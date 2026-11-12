@@ -304,6 +304,59 @@ function Parcheggio() {
   );
 }
 
+function Supermercato() {
+  const cols = ['#d9534f', '#f0ad4e', '#5bc0de', '#5cb85c', '#9b6bd1', '#e8e2d0'];
+  return (
+    <g>
+      <defs>
+        <pattern id="linoleum" width="60" height="60" patternUnits="userSpaceOnUse">
+          <rect width="60" height="60" fill="#b9bcb5" />
+          <path d="M0 60H60M60 0V60" stroke="#a5a9a1" strokeWidth="1.5" />
+          <circle cx="18" cy="22" r="1.2" fill="#8f938b" />
+          <circle cx="44" cy="40" r="1" fill="#8f938b" />
+        </pattern>
+        <radialGradient id="neon" cx="0.5" cy="0.3" r="0.9">
+          <stop offset="0" stopColor="#f4fbff" stopOpacity="0.18" />
+          <stop offset="1" stopColor="#f4fbff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="url(#linoleum)" />
+      {/* scaffali */}
+      {[0, 1].map((r) => (
+        <g key={r} transform={`translate(0 ${r === 0 ? 10 : 470})`}>
+          <rect x="20" y="0" width="860" height="70" rx="4" fill="#d6d9de" />
+          {Array.from({ length: 34 }).map((_, i) => (
+            <rect key={i} x={28 + i * 25} y="8" width="20" height="54" rx="3" fill={cols[(i * 7 + r * 3) % cols.length]} opacity="0.85" />
+          ))}
+        </g>
+      ))}
+      {/* cassa con nastro */}
+      <g>
+        <rect x="690" y="120" width="190" height="90" rx="6" fill="#3a3f47" />
+        <rect x="700" y="140" width="130" height="50" rx="4" fill="#1d2126" />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <rect key={i} x={706 + i * 21} y="146" width="14" height="38" fill="#2a2f36" />
+        ))}
+        <rect x="840" y="135" width="30" height="40" rx="3" fill="#87929f" />
+      </g>
+      {/* carrello */}
+      <g transform="translate(140 120) rotate(-12)">
+        <rect width="110" height="70" rx="6" fill="none" stroke="#9aa3ad" strokeWidth="5" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <line key={i} x1={i * 22 + 11} y1="4" x2={i * 22 + 11} y2="66" stroke="#9aa3ad" strokeWidth="2" />
+        ))}
+        <rect x="14" y="14" width="30" height="22" rx="3" fill="#f0ad4e" />
+        <rect x="52" y="30" width="26" height="26" rx="3" fill="#5bc0de" />
+      </g>
+      {/* spesa caduta */}
+      <circle cx="600" cy="420" r="9" fill="#d9534f" />
+      <circle cx="622" cy="432" r="9" fill="#e5c33f" />
+      <rect x="560" y="400" width="26" height="16" rx="3" fill="#f2f2f2" transform="rotate(25 573 408)" />
+      <rect width={W} height={H} fill="url(#neon)" />
+    </g>
+  );
+}
+
 export function Floor({ setting, timeOfDay }: { setting: SettingId; timeOfDay: 'giorno' | 'sera' | 'notte' }) {
   let floor: JSX.Element;
   switch (setting) {
@@ -331,6 +384,9 @@ export function Floor({ setting, timeOfDay }: { setting: SettingId; timeOfDay: '
       break;
     case 'parcheggio':
       floor = <Parcheggio />;
+      break;
+    case 'supermercato':
+      floor = <Supermercato />;
       break;
     default:
       floor = <Casa />;

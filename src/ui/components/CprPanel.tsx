@@ -135,7 +135,7 @@ export function CprPanel({ sim, onAction }: { sim: Sim; onAction: (id: string) =
   if (!sim.inArrest() && !c.active) return null;
   const since = c.active ? sim.t - c.compressorSince : 0;
   const tired = since >= 120;
-  const who = c.by === 'giocatore' ? 'tu' : c.by === 'astante' ? 'un astante' : 'un collega';
+  const who = c.by === 'giocatore' || sim.scenario.role === 'laico' ? 'tu' : c.by === 'astante' ? 'un astante' : 'un collega';
   return (
     <section className={`cpr${c.active ? ' on' : ''}`} aria-label="Rianimazione cardiopolmonare">
       <div className="cpr-head">
@@ -166,11 +166,11 @@ export function CprPanel({ sim, onAction }: { sim: Sim; onAction: (id: string) =
         <div className="cpr-actions">
           {sim.scenario.crew > 1 && (
             <button className="btn" onClick={() => onAction('cambio_compressore')}>
-              Cambio compressore
+              {sim.scenario.role === 'laico' ? 'Fatti dare il cambio' : 'Cambio compressore'}
             </button>
           )}
           <button className={`btn${mine ? ' btn-on' : ''}`} onClick={() => setMine((m) => !m)} aria-pressed={mine}>
-            {mine ? 'Lascia al collega' : 'Comprimi tu'}
+            {mine ? 'Smetti il minigioco' : sim.scenario.role === 'laico' ? 'Comprimi a ritmo (minigioco)' : 'Comprimi tu'}
           </button>
           <div className="seg" role="group" aria-label="Rapporto compressioni ventilazioni">
             {(['30:2', '15:2'] as const).map((r) => (

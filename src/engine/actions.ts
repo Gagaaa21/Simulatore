@@ -95,6 +95,7 @@ const list: ActionDef[] = [
     label: 'Indossa i guanti',
     group: 'scena',
     duration: 5,
+    visible: (s) => s.scenario.role !== 'laico',
     available: (s) => (s.flags.guanti ? 'Hai già i guanti.' : true),
     run: ({ sim }) => {
       sim.set('guanti', true);
@@ -106,6 +107,7 @@ const list: ActionDef[] = [
     label: 'Indossa mascherina FFP2 e occhiali',
     group: 'scena',
     duration: 12,
+    visible: (s) => s.scenario.role !== 'laico',
     available: (s) => (s.flags.dpi ? 'Hai già i DPI completi.' : true),
     run: ({ sim }) => {
       sim.set('dpi', true);
@@ -186,6 +188,21 @@ const list: ActionDef[] = [
     run: ({ sim }) => {
       sim.set('fix_messa_sicurezza_acqua', true);
       sim.say('azione', 'Il bagnino porta il ragazzo a riva: non entri in acqua senza formazione e attrezzatura.');
+    },
+  },
+  {
+    id: 'siringa',
+    label: 'Metti in sicurezza la siringa nel contenitore rigido, senza reincappucciarla',
+    short: 'Siringa in sicurezza',
+    group: 'scena',
+    duration: 12,
+    visible: (s) => s.scenario.scene.hazards.some((h) => h.fixAction === 'siringa'),
+    run: ({ sim }) => {
+      sim.set('fix_siringa', true);
+      if (!sim.flags.guanti) {
+        sim.penalize('siringa_mani_nude', 'grave', 'Siringa maneggiata senza guanti', 'Rischio di puntura accidentale e trasmissione di infezioni: guanti e contenitore rigido, mai reincappucciare.', []);
+      }
+      sim.say('azione', 'Raccogli la siringa con la pinza e la chiudi nel contenitore per taglienti.');
     },
   },
   {
@@ -847,7 +864,7 @@ const list: ActionDef[] = [
   },
   {
     id: 'cambio_compressore',
-    label: 'Cambio compressore',
+    label: 'Cambio compressore (ogni 2 minuti)',
     group: 'C',
     duration: 3,
     visible: (s) => s.cpr.active && s.scenario.crew > 1,
@@ -1485,6 +1502,7 @@ const list: ActionDef[] = [
     label: 'Chiedi alla Centrale un mezzo avanzato (MSA / automedica)',
     short: 'Richiedi MSA',
     group: 'centrale',
+    visible: (s) => s.scenario.role !== 'laico',
     duration: 15,
     available: (s) => (s.requests.msa !== undefined ? (s.msaOnScene ? 'Il mezzo avanzato è già sul posto.' : 'Il mezzo avanzato è già in arrivo.') : true),
     run: ({ sim }) => {
@@ -1502,6 +1520,7 @@ const list: ActionDef[] = [
     label: 'Chiedi alla Centrale l’elisoccorso',
     short: 'Richiedi elisoccorso',
     group: 'centrale',
+    visible: (s) => s.scenario.role !== 'laico',
     duration: 15,
     available: (s) => (s.requests.elisoccorso !== undefined ? 'Già richiesto.' : true),
     run: ({ sim }) => {
@@ -1519,6 +1538,7 @@ const list: ActionDef[] = [
     label: 'Chiedi alla Centrale i Vigili del Fuoco',
     short: 'Richiedi VVF',
     group: 'centrale',
+    visible: (s) => s.scenario.role !== 'laico',
     duration: 10,
     available: (s) => (s.requests.vvf !== undefined ? 'Già richiesti.' : true),
     run: ({ sim }) => {
@@ -1531,6 +1551,7 @@ const list: ActionDef[] = [
     label: 'Chiedi alla Centrale le Forze dell’ordine',
     short: 'Richiedi Forze dell’ordine',
     group: 'centrale',
+    visible: (s) => s.scenario.role !== 'laico',
     duration: 10,
     available: (s) => (s.requests.ffoo !== undefined ? 'Già richieste.' : true),
     run: ({ sim }) => {
@@ -1543,6 +1564,7 @@ const list: ActionDef[] = [
     label: 'Comunica alla Centrale valutazione e parametri',
     short: 'Comunica alla Centrale',
     group: 'centrale',
+    visible: (s) => s.scenario.role !== 'laico',
     duration: 40,
     picker: 'centrale',
     available: needPatient,
@@ -1565,6 +1587,18 @@ const list: ActionDef[] = [
     available: needPatient,
     run: ({ sim }) => {
       sim.say('azione', sim.cpr.active ? 'Proseguite la RCP.' : 'Attendi osservando il paziente.');
+    },
+  },
+  {
+    id: 'attendi_lungo',
+    label: 'Prosegui il trattamento e rivaluta tra 3 minuti',
+    short: 'Prosegui 3 min',
+    group: 'centrale',
+    duration: 180,
+    available: needPatient,
+    run: ({ sim }) => {
+      const p = sim.p;
+      sim.find(`Dopo 3 minuti: coscienza ${p.avpu}, ${breathingText(p, sim)}${sim.pulseOx && !sim.inArrest() ? ` SpO₂ ${Math.round(p.v.spo2)}%, FC ${Math.round(p.v.hr)}/min.` : ''}${sim.cooling ? ` Temperatura ${p.v.temp.toFixed(1).replace('.', ',')} °C.` : ''}`);
     },
   },
   {

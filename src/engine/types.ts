@@ -218,6 +218,7 @@ export type SettingId =
   | 'festival'
   | 'lago'
   | 'parcheggio'
+  | 'supermercato'
   | 'stadio';
 
 export interface ArrestConfig {

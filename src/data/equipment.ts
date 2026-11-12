@@ -28,7 +28,7 @@ export interface Equipment {
   contains?: string[];
 }
 
-export const CAPACITY = 7;
+export const CAPACITY = 8;
 
 export const EQUIPMENT: Record<EquipmentId, Equipment> = {
   zaino: {

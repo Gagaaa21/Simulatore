@@ -293,12 +293,15 @@ export class Sim {
       this.soundQueue.push('sirena');
     }
     if (this.heliAt !== null && this.t === this.heliAt) {
-      this.say('radio', 'L’elisoccorso è atterrato nella zona indicata: l’équipe sta arrivando.');
+      this.say('radio', 'L’elisoccorso è atterrato nella zona indicata: l’équipe medica è con voi.');
+      this.msaOnScene = true;
+      this.soundQueue.push('sirena');
     }
     // presidi recuperati
     if (this.aedFetchAt !== null && this.t >= this.aedFetchAt) {
       this.aedFetchAt = null;
       this.brought.add('dae');
+      this.set('daeArrivatoAt', this.t);
       this.say('evento', 'Il DAE è arrivato: accendilo subito e applica le piastre.');
       this.soundQueue.push('bip');
     }
@@ -622,7 +625,7 @@ export class Sim {
       return;
     }
     if (c.active) return;
-    if (!this.inArrest()) {
+    if (!this.inArrest() && !this.flags.cprIndicata) {
       if (this.arrest.roscAt !== null) {
         this.penalize('cpr_after_rosc', 'lieve', 'RCP ripresa su paziente con segni di vita', 'Dopo il ritorno del circolo si interrompe la RCP e si rivaluta il respiro, pronti a ricominciare se si ferma.', ['ERC_BLS_2025']);
       } else {
@@ -635,7 +638,7 @@ export class Sim {
     }
     c.active = true;
     c.by = by;
-    if (by !== 'astante') c.quality = by === 'giocatore' ? c.quality : 0.88;
+    if (by !== 'astante') c.quality = by === 'giocatore' ? Math.max(c.quality, 0.8) : 0.88;
     if (by !== 'astante' && !this.flags.crewCprAt) this.set('crewCprAt', this.t);
     if (c.startedAt === null) {
       c.startedAt = this.t;
@@ -650,7 +653,12 @@ export class Sim {
     }
     c.pausedAt = null;
     if (this.p.position !== 'supino') this.p.position = 'supino';
-    this.say('azione', by === 'giocatore' ? 'Inizi le compressioni toraciche.' : 'Il collega inizia le compressioni toraciche (30:2).');
+    this.say(
+      'azione',
+      by === 'giocatore' || this.scenario.role === 'laico'
+        ? 'Inizi le compressioni toraciche al centro del torace.'
+        : `Il collega inizia le compressioni toraciche (${c.ratio === 'solo_compressioni' ? 'continue' : c.ratio}).`,
+    );
     this.emit();
   }
   stopCpr(reason?: string) {
@@ -664,7 +672,7 @@ export class Sim {
   rotateCompressor() {
     this.cpr.compressorSince = this.t;
     this.cpr.quality = this.cpr.by === 'giocatore' ? this.cpr.quality : 0.88;
-    this.say('azione', 'Cambio compressore in meno di 5 secondi.');
+    this.say('azione', this.scenario.role === 'laico' ? 'Un presente, istruito da te, ti dà il cambio alle compressioni.' : 'Cambio compressore in meno di 5 secondi.');
   }
 
   // ───────────────────────── azioni
@@ -695,7 +703,7 @@ export class Sim {
       return { ok: false, reason: `Serve: ${missing.map((m) => EQUIPMENT[m].name).join(', ')}`, missing };
     }
     // autoprotezione
-    if (def.contact && this.phase === 'paziente' && !this.flags.guanti) {
+    if (def.contact && this.phase === 'paziente' && !this.flags.guanti && this.scenario.role !== 'laico') {
       this.penalize('no_gloves', 'lieve', 'Contatto con il paziente senza guanti', 'L’autoprotezione viene prima di tutto: indossa i guanti prima di toccare il paziente.', ['ERC_FA_2025']);
     }
     const dur = typeof def.duration === 'function' ? def.duration(this) : def.duration;
