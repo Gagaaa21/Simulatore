@@ -129,7 +129,7 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
       { title: 'Riposo', detail: 'Posizione comoda (spesso semiseduto). Il paziente non deve camminare: sedia portantina.' },
       { title: 'Parametri', detail: 'SpO₂, FC, PA, FR, cute. Ossigeno solo se SpO₂ < 90%.' },
       { title: 'OPQRST', detail: 'Ora di esordio, caratteristiche, irradiazione, durata, sintomi associati (sudorazione, nausea, dispnea).' },
-      { title: 'Farmaci', detail: 'ERC 2025: un soccorritore laico aiuta ad assumere aspirina 300 mg masticabile (se non allergico) e la nitroglicerina prescritta per angina nota. In servizio segui il protocollo regionale e le indicazioni della Centrale.' },
+      { title: 'Farmaci', detail: 'ERC 2025: chi presta primo soccorso può aiutare la persona ad assumere aspirina masticabile (se non allergica) e la nitroglicerina prescritta per un’angina nota. In servizio segui il protocollo regionale e le indicazioni della Centrale: in molte Regioni i farmaci sono competenza del personale sanitario.' },
       { title: 'ECG e Centrale', detail: 'ECG a 12 derivazioni se previsto dal protocollo regionale; comunica presto per attivare la rete dell’infarto.' },
       { title: 'DAE pronto', detail: 'Rischio di aritmie maligne: tieni il DAE vicino e rivaluta spesso.' },
     ],
