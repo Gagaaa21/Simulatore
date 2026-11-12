@@ -1,0 +1,1 @@
+{"root":["./src/data/codes.ts","./src/data/equipment.ts","./src/data/protocols.ts","./src/data/sources.ts","./src/data/scenarios/acr-casa.ts","./src/data/scenarios/index.ts","./src/engine/actions.ts","./src/engine/engine.ts","./src/engine/scoring.ts","./src/engine/types.ts","./tests/engine.test.ts"],"version":"5.6.3"}
