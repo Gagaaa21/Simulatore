@@ -1,7 +1,6 @@
 import type { Sim } from './engine';
 import type { ActionDef, BodyRegion, Patient, Position } from './types';
 import type { ValutazioneCode } from '../data/codes';
-import { clockAt } from './engine';
 
 // ───────────────────────── testi dei reperti
 const AVPU_TXT: Record<string, string> = {
@@ -788,17 +787,19 @@ const list: ActionDef[] = [
       }
       const joint = params?.joint === true;
       const above = pos < b.pos;
-      const dist = b.pos - pos;
-      const ok = above && !joint && dist <= 0.3;
+      const lenCm = region.startsWith('gamba') ? 95 : 75;
+      const cm = Math.round((b.pos - pos) * lenCm);
+      const ok = above && !joint;
       sim.tourniquet = { at: sim.t, region, pos, ok };
+      sim.set('tqCm', cm);
       if (!sim.flags.emostasiAt) sim.set('emostasiAt', sim.t);
-      const ora = clockAt(sim.scenario.dispatch.time, sim.t + 600);
+      const ora = sim.clock();
       if (!above) {
         sim.penalize('tq_sotto', 'critico', 'Tourniquet a valle della ferita', 'Il tourniquet va posizionato a monte della ferita (tra ferita e cuore), 5–7 cm sopra.', ['ERC_FA_2025']);
       } else if (joint) {
         sim.penalize('tq_articolazione', 'grave', 'Tourniquet su un’articolazione', 'Sopra un’articolazione il laccio non comprime l’arteria: posizionalo 5–7 cm sopra la ferita, evitando le articolazioni.', ['ERC_FA_2025']);
-      } else if (!ok) {
-        sim.say('consiglio', 'Il tourniquet è molto lontano dalla ferita: la raccomandazione è 5–7 cm a monte.');
+      } else if (cm > 15) {
+        sim.say('consiglio', `Il laccio è circa ${cm} cm sopra la ferita: funziona, ma la raccomandazione è 5–7 cm a monte per risparmiare tessuto.`);
       }
       if (sim.tourniquet.ok) {
         sim.say('azione', `Stringi il tourniquet finché il sanguinamento si arresta (fa male: è normale). Annoti l’ora: ${ora}.`);

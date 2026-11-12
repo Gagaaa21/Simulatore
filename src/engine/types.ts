@@ -239,6 +239,8 @@ export interface Dispatch {
   text: string;
   extra?: string; // es. "Inviato anche MSA, ETA 8 minuti"
   time: string; // ora della chiamata hh:mm
+  /** secondi tra la chiamata e l'arrivo sul posto (default 480) */
+  travel?: number;
 }
 
 export interface LoadoutConfig {

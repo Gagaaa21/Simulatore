@@ -1,0 +1,185 @@
+/*
+  Sirena 118 — design system
+  Layout: la cabina dell'ambulanza di notte. Ogni pannello è uno strumento reale
+  (tablet della Centrale, monitor, DAE, zaino) attorno alla vista dall'alto del paziente.
+  Un solo mondo visivo, scuro per scelta: la notte del turno, le luci del monitor,
+  l'arancio fluorescente e l'argento rifrangente della livrea.
+*/
+:root {
+  color-scheme: dark;
+
+  /* notte e cabina */
+  --notte: #0d1826;
+  --notte-2: #13233a;
+  --notte-3: #1a2f4b;
+  --notte-4: #223a5a;
+  --filo: #29415f;
+  --filo-2: #3a587d;
+  --testo: #e9eef5;
+  --testo-2: #a7b7ca;
+  --testo-3: #7389a4;
+
+  /* livrea */
+  --arancio: #ff7a1a;
+  --arancio-2: #ffa25c;
+  --arancio-scuro: #b84d06;
+  --argento: #c9d4df;
+  --blu: #3f8cff;
+  --blu-2: #8ab8ff;
+
+  /* monitor */
+  --m-fc: #4be38a;
+  --m-spo2: #46d5f7;
+  --m-fr: #ffd84d;
+  --m-pa: #f2f5f8;
+  --m-glu: #c8a6ff;
+  --m-temp: #ff9fcf;
+  --m-allarme: #ff3d55;
+  --m-fondo: #050b12;
+
+  /* codici colore */
+  --c-rosso: #e5323b;
+  --c-giallo: #f5c21b;
+  --c-verde: #2db34f;
+  --c-bianco: #eef2f5;
+  --c-nero: #20262e;
+
+  /* scheda cartacea */
+  --carta: #edf1ee;
+  --carta-2: #e2e8e4;
+  --carta-riga: #c3cfca;
+  --inchiostro: #1e2b49;
+  --stampa: #b8333a;
+
+  /* stati */
+  --ok: #4be38a;
+  --warn: #ffd84d;
+  --bad: #ff5468;
+
+  /* tipografia */
+  --f-display: 'Saira Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --f-testo: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --f-mano: 'Caveat', 'Bradley Hand', 'Segoe Print', cursive;
+
+  /* scala tipografica (Bringhurst) */
+  --t-12: 0.75rem;
+  --t-14: 0.875rem;
+  --t-16: 1rem;
+  --t-18: 1.125rem;
+  --t-21: 1.3125rem;
+  --t-24: 1.5rem;
+  --t-36: 2.25rem;
+  --t-48: 3rem;
+  --t-72: 4.5rem;
+
+  --r-s: 6px;
+  --r-m: 10px;
+  --r-l: 16px;
+  --ombra: 0 10px 30px rgba(2, 6, 14, 0.55);
+
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--notte);
+  color: var(--testo);
+  font-family: var(--f-testo);
+  font-size: var(--t-16);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100%;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--f-display);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+  text-wrap: balance;
+  letter-spacing: 0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: var(--blu-2);
+}
+
+:focus-visible {
+  outline: 2px solid var(--arancio-2);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.num {
+  font-family: var(--f-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+::selection {
+  background: var(--arancio);
+  color: #1a0c00;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

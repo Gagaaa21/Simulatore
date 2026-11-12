@@ -78,7 +78,7 @@ export class Sim {
   measurements = new Map<string, Measurement>();
   log: LogEntry[] = [];
   penalties: Penalty[] = [];
-  history: { t: number; hr: number; spo2: number; sbp: number; rr: number }[] = [];
+  history: { t: number; hr: number; spo2: number | null; sbp: number; rr: number }[] = [];
   requests: Record<string, number> = {};
   msaAt: number | null = null;
   msaOnScene = false;
@@ -210,6 +210,10 @@ export class Sim {
   has(eq: EquipmentId) {
     return this.brought.has(eq);
   }
+  /** Orario reale (hh:mm) al tempo di missione t. */
+  clock(t: number = this.t): string {
+    return clockAt(this.scenario.dispatch.time, (this.scenario.dispatch.travel ?? 480) + t);
+  }
   hint(text: string) {
     if (this.mode === 'addestramento') this.say('consiglio', text);
   }
@@ -309,7 +313,7 @@ export class Sim {
 
   private sample() {
     const v = this.p.v;
-    this.history.push({ t: this.t, hr: Math.round(v.hr), spo2: Math.round(v.spo2), sbp: Math.round(v.sbp), rr: Math.round(v.rr) });
+    this.history.push({ t: this.t, hr: Math.round(v.hr), spo2: this.inArrest() ? null : Math.round(v.spo2), sbp: Math.round(v.sbp), rr: Math.round(v.rr) });
   }
 
   // ───────────────────────── fisiologia generica
@@ -611,6 +615,7 @@ export class Sim {
       c.by = by;
       c.quality = by === 'giocatore' ? c.quality : 0.88;
       c.compressorSince = this.t;
+      if (c.ratio === 'solo_compressioni') c.ratio = this.isChild() ? '15:2' : '30:2';
       if (!this.flags.crewCprAt) this.set('crewCprAt', this.t);
       this.say('azione', 'Prendi il posto dell’astante alle compressioni senza interromperle: ora la RCP è dell’equipaggio.');
       this.emit();

@@ -1,0 +1,351 @@
+import type { SettingId } from '../../engine/types';
+
+export const W = 900;
+export const H = 560;
+
+function Casa() {
+  return (
+    <g>
+      <defs>
+        <pattern id="parquet" width="160" height="56" patternUnits="userSpaceOnUse">
+          <rect width="160" height="28" fill="#5e412c" />
+          <rect y="28" width="160" height="28" fill="#664833" />
+          <rect x="0" y="0" width="96" height="28" fill="#6a4a33" />
+          <rect x="60" y="28" width="100" height="28" fill="#5a3f2b" />
+          <path d="M0 28H160M0 56H160M96 0V28M60 28V56" stroke="#3e2a1c" strokeWidth="1.5" />
+          <path d="M10 9c30 2 50-2 70 1M110 40c20 1 30-2 46 0" stroke="#7a5840" strokeWidth="1" fill="none" opacity="0.5" />
+        </pattern>
+        <radialGradient id="lampada" cx="0.78" cy="0.12" r="0.7">
+          <stop offset="0" stopColor="#ffcf8a" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#ffcf8a" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="tv" cx="0.05" cy="0.0" r="0.6">
+          <stop offset="0" stopColor="#7fb2ff" stopOpacity="0.45" />
+          <stop offset="1" stopColor="#7fb2ff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="url(#parquet)" />
+      {/* tappeto */}
+      <rect x="150" y="150" width="620" height="300" rx="6" fill="#5b2f37" />
+      <rect x="166" y="166" width="588" height="268" rx="4" fill="none" stroke="#c9a46b" strokeWidth="3" strokeDasharray="14 6" opacity="0.55" />
+      <rect x="186" y="186" width="548" height="228" rx="3" fill="#6a3a43" opacity="0.6" />
+      {/* divano */}
+      <g>
+        <rect x="120" y="18" width="560" height="104" rx="18" fill="#2f4a52" />
+        <rect x="140" y="30" width="170" height="70" rx="12" fill="#3b5a63" />
+        <rect x="315" y="30" width="170" height="70" rx="12" fill="#3b5a63" />
+        <rect x="490" y="30" width="170" height="70" rx="12" fill="#3b5a63" />
+        <rect x="120" y="18" width="560" height="20" rx="10" fill="#24393f" />
+      </g>
+      {/* tavolino */}
+      <g>
+        <rect x="690" y="400" width="170" height="110" rx="6" fill="#3a2a1d" />
+        <rect x="700" y="410" width="150" height="90" rx="4" fill="#4a3727" />
+        <circle cx="740" cy="440" r="14" fill="#d9d9d9" opacity="0.8" />
+        <rect x="780" y="455" width="50" height="26" rx="3" fill="#202326" />
+      </g>
+      <rect width={W} height={H} fill="url(#lampada)" />
+      <rect width={W} height={H} fill="url(#tv)" className="tv-flicker" />
+    </g>
+  );
+}
+
+function Ristorante() {
+  return (
+    <g>
+      <defs>
+        <pattern id="piastrelle" width="80" height="80" patternUnits="userSpaceOnUse">
+          <rect width="80" height="80" fill="#6f665b" />
+          <rect width="40" height="40" fill="#7d7468" />
+          <rect x="40" y="40" width="40" height="40" fill="#7d7468" />
+          <path d="M0 40H80M40 0V80" stroke="#5a5249" strokeWidth="1.5" />
+        </pattern>
+        <radialGradient id="caldo" cx="0.5" cy="0.4" r="0.8">
+          <stop offset="0" stopColor="#ffd59a" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#ffd59a" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="url(#piastrelle)" />
+      {[
+        [110, 90],
+        [790, 110],
+        [800, 470],
+      ].map(([x, y], i) => (
+        <g key={i}>
+          <circle cx={x} cy={y} r="70" fill="#efe9df" />
+          <circle cx={x} cy={y} r="70" fill="none" stroke="#cfc6b6" strokeWidth="3" />
+          <circle cx={x - 25} cy={y - 18} r="16" fill="#fff" stroke="#ddd" />
+          <circle cx={x + 24} cy={y + 14} r="16" fill="#fff" stroke="#ddd" />
+          <rect x={x - 6} y={y - 40} width="12" height="30" rx="3" fill="#7a1f2a" opacity="0.8" />
+        </g>
+      ))}
+      {/* tavolo del paziente con sedia rovesciata */}
+      <g>
+        <circle cx="300" cy="80" r="60" fill="#efe9df" />
+        <circle cx="285" cy="70" r="15" fill="#fff" stroke="#ddd" />
+        <path d="M280 66c6-4 14-3 16 4" stroke="#b07a3a" strokeWidth="5" fill="none" />
+        <rect x="420" y="120" width="56" height="56" rx="6" fill="#3e2a1d" transform="rotate(28 448 148)" />
+        <rect x="430" y="118" width="40" height="12" rx="3" fill="#2c1e15" transform="rotate(28 448 148)" />
+      </g>
+      <rect width={W} height={H} fill="url(#caldo)" />
+    </g>
+  );
+}
+
+function Strada() {
+  return (
+    <g>
+      <defs>
+        <filter id="asfalto" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" />
+          <feColorMatrix values="0 0 0 0 0.16  0 0 0 0 0.17  0 0 0 0 0.19  0 0 0 0.55 0" />
+          <feComposite in2="SourceGraphic" operator="in" />
+        </filter>
+        <radialGradient id="lampione" cx="0.86" cy="0.08" r="0.55">
+          <stop offset="0" stopColor="#ffb860" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#ffb860" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="#2a2e34" />
+      <rect width={W} height={H} fill="#2a2e34" filter="url(#asfalto)" />
+      {/* marciapiede */}
+      <rect x="0" y="0" width={W} height="70" fill="#4b4f55" />
+      <rect x="0" y="66" width={W} height="8" fill="#6c7076" />
+      {/* strisce */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <rect key={i} x={i * 130 + 10} y="286" width="70" height="10" fill="#e8e6dc" opacity="0.85" />
+      ))}
+      <rect x="0" y="520" width={W} height="6" fill="#e8e6dc" opacity="0.7" />
+      {/* frenata */}
+      <path d="M40 360 C 220 350, 380 340, 520 380" stroke="#16181b" strokeWidth="9" fill="none" opacity="0.7" />
+      <path d="M40 380 C 220 372, 380 362, 520 398" stroke="#16181b" strokeWidth="9" fill="none" opacity="0.6" />
+      {/* moto a terra */}
+      <g transform="translate(700 150) rotate(-24)">
+        <ellipse cx="0" cy="0" rx="92" ry="22" fill="#121417" opacity="0.5" transform="translate(6 10)" />
+        <rect x="-80" y="-12" width="40" height="24" rx="10" fill="#1d1f22" />
+        <rect x="42" y="-12" width="40" height="24" rx="10" fill="#1d1f22" />
+        <rect x="-50" y="-18" width="100" height="36" rx="14" fill="#c4271f" />
+        <rect x="-20" y="-11" width="45" height="22" rx="8" fill="#1b1b1d" />
+        <rect x="52" y="-30" width="8" height="60" rx="3" fill="#8a9097" />
+      </g>
+      {/* detriti */}
+      {[
+        [560, 250, 0],
+        [600, 230, 30],
+        [610, 270, 70],
+        [520, 220, 15],
+      ].map(([x, y, r], i) => (
+        <rect key={i} x={x} y={y} width="12" height="7" fill="#d0d5da" opacity="0.7" transform={`rotate(${r} ${x} ${y})`} />
+      ))}
+      <rect width={W} height={H} fill="url(#lampione)" />
+      <rect width={W} height={H} className="lampeggiante" fill="#3f8cff" />
+    </g>
+  );
+}
+
+function Cantiere() {
+  return (
+    <g>
+      <defs>
+        <filter id="cemento" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="8" />
+          <feColorMatrix values="0 0 0 0 0.45  0 0 0 0 0.44  0 0 0 0 0.41  0 0 0 0.45 0" />
+          <feComposite in2="SourceGraphic" operator="in" />
+        </filter>
+        <pattern id="zebra" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="15" height="30" fill="#f3c316" />
+          <rect x="15" width="15" height="30" fill="#1b1b1b" />
+        </pattern>
+        <radialGradient id="faro" cx="0.15" cy="0.15" r="0.9">
+          <stop offset="0" stopColor="#fff6dc" stopOpacity="0.3" />
+          <stop offset="1" stopColor="#fff6dc" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="#6b6862" />
+      <rect width={W} height={H} fill="#6b6862" filter="url(#cemento)" />
+      <path d="M120 470 L190 420 L260 432 L330 380" stroke="#4d4a45" strokeWidth="2" fill="none" />
+      <rect x="0" y="0" width={W} height="26" fill="url(#zebra)" />
+      {/* tavolo da lavoro e smerigliatrice */}
+      <rect x="640" y="70" width="220" height="110" rx="4" fill="#7c5a37" />
+      <rect x="650" y="80" width="200" height="90" fill="#8a6640" />
+      <g transform="translate(600 210) rotate(-15)">
+        <rect x="-50" y="-12" width="80" height="24" rx="8" fill="#1f5fae" />
+        <rect x="-70" y="-6" width="26" height="12" rx="4" fill="#222" />
+        <circle cx="38" cy="0" r="24" fill="#9aa3ab" stroke="#4b5157" strokeWidth="4" />
+      </g>
+      <path d="M560 216 C 520 240, 500 170, 460 150 S 380 110, 300 40" stroke="#111" strokeWidth="5" fill="none" />
+      {/* polvere */}
+      {Array.from({ length: 30 }).map((_, i) => (
+        <circle key={i} cx={560 + ((i * 37) % 120)} cy={220 + ((i * 53) % 80)} r={1.5 + (i % 3)} fill="#d8d2c6" opacity="0.4" />
+      ))}
+      <rect width={W} height={H} fill="url(#faro)" />
+    </g>
+  );
+}
+
+function Concerto({ giorno }: { giorno: boolean }) {
+  const heads = Array.from({ length: 44 }).map((_, i) => {
+    const x = 18 + i * 20 + ((i * 7) % 9);
+    const y = 10 + ((i * 13) % 26);
+    const cols = ['#2a1d14', '#4a3222', '#141414', '#a37a43', '#6b3b26', '#d9c28a', '#3b2a1e'];
+    return <circle key={i} cx={x} cy={y} r={12 + (i % 3)} fill={cols[i % cols.length]} />;
+  });
+  return (
+    <g>
+      <defs>
+        <filter id="erba" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="5" />
+          <feColorMatrix values={giorno ? '0 0 0 0 0.42  0 0 0 0 0.52  0 0 0 0 0.24  0 0 0 0.6 0' : '0 0 0 0 0.12  0 0 0 0 0.17  0 0 0 0 0.12  0 0 0 0.7 0'} />
+          <feComposite in2="SourceGraphic" operator="in" />
+        </filter>
+      </defs>
+      <rect width={W} height={H} fill={giorno ? '#7f8a45' : '#1b2419'} />
+      <rect width={W} height={H} fill={giorno ? '#7f8a45' : '#1b2419'} filter="url(#erba)" />
+      {/* zone calpestate */}
+      <ellipse cx="300" cy="380" rx="220" ry="120" fill={giorno ? '#8f8250' : '#2a2a20'} opacity="0.6" />
+      {/* transenna e pubblico */}
+      <g>{heads}</g>
+      <rect x="0" y="48" width={W} height="10" fill="#9aa3ad" />
+      {Array.from({ length: 19 }).map((_, i) => (
+        <rect key={i} x={i * 50} y="44" width="4" height="18" fill="#6f7882" />
+      ))}
+      {/* bicchieri e bottiglie */}
+      {[
+        [130, 470],
+        [720, 330],
+        [760, 360],
+        [180, 140],
+        [620, 500],
+        [840, 210],
+      ].map(([x, y], i) => (
+        <g key={i} transform={`rotate(${i * 40} ${x} ${y})`}>
+          <rect x={x} y={y} width="16" height="9" rx="2" fill={i % 2 ? '#e8f1ff' : '#d84b3b'} opacity="0.85" />
+        </g>
+      ))}
+      {!giorno && <rect width={W} height={H} className="luci-palco" fill="url(#raggi)" />}
+      <defs>
+        <linearGradient id="raggi" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#ff3fa6" stopOpacity="0.22" />
+          <stop offset="0.5" stopColor="#3fe0ff" stopOpacity="0.05" />
+          <stop offset="1" stopColor="#7b5cff" stopOpacity="0.2" />
+        </linearGradient>
+      </defs>
+      {giorno && (
+        <>
+          {/* ombra della tenda del PMA */}
+          <path d="M600 560 L900 560 L900 300 L700 260 Z" fill="#0b1a10" opacity="0.28" />
+          <rect x="760" y="250" width="140" height="18" fill="#e8ecef" />
+          <rect x="760" y="250" width="140" height="18" fill="none" stroke="#c4271f" strokeWidth="4" strokeDasharray="20 10" />
+        </>
+      )}
+    </g>
+  );
+}
+
+function Lago() {
+  return (
+    <g>
+      <defs>
+        <linearGradient id="acqua" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1f5a74" />
+          <stop offset="1" stopColor="#3a8aa3" />
+        </linearGradient>
+        <filter id="sabbia" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="11" />
+          <feColorMatrix values="0 0 0 0 0.79  0 0 0 0 0.7  0 0 0 0 0.54  0 0 0 0.5 0" />
+          <feComposite in2="SourceGraphic" operator="in" />
+        </filter>
+      </defs>
+      <rect width={W} height={H} fill="#c7b089" />
+      <rect width={W} height={H} fill="#c7b089" filter="url(#sabbia)" />
+      <path d="M0 0 H900 V130 C 760 160, 600 120, 450 150 S 150 120, 0 150 Z" fill="url(#acqua)" />
+      <path d="M0 150 C 150 120, 300 160, 450 150 S 760 160, 900 130" stroke="#e8f4f7" strokeWidth="5" fill="none" opacity="0.7" className="onda" />
+      {[60, 95].map((y, i) => (
+        <path key={i} d={`M${40 + i * 60} ${y} q 30 -8 60 0 t 60 0`} stroke="#bfe3ee" strokeWidth="2" fill="none" opacity="0.5" />
+      ))}
+      {/* telo e salvagente */}
+      <rect x="640" y="380" width="200" height="110" rx="6" fill="#2f8f88" transform="rotate(-6 740 435)" />
+      <rect x="640" y="380" width="200" height="110" rx="6" fill="none" stroke="#f2e9c9" strokeWidth="6" strokeDasharray="30 18" transform="rotate(-6 740 435)" />
+      <g transform="translate(130 450)">
+        <circle r="38" fill="#e8492f" />
+        <circle r="20" fill="#c7b089" />
+        {[0, 90, 180, 270].map((a) => (
+          <rect key={a} x="-8" y="-38" width="16" height="18" fill="#f5f2ea" transform={`rotate(${a + 45})`} />
+        ))}
+      </g>
+    </g>
+  );
+}
+
+function Parcheggio() {
+  return (
+    <g>
+      <defs>
+        <radialGradient id="lampada-park" cx="0.5" cy="0.35" r="0.65">
+          <stop offset="0" stopColor="#ffd7a0" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#ffd7a0" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="#23272d" />
+      {Array.from({ length: 7 }).map((_, i) => (
+        <rect key={i} x={40 + i * 130} y="0" width="6" height="120" fill="#d9d7cf" opacity="0.8" />
+      ))}
+      {Array.from({ length: 7 }).map((_, i) => (
+        <rect key={i} x={40 + i * 130} y="440" width="6" height="120" fill="#d9d7cf" opacity="0.8" />
+      ))}
+      <g transform="translate(110 20)">
+        <rect width="110" height="190" rx="28" fill="#3e4f63" />
+        <rect x="12" y="40" width="86" height="50" rx="10" fill="#1d2733" />
+        <rect x="12" y="120" width="86" height="40" rx="10" fill="#1d2733" />
+      </g>
+      <ellipse cx="640" cy="420" rx="90" ry="30" fill="#14171b" opacity="0.7" />
+      <rect width={W} height={H} fill="url(#lampada-park)" />
+    </g>
+  );
+}
+
+export function Floor({ setting, timeOfDay }: { setting: SettingId; timeOfDay: 'giorno' | 'sera' | 'notte' }) {
+  let floor: JSX.Element;
+  switch (setting) {
+    case 'casa':
+      floor = <Casa />;
+      break;
+    case 'ristorante':
+      floor = <Ristorante />;
+      break;
+    case 'strada':
+      floor = <Strada />;
+      break;
+    case 'cantiere':
+      floor = <Cantiere />;
+      break;
+    case 'concerto':
+    case 'stadio':
+      floor = <Concerto giorno={timeOfDay === 'giorno'} />;
+      break;
+    case 'festival':
+      floor = <Concerto giorno />;
+      break;
+    case 'lago':
+      floor = <Lago />;
+      break;
+    case 'parcheggio':
+      floor = <Parcheggio />;
+      break;
+    default:
+      floor = <Casa />;
+  }
+  const night = timeOfDay !== 'giorno';
+  return (
+    <g>
+      {floor}
+      <defs>
+        <radialGradient id="vignetta" cx="0.5" cy="0.54" r="0.72">
+          <stop offset="0.45" stopColor="#050a14" stopOpacity="0" />
+          <stop offset="1" stopColor="#050a14" stopOpacity={night ? 0.82 : 0.38} />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="url(#vignetta)" pointerEvents="none" />
+    </g>
+  );
+}
