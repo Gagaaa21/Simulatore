@@ -23,7 +23,7 @@ function ProtocolPage({ id }: { id: ProtocolId }) {
       <ol className="flow">
         {p.steps.map((s, i) => (
           <li key={i} className={s.ask ? 'ask' : ''}>
-            <span className="flow-n num">{i + 1}</span>
+            <span className="flow-n num"><span>{i + 1}</span></span>
             <div>
               <p className="flow-t">{s.title}</p>
               {s.detail && <p className="flow-d">{s.detail}</p>}
@@ -136,35 +136,35 @@ function Maxi() {
       <p className="lib-sum">Quando i feriti superano le risorse si cambia obiettivo: il massimo beneficio per il maggior numero. Il triage START classifica ogni ferito in meno di un minuto.</p>
       <ol className="flow">
         <li>
-          <span className="flow-n num">1</span>
+          <span className="flow-n num"><span>1</span></span>
           <div>
             <p className="flow-t">Cammina?</p>
             <p className="flow-d">Chi riesce a camminare va verso un punto di raccolta: VERDE (minore). Lo rivaluterai.</p>
           </div>
         </li>
         <li className="ask">
-          <span className="flow-n num">2</span>
+          <span className="flow-n num"><span>2</span></span>
           <div>
             <p className="flow-t">Respira?</p>
             <p className="flow-d">Se no, apri le vie aeree: se riprende a respirare è ROSSO, altrimenti NERO (deceduto o non salvabile con le risorse disponibili).</p>
           </div>
         </li>
         <li className="ask">
-          <span className="flow-n num">3</span>
+          <span className="flow-n num"><span>3</span></span>
           <div>
             <p className="flow-t">Frequenza respiratoria oltre 30/min?</p>
             <p className="flow-d">Se sì: ROSSO.</p>
           </div>
         </li>
         <li className="ask">
-          <span className="flow-n num">4</span>
+          <span className="flow-n num"><span>4</span></span>
           <div>
             <p className="flow-t">Perfusione</p>
             <p className="flow-d">Polso radiale assente o riempimento capillare oltre 2 s: ROSSO (controlla le emorragie).</p>
           </div>
         </li>
         <li className="ask">
-          <span className="flow-n num">5</span>
+          <span className="flow-n num"><span>5</span></span>
           <div>
             <p className="flow-t">Esegue ordini semplici?</p>
             <p className="flow-d">No: ROSSO. Sì: GIALLO.</p>
