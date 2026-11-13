@@ -21,7 +21,8 @@ export function keyMarkers(sim: Sim): Marker[] {
   if (sim.arrest.roscAt !== null) out.push({ t: sim.arrest.roscAt, label: 'ROSC' });
   if (sim.flags.o2At !== undefined) out.push({ t: Number(sim.flags.o2At), label: 'O₂' });
   if (sim.tourniquet) out.push({ t: sim.tourniquet.at, label: 'Tourniquet' });
-  if (sim.flags.zuccheroAt !== undefined) out.push({ t: Number(sim.flags.zuccheroAt), label: 'Zucchero' });
+  if (sim.flags.glucosioEv !== undefined) out.push({ t: Number(sim.flags.glucosioEv), label: 'Glucosio ALS' });
+  if (sim.msaOnScene && sim.msaAt !== null) out.push({ t: sim.msaAt, label: 'Avanzato' });
   if (sim.flags.raffreddamentoAt !== undefined) out.push({ t: Number(sim.flags.raffreddamentoAt), label: 'Raffreddamento' });
   if (sim.flags.adrenalina1At !== undefined) out.push({ t: Number(sim.flags.adrenalina1At), label: 'Adrenalina' });
   if (sim.bvm && sim.flags.bvmAt !== undefined) out.push({ t: Number(sim.flags.bvmAt), label: 'Pallone' });

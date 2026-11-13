@@ -12,8 +12,8 @@ const CATS: { id: Scenario['category'] | 'tutti'; label: string }[] = [
   { id: 'fuori_servizio', label: 'Fuori servizio' },
 ];
 const ROLE: Record<Scenario['role'], string> = {
-  msb: 'Equipaggio MSB',
-  squadra: 'Squadra a piedi',
+  msb: 'Ambulanza BLS',
+  squadra: 'Squadra a piedi (SAP)',
   laico: 'Da solo, senza presidi',
 };
 
@@ -50,7 +50,7 @@ export function ScenarioSelect({
         </button>
         <div>
           <h1>Missioni</h1>
-          <p className="muted">Scegli una missione. Il codice in alto è quello con cui la Centrale ti invia (luogo, patologia presunta, criticità – DM 15/05/1992).</p>
+          <p className="muted">Scegli una missione. Il codice in alto è quello con cui la SORES ti invia (luogo, patologia presunta, criticità – DM 15/05/1992).</p>
         </div>
         <div className="seg" role="radiogroup" aria-label="Modalità">
           <button className={settings.mode === 'addestramento' ? 'on' : ''} onClick={() => setSettings({ mode: 'addestramento' })}>

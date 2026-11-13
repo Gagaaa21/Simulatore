@@ -12,17 +12,17 @@ export const pblsLattante: Scenario = {
   setting: 'casa',
   timeOfDay: 'notte',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'K',
     patologia: 'C3',
     criticita: 'R',
-    address: 'Via San Francesco 27, primo piano',
+    address: 'Codroipo, via San Francesco 27, primo piano',
     caller: 'Padre',
     time: '02:47',
     travel: 360,
     text: 'Lattante di 8 mesi con bronchiolite da tre giorni. Stanotte respirava sempre peggio, ora è «molle e blu». L’operatore ha guidato il padre nelle ventilazioni e nelle compressioni.',
-    extra: 'Centrale: «Inviata anche l’automedica pediatrica, arrivo stimato 10 minuti».',
+    extra: 'SORES: «ALS non disponibile, siete i più vicini. Parte anche l’automedica, arrivo stimato 10 minuti».',
   },
   loadout: {
     essential: ['zaino', 'pallone', 'ossigeno', 'aspiratore', 'dae'],
@@ -76,7 +76,7 @@ export const pblsLattante: Scenario = {
   protocol: { correct: ['pbls'] },
   valutazione: { correct: ['I3'] },
   reportKeys: [],
-  msa: { available: true, eta: 600, autoDispatched: true, label: 'L’automedica pediatrica' },
+  msa: { available: true, eta: 600, autoDispatched: true, label: 'L’automedica' },
   timeLimit: 1500,
   objectives: [
     {

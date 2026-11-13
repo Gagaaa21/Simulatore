@@ -3844,3 +3844,33 @@ kbd {
 [data-motion='ridotta'] .vapore {
   animation: none;
 }
+
+/* indicazione della SORES nel pannello ossigeno */
+.sores-order {
+  display: block;
+  line-height: 1.55;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: var(--r-s);
+  background: rgba(63, 140, 255, 0.12);
+  border: 1px solid rgba(63, 140, 255, 0.35);
+  color: var(--testo);
+}
+.sores-tag {
+  display: inline-block;
+  margin-right: 8px;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-12);
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--blu);
+  color: #fff;
+}
+.flow-label {
+  display: block;
+  font-family: var(--f-display);
+  font-weight: 600;
+  margin-bottom: 8px;
+}

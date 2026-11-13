@@ -102,7 +102,7 @@ export function Mission({
       }
     });
     sim.set('suggerimenti', Number(sim.flags.suggerimenti ?? 0) + 1);
-    setFlash(next ? `consiglio|Prossimo obiettivo: ${next.label}. ${next.why}` : 'ok|Hai già raggiunto gli obiettivi principali: completa la missione con la Centrale.');
+    setFlash(next ? `consiglio|Prossimo obiettivo: ${next.label}. ${next.why}` : 'ok|Hai già raggiunto gli obiettivi principali: completa la missione con la SORES.');
   };
 
   // guida del tutorial: primo passo non ancora completato ed evidenziazione del comando
@@ -259,10 +259,10 @@ export function Mission({
             )}
             {sim.msaAt !== null && !sim.msaOnScene && (
               <span className="hud-eta" title="Mezzo avanzato in arrivo">
-                MSA <span className="num">{fmtClock(Math.max(0, sim.msaAt - sim.t))}</span>
+                Avanzato <span className="num">{fmtClock(Math.max(0, sim.msaAt - sim.t))}</span>
               </span>
             )}
-            {sim.msaOnScene && <span className="hud-eta on">MSA sul posto</span>}
+            {sim.msaOnScene && <span className="hud-eta on">Avanzato sul posto</span>}
             <button className="icon-btn" onClick={() => setPaused((x) => !x)} aria-label={paused ? 'Riprendi' : 'Pausa'} title="Pausa (P)">
               {paused ? '▶' : '❚❚'}
             </button>
@@ -403,10 +403,10 @@ export function Mission({
               <strong>Agisci.</strong> A sinistra trovi le azioni divise per ABCDE; puoi anche cliccare direttamente sul corpo del paziente o sui presidi a terra. Ogni azione richiede tempo: il paziente intanto cambia.
             </li>
             <li>
-              <strong>Leggi gli strumenti.</strong> A destra il monitor (saturimetro, pressione, glicemia), il DAE e la RCP; sotto la scena il diario con reperti e messaggi radio.
+              <strong>Leggi gli strumenti.</strong> A destra il monitor (saturimetro e pressione; la glicemia compare quando la misura l’infermiere), il DAE e la RCP; sotto la scena il diario con reperti e messaggi radio.
             </li>
             <li>
-              <strong>Decidi.</strong> In alto scegli il protocollo; dal gruppo «Centrale» comunichi la valutazione, chiedi rinforzi, trasporti o passi le consegne.
+              <strong>Decidi.</strong> In alto scegli il protocollo; dal gruppo «SORES» riferisci valutazione e parametri, chiedi rinforzi, trasporti o passi le consegne. L’ossigeno lo applichi con presidio e concentrazione indicati dalla SORES.
             </li>
             <li>
               Il tempo scorre: <kbd>P</kbd> mette in pausa, <kbd>/</kbd> cerca un’azione.{settings.mode === 'addestramento' ? ' In addestramento il pulsante «Suggerimento» indica il prossimo obiettivo.' : ''}

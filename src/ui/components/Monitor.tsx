@@ -96,7 +96,7 @@ export function Monitor({ sim }: { sim: Sim }) {
     <section className="monitor" aria-label="Monitor dei parametri">
       <header className="monitor-head">
         <span className="monitor-brand">Parametri</span>
-        <span className="monitor-o2">{sim.o2 ? `O₂ ${sim.o2.flow} L/min · ${sim.o2.device}` : sim.bvm ? 'Ventilazione assistita' : 'aria ambiente'}</span>
+        <span className="monitor-o2">{sim.o2 ? (sim.o2.device === 'venturi' ? `O₂ Venturi ${sim.o2.fio2}%` : `O₂ ${sim.o2.flow} L/min · ${sim.o2.device}`) : sim.bvm ? 'Ventilazione assistita' : 'aria ambiente'}</span>
       </header>
       <div className="monitor-row">
         <div className={`mtile mt-spo2${spo2Alarm ? ' alarm' : ''}`}>
@@ -124,7 +124,7 @@ export function Monitor({ sim }: { sim: Sim }) {
         <div className="mtile small mt-glu">
           <span className="mt-label">Glicemia</span>
           <span className="mt-value num">{glu ? glu.value.replace(' mg/dL', '') : '––'}</span>
-          <span className="mt-note">{glu ? 'mg/dL · ' + ago(sim, glu.t) : 'mg/dL'}</span>
+          <span className="mt-note">{glu ? 'mg/dL · infermiere' : 'la misura l’infermiere'}</span>
         </div>
         <div className="mtile small mt-temp">
           <span className="mt-label">Temp. °C</span>

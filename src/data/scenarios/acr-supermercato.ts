@@ -17,7 +17,7 @@ export const acrSupermercato: Scenario = {
     luogo: 'P',
     patologia: 'C9',
     criticita: 'R',
-    address: 'Supermercato di quartiere, casse',
+    address: 'Sacile, supermercato di quartiere, casse',
     caller: 'Tu',
     time: '17:40',
     travel: 0,

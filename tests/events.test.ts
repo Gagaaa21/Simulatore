@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EVENTS, MAURER_TYPES, a1Score, maurerA, maurerB, maurerResources, maurerScore, riskClass } from '../src/data/events';
+import { fvgProcedura, scoreSores } from '../src/data/events';
 import { VICTIMS } from '../src/data/triage';
 
 describe('Accordo 2014 – A1 e Maurer', () => {
@@ -57,5 +58,18 @@ describe('triage START / JumpSTART', () => {
       else tag = 'giallo';
       expect(tag, v.id).toBe(v.correct);
     }
+  });
+});
+
+describe('DGR FVG 1653/2025', () => {
+  it('preavviso e validazione SORES per livello di rischio', () => {
+    expect(fvgProcedura(0)).toEqual({ giorni: 15, piano: false, validazione: false });
+    expect(fvgProcedura(1)).toEqual({ giorni: 30, piano: true, validazione: true });
+    expect(fvgProcedura(2).giorni).toBe(45);
+  });
+  it('Score SORES: operatore sul posto oltre 5', () => {
+    expect(scoreSores(5, 2000, 1)).toMatchObject({ m: 1, a: 1, s: 1, score: 3, operatore: false });
+    expect(scoreSores(30, 15000, 4)).toMatchObject({ m: 4, a: 4, s: 2, score: 10, operatore: true });
+    expect(scoreSores(13.5, 6000, 3).score).toBe(5);
   });
 });

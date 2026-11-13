@@ -17,7 +17,7 @@ export function Sources({ onBack }: { onBack: () => void }) {
         <h2>Prima di iniziare</h2>
         <ul>
           <li>Sirena 118 è uno strumento di ripasso e di allenamento decisionale. Non rilascia certificazioni e non sostituisce i corsi BLSD, PBLSD, PTC e la formazione regionale per soccorritori.</li>
-          <li>I protocolli operativi variano tra Regioni e Centrali Operative (presidi, farmaci, codici di rientro). In servizio vale sempre il protocollo della tua Centrale.</li>
+          <li>Il simulatore segue il modello del Friuli Venezia Giulia: ambulanze BLS senza infermiere, ALS con infermiere, automedica, SORES. Il soccorritore non esegue manovre invasive né somministrazioni, applica l’ossigeno come indicato dalla SORES e non assegna il codice di rientro. In servizio valgono sempre le indicazioni della SORES e del tuo ente.</li>
           <li>La fisiologia del paziente è semplificata a scopo didattico: tempi e valori sono plausibili, non predittivi.</li>
           <li>Le linee guida usate sono quelle ERC 2025 (pubblicate a ottobre 2025), le più recenti al momento dello sviluppo.</li>
         </ul>

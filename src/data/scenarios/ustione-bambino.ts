@@ -12,16 +12,17 @@ export const ustioneBambino: Scenario = {
   setting: 'casa',
   timeOfDay: 'sera',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'K',
     patologia: 'C1',
     criticita: 'G',
-    address: 'Via dei Mille 14, terzo piano',
+    address: 'Cividale del Friuli, via Carlo Alberto 6, terzo piano',
     caller: 'La madre',
     time: '19:42',
     travel: 420,
     text: 'Bambina di tre anni si è rovesciata addosso una pentola d’acqua bollente dal fornello. Piange forte, ha il petto e un braccio rossi. La madre è molto agitata.',
+    extra: 'SORES: «ALS non disponibile: inviamo la vostra BLS. Riferite l’estensione dell’ustione appena l’avete».',
   },
   loadout: {
     essential: ['zaino', 'kit_ustioni'],
@@ -147,7 +148,7 @@ export const ustioneBambino: Scenario = {
     'Togli indumenti bagnati, anelli e braccialetti; lascia ciò che è attaccato alla pelle.',
     'Nei bambini l’ipotermia arriva presto: raffredda solo l’ustione e copri il resto del corpo.',
     'Dopo il raffreddamento copri con pellicola appoggiata a strisce o con una medicazione non aderente.',
-    'Stima l’estensione con la regola del palmo e comunicala alla Centrale: orienta verso il centro adatto.',
+    'Stima l’estensione con la regola del palmo e riferiscila alla SORES: orienta verso il centro adatto.',
   ],
   sources: ['ERC_FA_2025'],
   hooks: {

@@ -1,6 +1,8 @@
 import type { Sim } from './engine';
-import type { ActionDef, BodyRegion, Patient, Position } from './types';
-import type { ValutazioneCode } from '../data/codes';
+import type { ActionDef, BodyRegion, O2Device, Patient, Position } from './types';
+import { VALUTAZIONE } from '../data/codes';
+import { describeO2, soresO2Order } from './oxygen';
+import { reportLabel } from './scoring';
 
 // ───────────────────────── testi dei reperti
 const AVPU_TXT: Record<string, string> = {
@@ -59,6 +61,17 @@ const POS_TXT: Record<Position, string> = {
   prono: 'prono',
   in_piedi: 'in piedi',
 };
+
+/** Come si presenta l'equipaggio alla radio. */
+function crewName(sim: Sim): string {
+  return sim.scenario.role === 'squadra' ? 'squadra a piedi' : 'BLS';
+}
+const lowerFirst = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+
+/** Manovre e somministrazioni riservate a infermieri e medici: in FVG il soccorritore non le esegue. */
+function fuoriCompetenza(sim: Sim, id: string, cosa: string, why: string) {
+  sim.penalize(`competenza_${id}`, 'grave', `${cosa}: non è competenza del soccorritore`, why, ['SORES_FVG', 'DGR_FVG_2039_2015']);
+}
 
 function needPatient(sim: Sim): true | string {
   if (sim.phase !== 'paziente') return 'Prima avvicinati al paziente.';
@@ -571,19 +584,65 @@ const list: ActionDef[] = [
   },
   {
     id: 'ossigeno',
-    label: 'Somministra ossigeno (scegli presidio e flusso)',
+    label: 'Ossigeno come indicato dalla SORES (presidio e concentrazione)',
     short: 'Ossigeno',
     group: 'B',
     duration: 15,
     needs: ['ossigeno'],
     contact: true,
     picker: 'ossigeno',
-    available: needPatient,
+    available: (s) => {
+      const n = needPatient(s);
+      if (n !== true) return n;
+      if (s.o2 || s.bvm || s.inArrest() || s.scenario.role === 'laico') return true;
+      if (!s.o2Order) return 'Prima riferisci la saturazione alla SORES: sarà lei a indicarti presidio e concentrazione.';
+      if (!s.o2Order.device) return 'La SORES non ha indicato l’ossigeno.';
+      return true;
+    },
     regions: ['testa'],
     run: ({ sim, params }) => {
-      const device = (params?.device as 'occhialini' | 'maschera' | 'reservoir' | null) ?? null;
+      const device = (params?.device as O2Device | null) ?? null;
       const flow = Number(params?.flow ?? 0);
-      sim.setO2(device, flow);
+      const fio2 = params?.fio2 === undefined ? undefined : Number(params.fio2);
+      const o = sim.o2Order;
+      if (device && !sim.bvm && !sim.inArrest() && sim.scenario.role !== 'laico') {
+        const match = !!o && o.device === device && (device === 'venturi' ? o.fio2 === fio2 : Math.abs(o.flow - flow) <= 1);
+        if (!match) {
+          sim.penalize(
+            'o2_non_indicato',
+            'grave',
+            'Ossigeno diverso dall’indicazione della SORES',
+            o?.device ? `La SORES aveva indicato ${describeO2(o.device, o.flow, o.fio2)}: presidio e concentrazione li decide la Centrale in base alla saturazione che riferisci.` : 'Presidio e concentrazione li decide la SORES in base alla saturazione che riferisci.',
+            ['SORES_FVG', 'BTS_O2_2017'],
+          );
+        }
+      }
+      sim.setO2(device, flow, fio2);
+    },
+  },
+  {
+    id: 'chiedi_ossigeno',
+    label: 'Riferisci la SpO₂ alla SORES e chiedi l’indicazione per l’ossigeno',
+    short: 'SpO₂ alla SORES',
+    group: 'B',
+    duration: 20,
+    visible: (s) => s.scenario.role !== 'laico',
+    available: (s) => {
+      const n = needPatient(s);
+      if (n !== true) return n;
+      if (!s.pulseOx) return 'Prima applica il saturimetro.';
+      if (s.inArrest()) return 'In arresto: ventila con pallone e ossigeno ad alti flussi.';
+      return true;
+    },
+    run: ({ sim }) => {
+      const o = soresO2Order(sim);
+      sim.o2Order = o;
+      if (!sim.flags.o2RiferitoAt) sim.set('o2RiferitoAt', sim.t);
+      sim.say('radio', `Tu: «SORES da ${crewName(sim)}: saturazione ${o.spo2}% ${sim.o2 ? 'in ossigeno' : 'in aria ambiente'}».`);
+      const [lo, hi] = o.target;
+      if (!o.device) sim.say('radio', `SORES: «Ricevuto, ${o.spo2}%. L’ossigeno per ora non serve: continuate a monitorare e riferite se scende sotto il ${lo}%».`);
+      else if (sim.o2 && sim.o2.device === o.device && (o.device !== 'venturi' || sim.o2.fio2 === o.fio2)) sim.say('radio', `SORES: «Ricevuto. Mantenete ${describeO2(o.device, o.flow, o.fio2)}, obiettivo ${lo}–${hi}%».`);
+      else sim.say('radio', `SORES: «Ricevuto. Applicate ${describeO2(o.device, o.flow, o.fio2)}, obiettivo ${lo}–${hi}%. Ricontrollate e riferite».`);
     },
   },
   {
@@ -971,16 +1030,12 @@ const list: ActionDef[] = [
     label: 'Misura la glicemia capillare',
     short: 'Glicemia',
     group: 'D',
-    duration: 35,
+    duration: 10,
     needs: ['zaino'],
     contact: true,
     available: needPatient,
-    regions: ['braccio_dx', 'braccio_sx'],
     run: ({ sim }) => {
-      const g = Math.round(sim.p.v.glu);
-      sim.find(`Glicemia capillare: ${g} mg/dL.`);
-      sim.measure('glicemia', 'Glicemia', `${g} mg/dL`);
-      if (!sim.flags.glicemiaAt) sim.set('glicemiaAt', sim.t);
+      fuoriCompetenza(sim, 'glicemia', 'Glicemia capillare', 'È una manovra invasiva (puntura del dito): la esegue l’infermiere dell’ALS o il medico. Tu riferisci alla SORES coscienza, parametri e che il paziente è diabetico.');
     },
   },
   {
@@ -1420,50 +1475,44 @@ const list: ActionDef[] = [
   },
   {
     id: 'glucosio_os',
-    label: 'Dai zucchero per bocca (15–20 g: bustine, succo, caramelle)',
+    label: 'Dai zucchero per bocca (bustine, succo, caramelle)',
     short: 'Zucchero per bocca',
     group: 'trattamenti',
-    duration: 60,
+    duration: 10,
     contact: true,
+    visible: (s) => !!s.flags.diabetico,
     available: needPatient,
     run: ({ sim }) => {
-      const p = sim.p;
-      if (p.avpu !== 'A' || !p.canSwallow) {
-        sim.penalize('zucchero_incosciente', 'critico', 'Zucchero per bocca a un paziente che non può deglutire', 'Nulla per bocca se il paziente non è sveglio e in grado di deglutire: rischio di inalazione. Posizione laterale e mezzo avanzato.', ['ERC_FA_2025']);
-        return;
+      if (sim.p.avpu !== 'A' || !sim.p.canSwallow) {
+        sim.penalize('zucchero_incosciente', 'critico', 'Zucchero per bocca a un paziente che non può deglutire', 'Nulla per bocca a chi non è sveglio e in grado di deglutire: rischio di inalazione.', ['ERC_FA_2025']);
       }
-      sim.set('zuccheroAt', sim.t);
-      sim.say('azione', 'Fai bere al paziente un succo di frutta e due bustine di zucchero (circa 20 g di zuccheri semplici).');
+      fuoriCompetenza(sim, 'zucchero', 'Zucchero per bocca', 'Il soccorritore non somministra nulla, nemmeno acqua e zucchero: il glucosio lo dà l’infermiere o il medico. Riferisci il sospetto di ipoglicemia alla SORES.');
     },
   },
   {
     id: 'autoiniettore',
-    label: 'Aiuta a usare l’autoiniettore di adrenalina (coscia, lato esterno)',
-    short: 'Autoiniettore adrenalina',
+    label: 'Aiuta il paziente a usare il suo autoiniettore di adrenalina',
+    short: 'Autoiniettore del paziente',
     group: 'trattamenti',
-    duration: 20,
+    duration: 10,
     contact: true,
     visible: (s) => !!s.flags.haAutoiniettore,
     available: needPatient,
     run: ({ sim }) => {
-      const n = Number(sim.flags.adrenalinaDosi ?? 0) + 1;
-      sim.set('adrenalinaDosi', n);
-      sim.set(`adrenalina${n}At`, sim.t);
-      sim.say('azione', n === 1 ? 'Il paziente si inietta l’adrenalina nella parte esterna della coscia, attraverso i pantaloni; lo aiuti a tenere l’iniettore premuto. Annoti l’ora.' : 'Seconda dose di adrenalina con il secondo autoiniettore, nella coscia opposta.');
+      fuoriCompetenza(sim, 'adrenalina', 'Adrenalina con l’autoiniettore', 'Anche se il farmaco è del paziente, il soccorritore non lo somministra: riferisci subito alla SORES «anafilassi, ha con sé l’autoiniettore» e l’adrenalina la fa l’équipe sanitaria.');
     },
   },
   {
     id: 'inalatore',
-    label: 'Aiuta a usare il suo spray broncodilatatore',
-    short: 'Spray broncodilatatore',
+    label: 'Aiuta il paziente a usare il suo spray broncodilatatore',
+    short: 'Spray del paziente',
     group: 'trattamenti',
-    duration: 20,
+    duration: 10,
     contact: true,
     visible: (s) => !!s.flags.haInalatore,
     available: needPatient,
     run: ({ sim }) => {
-      sim.set('inalatoreAt', sim.t);
-      sim.say('azione', 'Aiuti il paziente a usare il suo spray, con il distanziatore.');
+      fuoriCompetenza(sim, 'spray', 'Spray broncodilatatore', 'Anche se lo spray è del paziente, il soccorritore non somministra farmaci: riferiscilo alla SORES, che decide se inviare l’infermiere.');
     },
   },
   {
@@ -1471,30 +1520,13 @@ const list: ActionDef[] = [
     label: 'Dai da bere un po’ d’acqua',
     short: 'Acqua',
     group: 'trattamenti',
-    duration: 15,
+    duration: 10,
     available: needPatient,
     run: ({ sim }) => {
-      const p = sim.p;
-      if (p.avpu !== 'A' || !p.canSwallow) {
+      if (sim.p.avpu !== 'A' || !sim.p.canSwallow) {
         sim.penalize('acqua_incosciente', 'critico', 'Liquidi a un paziente con coscienza alterata', 'Nulla per bocca a chi non è pienamente sveglio e in grado di deglutire: rischio di inalazione.', ['ERC_FA_2025']);
-        return;
       }
-      sim.set('acquaAt', sim.t);
-      sim.say('azione', 'Il paziente beve qualche sorso d’acqua.');
-    },
-  },
-  {
-    id: 'ecg',
-    label: 'ECG a 12 derivazioni con teletrasmissione (se previsto dal protocollo regionale)',
-    short: 'ECG 12 derivazioni',
-    group: 'trattamenti',
-    duration: 90,
-    contact: true,
-    visible: (s) => !!s.flags.ecgDisponibile,
-    available: needPatient,
-    run: ({ sim }) => {
-      sim.set('ecgAt', sim.t);
-      sim.find(sim.scenario.exam.extra?.ecg ?? 'Tracciato acquisito e trasmesso alla Centrale.');
+      fuoriCompetenza(sim, 'acqua', 'Acqua per bocca', 'Il soccorritore non somministra nulla, nemmeno l’acqua: in caso di dubbio chiedi alla SORES.');
     },
   },
 
@@ -1586,8 +1618,8 @@ const list: ActionDef[] = [
   // ════════════ CENTRALE / TRASPORTO
   {
     id: 'richiedi_msa',
-    label: 'Chiedi alla Centrale un mezzo avanzato (MSA / automedica)',
-    short: 'Richiedi MSA',
+    label: 'Chiedi alla SORES il mezzo avanzato (ALS o automedica)',
+    short: 'Mezzo avanzato',
     group: 'centrale',
     visible: (s) => s.scenario.role !== 'laico',
     duration: 15,
@@ -1596,15 +1628,15 @@ const list: ActionDef[] = [
       sim.requests.msa = sim.t;
       if (sim.scenario.msa.available) {
         sim.msaAt = sim.t + sim.scenario.msa.eta;
-        sim.say('radio', `Centrale: «Ricevuto, attivo ${sim.scenario.msa.label ?? 'l’MSA'}. Arrivo stimato in ${Math.round(sim.scenario.msa.eta / 60)} minuti».`);
+        sim.say('radio', `SORES: «Ricevuto, attiviamo ${lowerFirst(sim.scenario.msa.label ?? 'l’ALS')}. Arrivo stimato in ${Math.round(sim.scenario.msa.eta / 60)} minuti».`);
       } else {
-        sim.say('radio', 'Centrale: «Al momento non ci sono mezzi avanzati disponibili: procedete con il trasporto, vi teniamo aggiornati».');
+        sim.say('radio', 'SORES: «Al momento non ci sono mezzi avanzati disponibili: procedete con il trasporto, vi teniamo aggiornati».');
       }
     },
   },
   {
     id: 'richiedi_elisoccorso',
-    label: 'Chiedi alla Centrale l’elisoccorso',
+    label: 'Chiedi alla SORES l’elisoccorso',
     short: 'Richiedi elisoccorso',
     group: 'centrale',
     visible: (s) => s.scenario.role !== 'laico',
@@ -1614,15 +1646,15 @@ const list: ActionDef[] = [
       sim.requests.elisoccorso = sim.t;
       if (sim.scenario.heli) {
         sim.heliAt = sim.t + sim.scenario.heli.eta;
-        sim.say('radio', `Centrale: «Ricevuto, l’elisoccorso decolla ora, arrivo in circa ${Math.round(sim.scenario.heli.eta / 60)} minuti».`);
+        sim.say('radio', `SORES: «Ricevuto, l’elisoccorso decolla ora, arrivo in circa ${Math.round(sim.scenario.heli.eta / 60)} minuti».`);
       } else {
-        sim.say('radio', 'Centrale: «Ricevuto. In base ai dati la Centrale ritiene non necessario l’elisoccorso».');
+        sim.say('radio', 'SORES: «Ricevuto. In base ai dati l’elisoccorso non è necessario».');
       }
     },
   },
   {
     id: 'richiedi_vvf',
-    label: 'Chiedi alla Centrale i Vigili del Fuoco',
+    label: 'Chiedi alla SORES i Vigili del Fuoco',
     short: 'Richiedi VVF',
     group: 'centrale',
     visible: (s) => s.scenario.role !== 'laico',
@@ -1630,12 +1662,12 @@ const list: ActionDef[] = [
     available: (s) => (s.requests.vvf !== undefined ? 'Già richiesti.' : true),
     run: ({ sim }) => {
       sim.requests.vvf = sim.t;
-      sim.say('radio', 'Centrale: «Ricevuto, allertiamo i Vigili del Fuoco».');
+      sim.say('radio', 'SORES: «Ricevuto, allertiamo i Vigili del Fuoco».');
     },
   },
   {
     id: 'richiedi_ffoo',
-    label: 'Chiedi alla Centrale le Forze dell’ordine',
+    label: 'Chiedi alla SORES le Forze dell’ordine',
     short: 'Richiedi Forze dell’ordine',
     group: 'centrale',
     visible: (s) => s.scenario.role !== 'laico',
@@ -1643,26 +1675,38 @@ const list: ActionDef[] = [
     available: (s) => (s.requests.ffoo !== undefined ? 'Già richieste.' : true),
     run: ({ sim }) => {
       sim.requests.ffoo = sim.t;
-      sim.say('radio', 'Centrale: «Ricevuto, inviamo una pattuglia per la gestione del traffico e dei rilievi».');
+      sim.say('radio', 'SORES: «Ricevuto, allertiamo le Forze dell’ordine per il traffico e i rilievi».');
     },
   },
   {
     id: 'comunica',
-    label: 'Comunica alla Centrale valutazione e parametri',
-    short: 'Comunica alla Centrale',
+    label: 'Riferisci alla SORES valutazione ABCDE e parametri',
+    short: 'Riferisci alla SORES',
     group: 'centrale',
     visible: (s) => s.scenario.role !== 'laico',
     duration: 40,
     picker: 'centrale',
     available: needPatient,
     run: ({ sim, params }) => {
-      const code = (params?.code as ValutazioneCode) ?? 'I2';
       const items = (params?.items as string[]) ?? [];
+      // il codice di rientro lo assegna la SORES, non l'equipaggio
+      const code = sim.scenario.valutazione.correct[0];
       sim.report = { code, items, t: sim.t };
+      if (sim.flags.primoReportAt === undefined) sim.set('primoReportAt', sim.t);
       const list = items.map((k) => sim.measurements.get(k)).filter(Boolean).map((m) => `${m!.label} ${m!.value}`);
-      sim.say('radio', `Tu: «Centrale da ${sim.scenario.role === 'squadra' ? 'squadra a piedi' : 'MSB'}: paziente ${sim.p.sex === 'M' ? 'maschio' : 'femmina'}, ${sim.p.age < 1 ? `${Math.round(sim.p.age * 12)} mesi` : `${Math.round(sim.p.age)} anni`}, valutazione ${code}. ${list.join(', ')}».`);
-      const ok = sim.scenario.valutazione.correct.includes(code) || sim.scenario.valutazione.acceptable?.includes(code);
-      sim.say('radio', ok ? 'Centrale: «Ricevuto, confermiamo. Vi indichiamo noi l’ospedale di destinazione».' : 'Centrale: «Ricevuto. Ci confermi i parametri? La valutazione non ci sembra coerente».');
+      const eta = sim.p.age < 1 ? `${Math.max(1, Math.round(sim.p.age * 12))} mesi` : `${Math.round(sim.p.age)} anni`;
+      sim.say('radio', `Tu: «SORES da ${crewName(sim)}: ${sim.p.sex === 'M' ? 'maschio' : 'femmina'}, ${eta}. ${list.length ? list.join(', ') : 'Nessun parametro rilevato'}».`);
+      const missing = sim.scenario.reportKeys.filter((k) => !items.includes(k));
+      if (missing.length) sim.say('radio', `SORES: «Ricevuto. Appena potete riferiteci anche: ${missing.map(reportLabel).join(', ')}».`);
+      const dest = sim.scenario.destination;
+      const msa = sim.scenario.msa;
+      if (msa.onReport && msa.available && sim.msaAt === null && !sim.msaOnScene) {
+        sim.requests.msa = sim.t;
+        sim.msaAt = sim.t + msa.eta;
+        sim.say('radio', `SORES: «Ricevuto. Vi mandiamo ${lowerFirst(msa.label ?? 'l’ALS')}, arrivo stimato ${Math.round(msa.eta / 60)} minuti. Restate con il paziente e riferite se cambia qualcosa».`);
+      } else {
+        sim.say('radio', `SORES: «Ricevuto. Codice di rientro ${VALUTAZIONE[code].colore}${dest ? `, destinazione ${dest}` : ''}».`);
+      }
     },
   },
   {
@@ -1728,16 +1772,16 @@ const list: ActionDef[] = [
       sim.say(
         'azione',
         sim.scenario.role === 'squadra'
-          ? `Trasferite il paziente (${how}) al PMA, dove viene affidato all’ambulanza per l’ospedale indicato dalla Centrale.`
-          : `Carichi il paziente (${how}) e partite verso l’ospedale indicato dalla Centrale.`,
+          ? `Trasferite il paziente (${how}) al PMA, dove viene affidato all’ambulanza per l’ospedale indicato dalla SORES.`
+          : `Carichi il paziente (${how}) e partite verso l’ospedale indicato dalla SORES.`,
       );
       sim.end('Trasporto in ospedale');
     },
   },
   {
     id: 'consegna',
-    label: 'Passa le consegne al mezzo avanzato',
-    short: 'Consegne al mezzo avanzato',
+    label: 'Passa le consegne all’équipe avanzata (infermiere o medico)',
+    short: 'Consegne all’équipe avanzata',
     group: 'centrale',
     duration: 45,
     visible: (s) => s.msaOnScene,
@@ -1761,5 +1805,5 @@ export const GROUP_LABEL: Record<ActionDef['group'], string> = {
   anamnesi: 'Anamnesi',
   trattamenti: 'Trattamenti',
   immobilizzazione: 'Immobilizzazione',
-  centrale: 'Centrale',
+  centrale: 'SORES',
 };

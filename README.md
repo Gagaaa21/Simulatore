@@ -2,9 +2,21 @@
 
 Simulatore di scenari di soccorso sanitario extraospedaliero per la formazione dei **soccorritori del 118**, volontari e dipendenti, e del personale sanitario degli **eventi e dei concerti**.
 
-Ricevi la missione dalla Centrale Operativa, scegli i presidi da portare, valuta la sicurezza della scena e il paziente, decidi il protocollo e agisci. Il paziente reagisce in tempo reale; alla fine una scheda di intervento confronta ogni scelta con le linee guida ufficiali, citando la fonte.
+Ricevi la missione dalla SORES, scegli i presidi da portare, valuta la sicurezza della scena e il paziente, decidi il protocollo e agisci. Il paziente reagisce in tempo reale; alla fine una scheda di intervento confronta ogni scelta con le linee guida ufficiali, citando la fonte.
 
-> Strumento didattico. Non sostituisce i corsi certificati (BLSD, PBLSD, PTC, formazione regionale per soccorritori) né i protocolli della tua Centrale Operativa. In un’emergenza reale chiama il **112**.
+## Modello del Friuli Venezia Giulia
+
+Il simulatore segue l’organizzazione del soccorso in FVG (Piano dell’emergenza urgenza, DGR 2039/2015; eventi, DGR 1653/2025):
+
+- **SORES**: la sala operativa regionale assegna il codice di invio e il **codice di rientro**; l’equipaggio riferisce valutazione ABCDE e parametri, non sceglie il codice.
+- **Mezzi**: ambulanza **BLS** (autista soccorritore e soccorritore, senza infermiere), **ALS** con infermiere, **automedica** con medico, elisoccorso. Sui codici gialli parte l’ALS e, se non è disponibile, una BLS; sui rossi parte sempre anche l’automedica.
+- **Competenze del soccorritore**: parametri non invasivi (coscienza, saturazione, frequenze, pressione), BLSD, cannula di Guedel e aspiratore, immobilizzazione ed emostasi. **Niente manovre invasive** (la glicemia capillare la misura l’infermiere) e **nessuna somministrazione**, nemmeno acqua e zucchero o il farmaco del paziente: nel gioco sono errori segnalati come «fuori competenza».
+- **Ossigeno**: si riferisce la saturazione alla SORES, che indica presidio e concentrazione (anche maschera Venturi in percentuale); un presidio diverso da quello indicato è un errore. Fa eccezione la ventilazione con pallone e ossigeno nell’arresto.
+- **Eventi**: registrazione sul portale G.A.M.E.S. con 15, 30 o 45 giorni di preavviso, validazione SORES dal rischio moderato e Score SORES.
+
+Le indicazioni operative interne della SORES non sono pubbliche: dove il simulatore le applica lo dichiara nelle fonti. In servizio valgono sempre le indicazioni della SORES e del proprio ente.
+
+> Strumento didattico. Non sostituisce i corsi certificati (BLSD, PBLSD, PTC, formazione regionale per soccorritori) né le indicazioni della SORES e del tuo ente. In un’emergenza reale chiama il **112**.
 
 ## Cosa contiene
 
@@ -12,7 +24,7 @@ Ricevi la missione dalla Centrale Operativa, scegli i presidi da portare, valuta
 |---|---|
 | **Missione guidata** | Un caso semplice con una guida passo per passo che evidenzia i comandi da usare: il punto di partenza consigliato. |
 | **Turno** | Tre chiamate in sequenza scelte tra quelle che non hai ancora affrontato, con riepilogo di fine turno. |
-| **Missioni** | 19 scenari: territorio 118, concerti ed eventi, interventi fuori servizio. Chiamata in arrivo dalla Centrale, scelta dei presidi, tragitto sulla mappa, poi la scena vista dall’alto con monitor dei parametri, DAE con voce, RCP, ossigeno, tourniquet, immobilizzazione e comunicazione con la Centrale. |
+| **Missioni** | 19 scenari: territorio 118, concerti ed eventi, interventi fuori servizio. Chiamata in arrivo dalla SORES, scelta dei presidi, tragitto sulla mappa, poi la scena vista dall’alto con monitor dei parametri, DAE con voce, RCP, ossigeno, tourniquet, immobilizzazione e comunicazione con la SORES. |
 | **Carriera** | Esperienza e sei gradi (da Aspirante a Istruttore), 15 riconoscimenti, padronanza per famiglia di protocolli, storico delle missioni. Tutto resta nel browser. |
 | **Allenamento RCP** | Ritmo 100–120/min con metronomo, rapporti 30:2 e 15:2, statistiche sulle pause. |
 | **Maxi-emergenza** | Triage START e JumpSTART di 14 feriti dopo una calca all’uscita di un concerto. |
@@ -30,7 +42,7 @@ Dalle **Impostazioni** (icona a ingranaggio, anche durante la missione) si regol
 |---|---|---|
 | Crollo sul divano | ACR a domicilio, RCP già avviata dalla moglie | BLSD adulto |
 | Il boccone di troppo | Soffocamento al ristorante | Disostruzione adulto |
-| Non è da lui | Ipoglicemia in diabetico | Ipoglicemia |
+| Non è da lui | Sospetta ipoglicemia in diabetico: riconoscere, riferire, attendere l’ALS | Ipoglicemia |
 | Le parole sbagliate | Ictus con afasia, paziente anticoagulata | Sospetto ictus |
 | Un peso sul petto | Infarto che evolve in fibrillazione ventricolare | Dolore toracico |
 | Silenzio nel seggiolone | Soffocamento in un lattante | Disostruzione pediatrica |
@@ -39,12 +51,12 @@ Dalle **Impostazioni** (icona a ingranaggio, anche durante la missione) si regol
 | Il disco della smerigliatrice | Emorragia arteriosa in cantiere | Emorragia massiva |
 | Parcheggio del palazzetto | Sovradosaggio da oppioidi | Oppioidi |
 | Dal pontile | Annegamento, arresto ipossico | Annegamento |
-| Il fiato che manca | BPCO, ossigeno titolato 88–92% | Dispnea |
+| Il fiato che manca | BPCO: maschera Venturi su indicazione SORES, target 88–92% | Dispnea |
 | Incrocio, ore 23 | Trauma maggiore da moto | Trauma maggiore |
 | Crisi in transenna | Crisi convulsiva al concerto | Crisi convulsiva |
 | Ballava fino a un attimo fa | ACR nel pogo con respiro «quasi normale» (ERC 2025) | BLSD adulto |
 | Mezzogiorno sotto il palco | Colpo di calore da sforzo | Colpo di calore |
-| La salsa sbagliata | Anafilassi allo stand gastronomico | Anafilassi |
+| La salsa sbagliata | Anafilassi allo stand gastronomico: mezzo avanzato subito | Anafilassi |
 | L’ultima vodka | Intossicazione alcolica in una minorenne | Intossicazione |
 | Alla cassa 4 | Fuori servizio: ACR al supermercato con DAE pubblico | BLSD adulto |
 
@@ -54,6 +66,7 @@ Dalle **Impostazioni** (icona a ingranaggio, anche durante la missione) si regol
 - **DM 15 maggio 1992** – codifica degli interventi di emergenza (codici luogo, patologia, criticità, valutazione sanitaria).
 - **Accordo Conferenza Unificata 5 agosto 2014** (Rep. Atti 91/CU) – soccorso sanitario negli eventi e algoritmo di Maurer.
 - **ISS – Linea guida sul trauma maggiore** (Sistema Nazionale Linee Guida).
+- **Regione Friuli Venezia Giulia**: Piano dell’emergenza urgenza (DGR 2039/2015), organizzazione sanitaria negli eventi (DGR 1653/2025), istituzione della centrale regionale (DGR 519/2014).
 - **Legge 116/2021** e Legge 120/2001 sui defibrillatori; art. 593 c.p.
 - BTS 2017 (ossigenoterapia), ESC 2023 (sindromi coronariche acute), AHA/ASA 2019 (ictus), Cincinnati Prehospital Stroke Scale, START/JumpSTART, LICE.
 
@@ -66,7 +79,7 @@ Serve Node.js 20 o successivo.
 ```bash
 npm install
 npm run dev        # sviluppo su http://localhost:5173
-npm test           # 69 test: motore, tabelle ufficiali, carriera e percorso ideale di ogni scenario
+npm test           # 73 test: motore, tabelle ufficiali, carriera e percorso ideale di ogni scenario
 npm run build      # build statica in dist/
 npm run build:artifact   # pagina HTML unica in dist-artifact/sirena-118.html
 ```

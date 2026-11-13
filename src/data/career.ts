@@ -71,7 +71,7 @@ export const BADGES: Badge[] = [
   { id: 'eccellenza', name: 'Eccellenza', desc: 'Ottieni almeno 90 punti in una missione.', shape: 'stella', color: '#ffd84d' },
   { id: 'esame', name: 'Esame superato', desc: 'Ottieni almeno 75 punti in modalità esame.', shape: 'scudo', color: '#8ab8ff' },
   { id: 'laccio', name: 'Emostasi', desc: 'Tourniquet efficace entro 2 minuti dal contatto.', shape: 'laccio', color: '#d32f2f' },
-  { id: 'radio', name: 'Voce chiara', desc: 'Valutazione e report alla Centrale corretti in 5 missioni.', shape: 'radio', color: '#3f8cff' },
+  { id: 'radio', name: 'Voce chiara', desc: 'Valutazione e dati chiave riferiti alla SORES in 5 missioni.', shape: 'radio', color: '#3f8cff' },
   { id: 'pediatra', name: 'Piccoli pazienti', desc: 'Almeno 75 punti in tutte le missioni pediatriche.', shape: 'bimbo', color: '#f2a6c1' },
   { id: 'tutte', name: 'Visto tutto', desc: 'Completa ogni missione almeno una volta.', shape: 'mappa', color: '#c9d4df' },
   { id: 'turno', name: 'Fine turno', desc: 'Completa un turno di tre chiamate.', shape: 'luna', color: '#c8a6ff' },
@@ -104,7 +104,7 @@ export function applyMission(career: Career, sim: Sim, report: Report, scenario:
       ...career.history,
     ].slice(0, 60),
     badges: { ...career.badges },
-    goodReports: career.goodReports + (report.results.some((r) => r.obj.id === 'c_valutazione' && r.ok) && !report.results.some((r) => r.obj.id === 'c_report' && !r.ok) ? 1 : 0),
+    goodReports: career.goodReports + (report.results.some((r) => r.obj.id === 'c_sores' && r.ok) && !report.results.some((r) => r.obj.id === 'c_report' && !r.ok) ? 1 : 0),
   };
   const earned: string[] = [];
   const give = (id: string, cond: boolean) => {

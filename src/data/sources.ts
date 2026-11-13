@@ -14,6 +14,30 @@ export interface Source {
 }
 
 export const SOURCES: Record<string, Source> = {
+  DGR_FVG_2039_2015: {
+    id: 'DGR_FVG_2039_2015',
+    short: 'FVG · Piano emergenza 2015',
+    title: 'Piano dell’emergenza urgenza della Regione Friuli Venezia Giulia (Allegato 1 alla DGR n. 2039 del 16/10/2015)',
+    org: 'Regione Autonoma Friuli Venezia Giulia',
+    year: 2015,
+    ref: 'Mezzi BLS-D (senza infermiere), ALS con infermiere, automedica, elisoccorso; il codice colore lo attribuiscono gli infermieri di centrale con il dispatch.',
+    url: 'https://mtom.regione.fvg.it/storage/2015_2039/Allegato%201%20alla%20Delibera%202039-2015.pdf',
+  },
+  DGR_FVG_519_2014: {
+    id: 'DGR_FVG_519_2014',
+    short: 'FVG · DGR 519/2014',
+    title: 'DGR n. 519 del 21 marzo 2014: istituzione della Centrale Operativa 118 regionale (ora SORES)',
+    org: 'Regione Autonoma Friuli Venezia Giulia',
+    year: 2014,
+    note: 'Citata dalla DGR 1653/2025 come atto istitutivo dell’unico riferimento regionale per il coordinamento del soccorso sanitario.',
+  },
+  SORES_FVG: {
+    id: 'SORES_FVG',
+    short: 'SORES FVG · prassi operativa',
+    title: 'SORES FVG – indicazioni operative per gli equipaggi di soccorso',
+    org: 'SORES – Sala Operativa Regionale Emergenza Sanitaria, Friuli Venezia Giulia',
+    note: 'Procedure interne non pubblicate, riferite da soccorritori in servizio: il soccorritore non esegue manovre invasive (es. glicemia) né somministrazioni (farmaci, acqua, zucchero); riferisce la saturazione e applica l’ossigeno con il presidio e la concentrazione indicati dalla SORES; il codice di rientro è assegnato dalla SORES. Verifica sempre con il tuo ente e con la formazione regionale.',
+  },
   ERC_BLS_2025: {
     id: 'ERC_BLS_2025',
     short: 'ERC 2025 · BLS adulto',
@@ -77,12 +101,12 @@ export const SOURCES: Record<string, Source> = {
   },
   FVG_EVENTI_2025: {
     id: 'FVG_EVENTI_2025',
-    short: 'DGR FVG 1653/2025',
-    title: 'Organizzazione sanitaria negli eventi e nelle manifestazioni programmate (recepimento regionale dell’Accordo 2014)',
-    org: 'Regione Friuli Venezia Giulia',
+    short: 'FVG · Eventi 2025',
+    title: 'Organizzazione sanitaria negli eventi e nelle manifestazioni programmate (Allegato alla DGR n. 1653 del 21/11/2025)',
+    org: 'Regione Autonoma Friuli Venezia Giulia',
     year: 2025,
-    ref: 'Allegato alla Delibera n. 1653 del 21 novembre 2025',
-    note: 'Esempio di recepimento regionale: definisce MSB, MSA, squadre a piedi e tempi di preavviso.',
+    ref: 'Portale G.A.M.E.S., calcolo del livello di rischio, algoritmo di Maurer, validazione e Score SORES; definizioni di MSA, MSB e squadra a piedi (SAP).',
+    url: 'https://prolocoregionefvg.it/media/documents/Allegato_1_alla_Delibera_1653-2025.pdf',
   },
   ISS_TRAUMA: {
     id: 'ISS_TRAUMA',

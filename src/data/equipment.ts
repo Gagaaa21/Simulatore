@@ -50,7 +50,7 @@ export const EQUIPMENT: Record<EquipmentId, Equipment> = {
     id: 'ossigeno',
     name: 'Ossigeno portatile',
     slots: 1,
-    what: 'Bombola portatile con flussimetro, occhialini nasali, maschera semplice e maschera con reservoir.',
+    what: 'Bombola portatile con flussimetro: occhialini nasali, maschere semplici, Venturi con valvole dal 24 al 60% e maschere con reservoir.',
     when: 'Dispnea, cianosi, SpO₂ sotto il target; necessario anche per arricchire il pallone in RCP.',
   },
   pallone: {

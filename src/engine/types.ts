@@ -96,11 +96,24 @@ export interface Patient {
   notes: string[];
 }
 
-export type O2Device = 'occhialini' | 'maschera' | 'reservoir';
+export type O2Device = 'occhialini' | 'maschera' | 'venturi' | 'reservoir';
 export interface O2State {
   device: O2Device;
   flow: number; // L/min
+  /** concentrazione impostata sulla valvola della maschera Venturi (%) */
+  fio2?: number;
   since: number;
+}
+/** Indicazione della SORES sull'ossigeno, data dopo che il soccorritore ha riferito la saturazione. */
+export interface O2Order {
+  device: O2Device | null;
+  flow: number;
+  fio2?: number;
+  /** saturazione obiettivo */
+  target: [number, number];
+  /** saturazione riferita */
+  spo2: number;
+  t: number;
 }
 
 export type AedPhase =
@@ -268,6 +281,8 @@ export interface ScenarioHooks {
   /** chiamato al completamento di un'azione; restituisci true per sostituire il comportamento standard */
   onAction?: (sim: Sim, actionId: string, params?: Record<string, unknown>) => boolean | void;
   outcome?: (sim: Sim) => Outcome;
+  /** arrivo del mezzo avanzato (ALS, automedica, elisoccorso): manovre e farmaci di competenza sanitaria */
+  onAdvanced?: (sim: Sim) => void;
 }
 
 export interface Outcome {
@@ -319,8 +334,13 @@ export interface Scenario {
   valutazione: { correct: ValutazioneCode[]; acceptable?: ValutazioneCode[] };
   /** informazioni che la Centrale si aspetta nel report */
   reportKeys: string[];
-  msa: { available: boolean; eta: number; autoDispatched?: boolean; label?: string };
+  /** mezzo avanzato (ALS con infermiere, automedica con medico): label al nominativo, es. «L’ALS» */
+  msa: { available: boolean; eta: number; autoDispatched?: boolean; label?: string; /** la SORES lo invia appena riceve la valutazione */ onReport?: boolean };
   heli?: { eta: number };
+  /** criteri con cui la SORES indica l'ossigeno (BTS 2017): paziente critico o a rischio di ipercapnia */
+  oxygen?: { critical?: boolean; copd?: boolean };
+  /** destinazione indicata dalla SORES al momento del codice di rientro */
+  destination?: string;
   timeLimit: number; // s
   objectives: Objective[];
   teaching: string[];

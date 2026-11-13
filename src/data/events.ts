@@ -217,6 +217,28 @@ export function maurerResources(score: number) {
 }
 
 // ───────────────────────── eventi da pianificare
+/**
+ * DGR FVG 1653/2025, punto 2: preavviso di registrazione sul portale G.A.M.E.S. e validazione della SORES
+ * in base al livello di rischio.
+ */
+export function fvgProcedura(level: 0 | 1 | 2): { giorni: number; piano: boolean; validazione: boolean } {
+  if (level === 0) return { giorni: 15, piano: false, validazione: false };
+  if (level === 1) return { giorni: 30, piano: true, validazione: true };
+  return { giorni: 45, piano: true, validazione: true };
+}
+
+/**
+ * DGR FVG 1653/2025, Tabella 3 – Score SORES: indica quando serve un coordinamento SORES sul posto (score > 5).
+ * Somma dei valori unitari di coefficiente di Maurer, affluenza stimata e ambulanze MSA previste.
+ */
+export function scoreSores(maurer: number, affluenza: number, msa: number) {
+  const m = maurer <= 6 ? 1 : maurer <= 13.5 ? 2 : maurer <= 22 ? 3 : maurer <= 40 ? 4 : 5;
+  const a = affluenza < 3000 ? 1 : affluenza <= 6000 ? 2 : affluenza <= 10000 ? 3 : affluenza <= 20000 ? 4 : 5;
+  const s = msa <= 3 ? 1 : msa <= 5 ? 2 : 3;
+  const score = m + a + s;
+  return { m, a, s, score, operatore: score > 5 };
+}
+
 export interface EventCase {
   id: string;
   title: string;

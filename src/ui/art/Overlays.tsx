@@ -133,6 +133,9 @@ function Mask({ at, k, color, stroke }: { at: Pt; k: number; color: string; stro
   );
 }
 
+/** Colore indicativo delle valvole Venturi più diffuse. */
+const VENTURI_COLOR: Record<number, string> = { 24: '#3f7fd6', 28: '#f4f4f4', 31: '#f39c3d', 35: '#f2d43b', 40: '#e04848', 50: '#f19ac4', 60: '#43b56b' };
+
 export function OverPatient({ sim, now }: { sim: Sim; now: number }) {
   const p = sim.p;
   const g = geo(sim);
@@ -333,6 +336,14 @@ export function OverPatient({ sim, now }: { sim: Sim; now: number }) {
           <path d={`M${face.x + 4} ${face.y} C 200 200, 140 170, 100 150`} stroke="#9fe2c4" strokeWidth="3" fill="none" />
           {res && <ellipse cx={face.x + 50 * k} cy={face.y} rx={(full ? 26 : 12) * k} ry={(full ? 18 : 8) * k} fill="#bfe8d6" opacity="0.85" stroke="#7fc9a8" strokeWidth="1.5" />}
           <Mask at={face} k={k} color="#c7f0dc" stroke="#7fc9a8" />
+          {sim.o2.device === 'venturi' && (
+            <g>
+              <rect x={face.x + 14 * k} y={face.y - 6 * k} width={22 * k} height={12 * k} rx={4 * k} fill={VENTURI_COLOR[sim.o2.fio2 ?? 28] ?? '#ffffff'} stroke="#5d6b75" strokeWidth="1.2" />
+              <text x={face.x + 25 * k} y={face.y + 22 * k} textAnchor="middle" fontSize={11 * k} fontFamily="var(--f-display)" fontWeight="700" fill="#e9f6ff">
+                {sim.o2.fio2}%
+              </text>
+            </g>
+          )}
         </g>,
       );
     }

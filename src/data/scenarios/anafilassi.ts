@@ -1,5 +1,5 @@
 import type { Scenario } from '../../engine/types';
-import { afterContact, flagT } from './helpers';
+import { contact, flagT, soresInformedAt } from './helpers';
 
 /** Anafilassi da arachidi a uno stand gastronomico: adrenalina IM il prima possibile. */
 export const anafilassi: Scenario = {
@@ -30,7 +30,7 @@ export const anafilassi: Scenario = {
     note: 'Sospetta anafilassi: ossigeno e DAE subito; la reazione può progredire fino all’arresto.',
   },
   scene: {
-    intro: 'Tavoli all’aperto davanti allo stand. Il ragazzo è seduto, le labbra gonfie, chiazze rosse sul collo, respira con un sibilo. L’amico agita un astuccio giallo: «Ha l’adrenalina, non sappiamo usarla!».',
+    intro: 'Tavoli all’aperto davanti allo stand. Il ragazzo è seduto, le labbra gonfie, chiazze rosse sul collo, respira con un sibilo. L’amico agita un astuccio giallo: «Ha l’adrenalina, è nello zaino!».',
     hazards: [],
     bystanders: 'L’amico, il gestore dello stand.',
   },
@@ -73,72 +73,73 @@ export const anafilassi: Scenario = {
   protocol: { correct: ['anafilassi'], acceptable: ['dispnea'] },
   valutazione: { correct: ['I3'] },
   reportKeys: ['pa', 'spo2'],
-  msa: { available: true, eta: 300, label: 'Il medico del PMA' },
+  msa: { available: true, eta: 180, label: 'L’MSA del PMA' },
+  oxygen: { critical: true },
   timeLimit: 1500,
   objectives: [
     {
-      id: 'adrenalina',
-      label: 'Adrenalina con autoiniettore entro 2 minuti dal contatto',
+      id: 'avanzato',
+      label: 'Mezzo avanzato chiesto entro 1 minuto dal contatto',
       category: 'tempi',
       points: 16,
       critical: true,
-      check: (s) => afterContact(s, 'autoiniettore') <= 120,
-      why: 'Nell’anafilassi l’adrenalina intramuscolo va data il prima possibile: ritardarla aumenta il rischio di morte.',
-      sources: ['ERC_FA_2025'],
-    },
-    {
-      id: 'seconda',
-      label: 'Seconda dose dopo almeno 5 minuti, perché i sintomi persistevano',
-      category: 'trattamento',
-      points: 10,
-      check: (s) => {
-        const a1 = flagT(s, 'adrenalina1At');
-        const a2 = flagT(s, 'adrenalina2At');
-        return a1 !== null && a2 !== null && a2 - a1 >= 280;
-      },
-      why: 'Se dopo 5 minuti non c’è miglioramento si somministra una seconda dose, possibilmente nell’altra coscia.',
-      sources: ['ERC_FA_2025'],
+      check: (s) => soresInformedAt(s) - contact(s) <= 60,
+      why: 'L’adrenalina intramuscolo è il farmaco salvavita dell’anafilassi e va data il prima possibile: la somministra l’infermiere o il medico, quindi va chiamato subito.',
+      sources: ['ERC_FA_2025', 'SORES_FVG'],
     },
     {
       id: 'posizione',
       label: 'Posizione corretta: seduto con gambe distese (respira male), mai in piedi',
       category: 'trattamento',
-      points: 6,
+      points: 8,
       check: (s) => !s.penalties.some((p) => p.id === 'fatto_camminare') && s.p.position !== 'in_piedi',
       why: 'Il paziente anafilattico non deve alzarsi: il passaggio in piedi può causare collasso.',
       sources: ['ERC_FA_2025'],
     },
     {
       id: 'ossigeno',
-      label: 'Ossigeno ad alti flussi',
+      label: 'Saturazione riferita e ossigeno ad alti flussi come indicato',
       category: 'trattamento',
-      points: 6,
-      check: (s) => !!s.o2 && s.o2.flow >= 10,
-      why: 'Ipossiemia con broncospasmo ed edema: ossigeno ad alte concentrazioni.',
-      sources: ['ERC_FA_2025', 'BTS_O2_2017'],
+      points: 8,
+      check: (s) => !!s.o2Order?.device && !!s.o2 && s.o2.device === s.o2Order.device,
+      why: 'Broncospasmo ed edema causano ipossiemia: nel paziente critico la SORES indica il reservoir a 15 L/min.',
+      sources: ['BTS_O2_2017', 'SORES_FVG'],
     },
     {
-      id: 'avanzato',
-      label: 'Supporto sanitario avanzato attivato subito',
+      id: 'parametri',
+      label: 'Pressione e saturazione rilevate',
+      category: 'valutazione',
+      points: 6,
+      check: (s) => s.did('pressione') && s.pulseOx,
+      why: 'L’ipotensione indica uno shock anafilattico: è il dato da passare per primo all’équipe.',
+      sources: ['ERC_FA_2025'],
+    },
+    {
+      id: 'consegna',
+      label: 'Consegne all’équipe dell’MSA',
       category: 'comunicazione',
       points: 6,
-      check: (s) => s.requests.msa !== undefined && afterContact(s, 'richiedi_msa') <= 180,
-      why: 'L’anafilassi richiede farmaci e monitoraggio avanzati: si chiama subito.',
-      sources: ['ERC_FA_2025'],
+      check: (s) => s.ended?.reason === 'Consegna al mezzo avanzato',
+      why: 'Ora di esordio, allergene, parametri e autoiniettore del paziente passano all’infermiere.',
+      sources: ['SORES_FVG'],
     },
   ],
   teaching: [
     'Anafilassi: esordio rapido dopo l’esposizione con problemi di vie aeree, respiro o circolo, spesso con orticaria.',
-    'Adrenalina intramuscolo nella parte esterna della coscia appena possibile, anche attraverso i vestiti.',
-    'Se i sintomi persistono dopo 5 minuti, seconda dose nell’altra coscia.',
+    'L’adrenalina intramuscolo va data il prima possibile: chiama subito il mezzo avanzato, che la somministra.',
+    'Anche se il paziente ha il suo autoiniettore, il soccorritore non somministra: riferiscilo all’équipe.',
     'Sdraiato; seduto con le gambe distese se respira male. Mai in piedi.',
-    'Allontana la causa e attiva subito il supporto avanzato.',
+    'Riferisci la saturazione e applica l’ossigeno indicato; tieni il DAE vicino.',
   ],
-  sources: ['ERC_FA_2025'],
+  sources: ['ERC_FA_2025', 'SORES_FVG'],
   hooks: {
     onStart: (s) => {
       s.set('haAutoiniettore', true);
       s.set('nonCamminare', 'Nell’anafilassi alzarsi o camminare può provocare un collasso cardiovascolare.');
+    },
+    onAdvanced: (s) => {
+      s.set('adrenalina1At', s.t);
+      s.say('evento', 'L’infermiere dell’MSA somministra adrenalina intramuscolo nella coscia e posiziona un accesso venoso.');
     },
     tick: (s) => {
       const p = s.p;
@@ -157,12 +158,14 @@ export const anafilassi: Scenario = {
         }
         if (s.base.sbp <= 58.2 && !s.inArrest()) s.enterArrest('aesp', 'Luca perde conoscenza e smette di respirare: arresto cardiaco.');
       } else if (a2 === null) {
-        // miglioramento parziale dopo la prima dose
         if (s.t - a1 < 240) {
           s.base.sbp = Math.min(98, s.base.sbp + 0.08);
           p.spo2Air = Math.min(91, p.spo2Air + 0.02);
         }
-        if (s.t - a1 === 300) s.say('paziente', 'Dopo 5 minuti: sibili ancora presenti, labbra gonfie, la pressione è risalita poco.');
+        if (s.t - a1 === 300) {
+          s.set('adrenalina2At', s.t);
+          s.say('evento', 'Dopo 5 minuti i sibili persistono: l’infermiere ripete l’adrenalina nell’altra coscia.');
+        }
       } else {
         s.base.sbp = Math.min(118, s.base.sbp + 0.1);
         s.base.hr = Math.max(104, s.base.hr - 0.08);
@@ -176,14 +179,12 @@ export const anafilassi: Scenario = {
         }
       }
     },
-    onAction: (s, id) => {
-      if (id === 'autoiniettore' && Number(s.flags.adrenalinaDosi ?? 0) === 1) {
-        const a1 = flagT(s, 'adrenalina1At')!;
-        if (s.t - a1 < 280) {
-          s.penalize('adrenalina_presto', 'lieve', 'Seconda dose troppo ravvicinata', 'La seconda dose si valuta dopo 5 minuti se i sintomi persistono.', ['ERC_FA_2025']);
-        }
-      }
-      return false;
+    outcome: (s) => {
+      if (s.inArrest()) return { status: 'decesso', title: 'Arresto cardiaco', text: 'Lo shock anafilattico è progredito prima che arrivasse l’adrenalina.' };
+      const a1 = flagT(s, 'adrenalina1At');
+      if (a1 !== null && a1 - contact(s) <= 300) return { status: 'ottimo', title: 'Adrenalina precoce', text: 'Chiamato subito, l’MSA ha somministrato l’adrenalina in pochi minuti: Luca va in ospedale stabile, in osservazione per una possibile reazione bifasica.' };
+      if (a1 !== null) return { status: 'buono', title: 'Adrenalina tardiva', text: 'L’adrenalina è arrivata, ma lo shock aveva già fatto scendere la pressione: con una chiamata più precoce sarebbe stato più semplice.' };
+      return { status: 'critico', title: 'Anafilassi senza adrenalina', text: 'Senza mezzo avanzato l’adrenalina non è arrivata: Luca va in ospedale in shock.' };
     },
   },
 };

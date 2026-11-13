@@ -5,8 +5,8 @@ import { CRITICITA, LUOGO, PATOLOGIA } from '../../data/codes';
 import { sfx } from '../audio';
 
 const ROLE_TXT: Record<Scenario['role'], string> = {
-  msb: 'Sei il capo equipaggio di un mezzo di soccorso di base (MSB) con altri due soccorritori.',
-  squadra: 'Sei in una squadra a piedi del servizio sanitario dell’evento, con un collega. Il PMA è vicino.',
+  msb: 'Sei il soccorritore di un’ambulanza BLS (senza infermiere a bordo) insieme all’autista soccorritore. Rilevi parametri non invasivi, fai il BLSD, riferisci alla SORES; glicemia, farmaci e codice di rientro non sono di tua competenza.',
+  squadra: 'Sei in una squadra a piedi (SAP) del servizio sanitario dell’evento, con un collega. Il PMA e il mezzo avanzato sono vicini.',
   laico: 'Sei fuori servizio: niente divisa, niente zaino. Hai il telefono e quello che trovi sul posto.',
 };
 
@@ -39,7 +39,7 @@ function IncomingCall({ scenario, onAccept, onBack, shiftInfo }: { scenario: Sce
         <div className="tablet-bar">
           <span className="ring-dot" aria-hidden="true" />
           <span>
-            {laico ? 'Emergenza davanti a te' : scenario.role === 'squadra' ? 'Coordinamento sanitario dell’evento' : 'Centrale Operativa 118 · nuova missione'}
+            {laico ? 'Emergenza davanti a te' : scenario.role === 'squadra' ? 'Coordinamento sanitario dell’evento' : 'SORES FVG · nuova missione'}
             {shiftInfo ? ` · chiamata ${shiftInfo.index + 1} di ${shiftInfo.total} del turno` : ''}
           </span>
           <span className="num">{d.time}</span>
@@ -109,9 +109,9 @@ export function Briefing({ scenario, mode, onBack, onStart, shiftInfo }: { scena
       </header>
 
       <div className="brief-grid">
-        <section className="tablet" aria-label="Scheda missione della Centrale">
+        <section className="tablet" aria-label="Scheda missione della SORES">
           <div className="tablet-bar">
-            <span>Centrale Operativa 118</span>
+            <span>SORES FVG</span>
             <span className="num">{d.time}</span>
           </div>
           <div className="tablet-body">
@@ -146,7 +146,7 @@ export function Briefing({ scenario, mode, onBack, onStart, shiftInfo }: { scena
               {d.extra && (
                 <div>
                   <dt>Risorse</dt>
-                  <dd>{d.extra.replace(/^Centrale: «|»$/g, '')}</dd>
+                  <dd>{d.extra.replace(/^(SORES|Centrale|Coordinamento sanitario): «|»\.?$/g, '')}</dd>
                 </div>
               )}
             </dl>

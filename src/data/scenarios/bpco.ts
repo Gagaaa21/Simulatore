@@ -12,12 +12,13 @@ export const bpco: Scenario = {
   setting: 'casa',
   timeOfDay: 'notte',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'K',
     patologia: 'C3',
     criticita: 'G',
-    address: 'Via Carducci 5, quarto piano senza ascensore',
+    address: 'Pordenone, via Carducci 5, quarto piano senza ascensore',
+    extra: 'SORES: «ALS impegnata su un altro intervento: inviamo la vostra BLS. Riferite la saturazione appena la avete».',
     caller: 'Moglie del paziente',
     time: '04:35',
     travel: 540,
@@ -27,7 +28,7 @@ export const bpco: Scenario = {
     essential: ['zaino', 'ossigeno', 'sedia'],
     recommended: ['dae', 'pallone', 'aspiratore'],
     fetchTime: 150,
-    note: 'Dispnea grave: ossigeno subito e sedia portantina, perché il paziente non deve fare le scale a piedi.',
+    note: 'Dispnea grave: bombola con maschere (anche Venturi) e sedia portantina, perché il paziente non deve fare le scale a piedi.',
   },
   scene: {
     room: 'camera',
@@ -75,7 +76,8 @@ export const bpco: Scenario = {
   protocol: { correct: ['dispnea'] },
   valutazione: { correct: ['I2'], acceptable: ['I3'] },
   reportKeys: ['spo2', 'fr'],
-  msa: { available: true, eta: 600 },
+  msa: { available: true, eta: 600, label: 'L’ALS' },
+  oxygen: { copd: true },
   timeLimit: 1800,
   objectives: [
     {
@@ -84,17 +86,17 @@ export const bpco: Scenario = {
       category: 'valutazione',
       points: 8,
       check: (s) => afterContact(s, 'saturimetro') <= 120,
-      why: 'L’ossigeno si titola sulla SpO₂: senza misurarla non si può scegliere né il presidio né il flusso.',
-      sources: ['ERC_FA_2025', 'BTS_O2_2017'],
+      why: 'Senza la saturazione la SORES non può indicarti presidio e concentrazione dell’ossigeno.',
+      sources: ['BTS_O2_2017', 'SORES_FVG'],
     },
     {
       id: 'o2',
-      label: 'Ossigeno iniziato (SpO₂ < 88%)',
+      label: 'Saturazione e BPCO riferite alla SORES; ossigeno come indicato',
       category: 'trattamento',
-      points: 8,
-      check: (s) => s.flags.o2At !== undefined,
-      why: 'Sotto l’88% l’ipossiemia è pericolosa anche nel BPCO: l’ossigeno va dato.',
-      sources: ['ERC_FA_2025'],
+      points: 10,
+      check: (s) => s.o2Order?.device === 'venturi' && s.o2?.device === 'venturi' && s.o2.fio2 === s.o2Order.fio2,
+      why: 'Sotto l’88% l’ipossiemia va corretta anche nel BPCO, ma a concentrazione controllata: la SORES indica di norma la maschera Venturi al 24–28%.',
+      sources: ['BTS_O2_2017', 'SORES_FVG'],
     },
     {
       id: 'target',
@@ -125,23 +127,23 @@ export const bpco: Scenario = {
       sources: ['ERC_FA_2025'],
     },
     {
-      id: 'spray',
-      label: 'Aiutato a usare il proprio broncodilatatore',
-      category: 'trattamento',
+      id: 'consegna',
+      label: 'Consegne all’infermiere dell’ALS',
+      category: 'comunicazione',
       points: 4,
-      check: (s) => s.did('inalatore'),
-      why: 'Il soccorritore può aiutare il paziente a usare il proprio inalatore.',
-      sources: ['ERC_FA_2025'],
+      check: (s) => s.ended?.reason === 'Consegna al mezzo avanzato' || s.ended?.reason === 'Trasporto in ospedale',
+      why: 'Lo spray e l’aerosol del paziente li gestisce l’infermiere: tu passi orari, saturazioni e ossigeno in corso.',
+      sources: ['SORES_FVG'],
     },
   ],
   teaching: [
     'Nel BPCO a rischio di ipercapnia il target di SpO₂ è 88–92%, non 94–98%.',
-    'Sotto l’88% si inizia con flussi adeguati e poi si titola verso il target.',
-    'Occhialini a basso flusso permettono una titolazione fine.',
+    'Riferisci alla SORES saturazione e BPCO: la SORES indica presidio e concentrazione, spesso la maschera Venturi al 24–28%.',
+    'Ricontrolla e riferisci di nuovo: se la saturazione supera il 92% la SORES riduce la concentrazione.',
     'Sonnolenza e confusione dopo ossigeno ad alti flussi fanno pensare alla narcosi da CO₂.',
-    'Seduto, niente scale a piedi, e aiuto con il proprio inalatore.',
+    'Seduto, niente scale a piedi. Lo spray del paziente non lo somministra il soccorritore.',
   ],
-  sources: ['ERC_FA_2025', 'BTS_O2_2017'],
+  sources: ['ERC_FA_2025', 'BTS_O2_2017', 'SORES_FVG'],
   hooks: {
     onStart: (s) => {
       s.set('haInalatore', true);
@@ -172,11 +174,11 @@ export const bpco: Scenario = {
         s.base.rr = 26;
         s.say('paziente', 'Con meno ossigeno Renato torna più vigile.');
       }
-      if (s.did('inalatore') && !s.flags.sprayEffetto) {
-        s.set('sprayEffetto', true);
-        p.spo2Air = Math.min(87, p.spo2Air + 2);
-        s.base.rr = Math.max(24, s.base.rr - 4);
-      }
+    },
+    onAdvanced: (s) => {
+      s.say('evento', 'L’infermiere dell’ALS somministra il broncodilatatore per aerosol e valuta il paziente.');
+      s.p.spo2Air = Math.min(87, s.p.spo2Air + 2);
+      s.base.rr = Math.max(24, s.base.rr - 4);
     },
   },
 };

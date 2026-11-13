@@ -12,12 +12,12 @@ export const fbaoLattante: Scenario = {
   setting: 'casa',
   timeOfDay: 'giorno',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'K',
     patologia: 'C3',
     criticita: 'R',
-    address: 'Via Leopardi 3, piano terra',
+    address: 'Monfalcone, via Leopardi 3, piano terra',
     caller: 'Madre',
     time: '12:18',
     travel: 300,
@@ -75,7 +75,7 @@ export const fbaoLattante: Scenario = {
   protocol: { correct: ['fbao_pediatrico'] },
   valutazione: { correct: ['I1', 'I2'] },
   reportKeys: ['spo2'],
-  msa: { available: true, eta: 720 },
+  msa: { available: true, eta: 720, autoDispatched: true, label: 'L’automedica' },
   timeLimit: 1080,
   objectives: [
     {

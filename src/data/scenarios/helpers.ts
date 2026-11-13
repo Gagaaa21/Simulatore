@@ -26,3 +26,15 @@ export function flagT(s: Sim, k: string): number | null {
 export function drift(cur: number, target: number, perSecond: number): number {
   return cur < target ? Math.min(target, cur + perSecond) : Math.max(target, cur - perSecond);
 }
+
+/**
+ * Primo momento in cui l'equipaggio ha informato la SORES (valutazione riferita o richiesta del mezzo avanzato
+ * o dell'elisoccorso). L'invio automatico all'apertura della missione non conta. 1e9 se mai.
+ */
+export function soresInformedAt(s: Sim): number {
+  const t: number[] = [];
+  if (s.flags.primoReportAt !== undefined) t.push(Number(s.flags.primoReportAt));
+  if (s.requests.msa !== undefined && !s.scenario.msa.autoDispatched) t.push(s.requests.msa);
+  if (s.requests.elisoccorso !== undefined) t.push(s.requests.elisoccorso);
+  return t.length ? Math.min(...t) : 1e9;
+}

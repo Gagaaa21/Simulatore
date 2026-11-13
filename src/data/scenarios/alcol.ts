@@ -1,5 +1,5 @@
 import type { Scenario } from '../../engine/types';
-import { afterContact, contact } from './helpers';
+import { afterContact, contact, soresInformedAt } from './helpers';
 
 /** Intossicazione alcolica in una minorenne, con vomito, ipoglicemia e ipotermia. */
 export const alcol: Scenario = {
@@ -70,7 +70,7 @@ export const alcol: Scenario = {
   },
   protocol: { correct: ['intossicazione'], acceptable: ['ipoglicemia', 'abcde'] },
   valutazione: { correct: ['I3'], acceptable: ['I2'] },
-  reportKeys: ['avpu', 'glicemia', 'spo2'],
+  reportKeys: ['avpu', 'spo2'],
   msa: { available: true, eta: 420, label: 'L’MSA del servizio' },
   timeLimit: 1500,
   objectives: [
@@ -94,16 +94,6 @@ export const alcol: Scenario = {
       sources: ['ERC_FA_2025'],
     },
     {
-      id: 'glicemia',
-      label: 'Glicemia misurata',
-      category: 'valutazione',
-      points: 10,
-      critical: true,
-      check: (s) => s.did('glicemia'),
-      why: 'L’alcol può provocare ipoglicemia, soprattutto nei giovani che non hanno mangiato.',
-      sources: ['ERC_FA_2025'],
-    },
-    {
       id: 'ipotermia',
       label: 'Telo isotermico',
       category: 'trattamento',
@@ -114,31 +104,32 @@ export const alcol: Scenario = {
     },
     {
       id: 'ossigeno',
-      label: 'SpO₂ riportata tra 94 e 98%',
+      label: 'Saturazione riferita alla SORES e ossigeno come indicato',
       category: 'trattamento',
-      points: 6,
-      check: (s) => s.pulseOx && s.p.v.spo2 >= 94,
-      why: 'Target 94–98% nel paziente non a rischio di ipercapnia.',
-      sources: ['ERC_FA_2025', 'BTS_O2_2017'],
+      points: 8,
+      check: (s) => !!s.o2Order && (s.o2Order.device === null || (!!s.o2 && s.o2.device === s.o2Order.device)),
+      why: 'Con SpO₂ sotto il 94% la SORES indica presidio e concentrazione: target 94–98%.',
+      sources: ['BTS_O2_2017', 'SORES_FVG'],
     },
     {
       id: 'avanzato',
-      label: 'Mezzo avanzato richiesto (coma e ipoglicemia: serve glucosio in vena)',
+      label: 'Mezzo avanzato chiesto entro 4 minuti dal contatto',
       category: 'comunicazione',
-      points: 8,
-      check: (s) => s.requests.msa !== undefined && s.requests.msa - contact(s) <= 480,
-      why: 'Una paziente che non deglutisce non può ricevere zucchero per bocca: lo darà il personale sanitario per via venosa.',
-      sources: ['ERC_FA_2025'],
+      points: 12,
+      critical: true,
+      check: (s) => soresInformedAt(s) - contact(s) <= 240,
+      why: 'Coma dopo alcol in una ragazza a digiuno: può esserci un’ipoglicemia, che solo l’infermiere può misurare e trattare con glucosio in vena.',
+      sources: ['ERC_FA_2025', 'SORES_FVG'],
     },
   ],
   teaching: [
     'Nel paziente intossicato il pericolo immediato sono le vie aeree: vomito e inalazione.',
     'Aspira il cavo orale e metti in posizione laterale se respira e non ci sono traumi.',
-    'Misura sempre la glicemia: l’alcol nei giovani a digiuno causa ipoglicemia.',
-    'Nulla per bocca a chi non è sveglio, nemmeno lo zucchero; niente cannula orofaringea se reagisce al dolore.',
+    'L’alcol nei giovani a digiuno può causare ipoglicemia: chiama presto il mezzo avanzato, la glicemia la misura l’infermiere.',
+    'Nulla per bocca: il soccorritore non somministra nulla. Niente cannula orofaringea se reagisce al dolore.',
     'Copri: alcol e notte all’aperto portano all’ipotermia. E non lasciarla mai sola con gli amici.',
   ],
-  sources: ['ERC_FA_2025', 'BTS_O2_2017'],
+  sources: ['ERC_FA_2025', 'BTS_O2_2017', 'SORES_FVG'],
   hooks: {
     tick: (s) => {
       const p = s.p;
@@ -151,16 +142,17 @@ export const alcol: Scenario = {
         s.say('paziente', 'Sofia ha un conato e vomita di nuovo: gorgoglio in gola.');
       }
       if (!p.vomitInMouth && p.airway === 'gorgogliante') p.airway = p.position === 'laterale' ? 'pervie' : 'russante';
-      // l'MSA somministra glucosio
-      if (s.msaOnScene && !s.flags.glucosio) {
-        s.set('glucosio', s.t);
-        s.say('evento', 'L’infermiere dell’MSA posiziona un accesso venoso e somministra glucosio.');
-      }
       if (s.flags.glucosio) s.base.glu = Math.min(100, s.base.glu + 0.08);
       if (s.flags.glucosio && s.base.glu > 80 && p.avpu === 'P') {
         p.avpu = 'V';
         s.say('paziente', 'Sofia apre gli occhi alla voce e borbotta qualcosa.');
       }
+    },
+    onAdvanced: (s) => {
+      const g = Math.round(s.p.v.glu);
+      s.measure('glicemia', 'Glicemia (infermiere MSA)', `${g} mg/dL`);
+      s.set('glucosio', s.t);
+      s.say('evento', `L’infermiere dell’MSA misura la glicemia: ${g} mg/dL. Posiziona un accesso venoso e somministra glucosio.`);
     },
   },
 };

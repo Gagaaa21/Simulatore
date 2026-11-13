@@ -216,11 +216,13 @@ function Eventi() {
         Punteggio = (A + B) × C + D + E. A: capienza massima (1 punto a 500 visitatori, 2 a 1.000, 3 a 1.500, 4 a 3.000, 5 a 6.000, 6 a 10.000, 7 a 20.000, +1 ogni ulteriori 10.000; raddoppia al chiuso). B: 1 punto ogni 500 visitatori previsti. C: fattore del tipo di manifestazione (es. concerto rock 1, manifestazione musicale 0,5, concerto 0,2). D: 10 punti ogni 5 personalità. E: +10 per rischio di disordini.
       </p>
       <p>Dal punteggio si leggono le ambulanze di soccorso e di trasporto, i soccorritori a piedi e i medici. Sono parametri indicativi: il Servizio di Emergenza Territoriale 118 può modificarli.</p>
+      <h3>In Friuli Venezia Giulia</h3>
+      <p>La DGR 1653/2025 recepisce l’Accordo con le stesse tabelle e aggiunge: registrazione di ogni evento sul portale G.A.M.E.S. almeno 15, 30 o 45 giorni prima (rischio basso, moderato/elevato, molto elevato); piano di soccorso sanitario e validazione della SORES dal rischio moderato in su; Score SORES (Maurer, affluenza, MSA previste) che oltre 5 richiede un operatore SORES sul posto.</p>
       <h3>Chi c’è sul campo</h3>
       <ul className="pitfalls">
-        <li>MSB – mezzo di soccorso di base: ambulanza con almeno un autista soccorritore e un soccorritore certificati BLSD e primo soccorso.</li>
-        <li>MSA – mezzo di soccorso avanzato: in più un infermiere esperto di area critica o emergenza (e/o un medico, a seconda del modello regionale).</li>
-        <li>Squadra a piedi: almeno due soccorritori con BLSD e primo soccorso.</li>
+        <li>MSB – mezzo di soccorso di base (ambulanza di tipo B): almeno un autista soccorritore e un soccorritore con BLSD e primo soccorso in corso di validità.</li>
+        <li>MSA – mezzo di soccorso avanzato (ambulanza di tipo A): in più un infermiere con esperienza in area critica o soccorso preospedaliero.</li>
+        <li>SAP – squadra a piedi: almeno due soccorritori con BLSD e corso di primo soccorso; la SORES può chiederne di più.</li>
         <li>PMA – posto medico avanzato: struttura di triage e stabilizzazione sul posto.</li>
       </ul>
       <p className="lib-src">
@@ -242,9 +244,10 @@ function Legale() {
       <h3>Omissione di soccorso</h3>
       <p>L’art. 593 del codice penale punisce chi, trovando una persona ferita o in pericolo, omette di prestare l’assistenza occorrente o di darne immediato avviso all’Autorità. Chiamare il 112 è già un modo di adempiere.</p>
       <h3>Il tuo perimetro</h3>
-      <p>Il soccorritore agisce secondo la formazione ricevuta e i protocolli della propria Centrale Operativa. Farmaci e manovre avanzate sono competenza del personale sanitario, salvo protocolli regionali specifici.</p>
+      <p>In Friuli Venezia Giulia le ambulanze BLS non hanno l’infermiere a bordo; l’ALS ha l’infermiere, l’automedica il medico. Il codice colore lo attribuiscono gli infermieri della SORES con il dispatch, e la SORES assegna anche il codice di rientro.</p>
+      <p>Il soccorritore rileva parametri non invasivi (coscienza, respiro, saturazione, frequenza, pressione), fa il BLSD, usa cannula di Guedel e aspiratore, immobilizza e controlla le emorragie. Non esegue manovre invasive come la glicemia capillare e non somministra nulla: farmaci, nemmeno quelli del paziente, acqua e zucchero. L’ossigeno lo applica con il presidio e la concentrazione indicati dalla SORES, dopo averle riferito la saturazione.</p>
       <p className="lib-src">
-        Fonti: <SourceChips ids={['L116_2021', 'L120_2001', 'CP_593']} />
+        Fonti: <SourceChips ids={['L116_2021', 'L120_2001', 'CP_593', 'DGR_FVG_2039_2015', 'SORES_FVG']} />
       </p>
     </article>
   );
@@ -260,7 +263,7 @@ export function Library({ focus, onBack }: { focus?: string; onBack: () => void 
         </button>
         <div>
           <h1>Protocolli</h1>
-          <p className="muted">Sequenze e numeri chiave tratti dalle linee guida ufficiali. Il protocollo della tua Centrale Operativa prevale sempre.</p>
+          <p className="muted">Sequenze e numeri chiave tratti dalle linee guida ufficiali. Le indicazioni della SORES e del tuo ente prevalgono sempre.</p>
         </div>
       </header>
       <div className="lib-grid">

@@ -1,5 +1,5 @@
 import type { Scenario } from '../../engine/types';
-import { afterContact, contact, flagT } from './helpers';
+import { afterContact, contact, flagT, soresInformedAt } from './helpers';
 
 /** Trauma maggiore: motociclista sbalzato, sospetta frattura di bacino e di femore. */
 export const traumaMoto: Scenario = {
@@ -12,17 +12,17 @@ export const traumaMoto: Scenario = {
   setting: 'strada',
   timeOfDay: 'notte',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'S',
     patologia: 'C1',
     criticita: 'R',
-    address: 'Incrocio tra viale Kennedy e via Battisti',
+    address: 'Latisana, incrocio sulla strada regionale all’altezza della zona artigianale',
     caller: 'Automobilista coinvolto',
     time: '23:04',
     travel: 420,
     text: 'Scontro auto-moto. Il motociclista è stato sbalzato di diversi metri, è a terra con il casco, si lamenta e non si alza. Traffico ancora aperto.',
-    extra: 'Centrale: «Allertate le Forze dell’ordine per la viabilità».',
+    extra: 'SORES: «ALS non disponibile, siete i più vicini. Parte anche l’automedica; allertate le Forze dell’ordine per la viabilità».',
   },
   loadout: {
     essential: ['zaino', 'collari', 'cucchiaio', 'ossigeno'],
@@ -83,7 +83,9 @@ export const traumaMoto: Scenario = {
   protocol: { correct: ['trauma'] },
   valutazione: { correct: ['I3'], acceptable: ['I2'] },
   reportKeys: ['avpu', 'spo2', 'pa', 'fc'],
-  msa: { available: true, eta: 600, label: 'L’automedica' },
+  msa: { available: true, eta: 600, autoDispatched: true, label: 'L’automedica' },
+  oxygen: { critical: true },
+  destination: 'il Trauma Center di Udine',
   heli: { eta: 720 },
   timeLimit: 1800,
   objectives: [
@@ -144,14 +146,11 @@ export const traumaMoto: Scenario = {
     },
     {
       id: 'avanzato',
-      label: 'Supporto avanzato (automedica o elisoccorso) richiesto entro 5 minuti',
+      label: 'Dinamica e parametri riferiti alla SORES entro 5 minuti',
       category: 'comunicazione',
       points: 8,
-      check: (s) => {
-        const t = Math.min(s.requests.msa ?? 1e9, s.requests.elisoccorso ?? 1e9);
-        return t - contact(s) <= 300;
-      },
-      why: 'Il triage preospedaliero (TRENAU) indirizza il trauma maggiore al Trauma Center con supporto avanzato.',
+      check: (s) => soresInformedAt(s) - contact(s) <= 300,
+      why: 'Con dinamica ad alta energia e parametri la SORES valuta l’elisoccorso e centralizza al Trauma Center.',
       sources: ['ISS_TRAUMA'],
     },
   ],

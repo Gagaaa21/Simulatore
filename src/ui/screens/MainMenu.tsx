@@ -78,7 +78,7 @@ export function MainMenu({
             Sirena<span className="hero-118 num">118</span>
           </h1>
           <p className="hero-lead">
-            Ricevi la missione dalla Centrale, scegli i presidi, valuta la scena e il paziente, decidi il protocollo. Ogni scelta è confrontata con le linee guida ERC 2025 e con la normativa italiana.
+            Ricevi la missione dalla SORES, scegli i presidi, valuta la scena e il paziente, decidi il protocollo. Ogni scelta è confrontata con le linee guida ERC 2025 e con la normativa italiana.
           </p>
           <div className="hero-cta">
             <button className="btn btn-big btn-arancio" onClick={onShift}>
@@ -166,7 +166,7 @@ export function MainMenu({
 
       <footer className="menu-foot">
         <p>
-          Strumento didattico: non sostituisce i corsi certificati (BLSD, PTC, formazione regionale 118) né i protocolli della tua Centrale Operativa. In caso di emergenza reale chiama il <strong>112</strong>.
+          Strumento didattico: non sostituisce i corsi certificati (BLSD, PTC, formazione regionale 118) né le indicazioni operative della SORES e del tuo ente. In caso di emergenza reale chiama il <strong>112</strong>.
         </p>
         <button className="btn btn-small" onClick={() => setShowSettings(true)}>
           Impostazioni

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { A1, EVENTS, MAURER_TYPES, a1Score, maurerA, maurerB, maurerResources, maurerScore, riskClass, type A1Selection, type EventCase } from '../../data/events';
+import { A1, EVENTS, MAURER_TYPES, a1Score, maurerA, maurerB, maurerResources, maurerScore, riskClass, fvgProcedura, scoreSores, type A1Selection, type EventCase } from '../../data/events';
 import { SourceChips } from '../components/SourceChip';
 import { loadCareer, loadExtra, saveCareer, saveExtra } from '../store';
 import { unlockBadge } from '../../data/career';
@@ -52,7 +52,7 @@ export function EventPlanner({ onBack }: { onBack: () => void }) {
             <p className="muted">Eventi e manifestazioni programmate</p>
             <h1>Pianifica il soccorso sanitario</h1>
             <p className="muted">
-              Per ogni evento l’organizzatore calcola il livello di rischio (Allegato A1) e dimensiona le risorse con l’algoritmo di Maurer (Allegato A2). Leggi la scheda dell’evento e compila le tabelle come faresti per la Centrale 118. <SourceChips ids={['ACCORDO_EVENTI_2014', 'FVG_EVENTI_2025']} />
+              Per ogni evento l’organizzatore calcola il livello di rischio (Allegato A1) e dimensiona le risorse con l’algoritmo di Maurer (Allegato A2). Leggi la scheda dell’evento e compila le tabelle come faresti per la registrazione su G.A.M.E.S. e la validazione della SORES. <SourceChips ids={['ACCORDO_EVENTI_2014', 'FVG_EVENTI_2025']} />
             </p>
           </div>
         </header>
@@ -85,6 +85,8 @@ export function EventPlanner({ onBack }: { onBack: () => void }) {
   const okC = MAURER_TYPES.find((t) => t.id === ev.type)!.factor;
   const okScore = maurerScore(okA, okB, okC, ev.personalita, ev.disordini);
   const okRes = maurerResources(okScore);
+  const proc = fvgProcedura(riskClass(okA1).level);
+  const sores = scoreSores(okScore, ev.expected, okRes.soccorso);
   const myRes = myScore !== null ? maurerResources(myScore) : null;
 
   if (step === 'a1') {
@@ -277,7 +279,7 @@ export function EventPlanner({ onBack }: { onBack: () => void }) {
               ))}
             </tbody>
           </table>
-          <p className="muted">Per i livelli moderato/elevato e molto elevato il piano di soccorso va verificato e validato dalla Centrale 118 competente, con i tempi di preavviso fissati dalla Regione.</p>
+          <p className="muted">In Friuli Venezia Giulia ogni evento si registra sul portale G.A.M.E.S.; per i livelli moderato/elevato e molto elevato il piano di soccorso sanitario va validato dalla SORES.</p>
         </section>
         <section className="lib-page">
           <h2>Algoritmo di Maurer</h2>
@@ -307,9 +309,49 @@ export function EventPlanner({ onBack }: { onBack: () => void }) {
               </div>
             ))}
           </dl>
-          <p className="muted">I valori dell’algoritmo sono indicativi: il Servizio di Emergenza Territoriale 118 può integrarli o modificarli in base alle caratteristiche dell’evento.</p>
+          <p className="muted">I valori dell’algoritmo sono indicativi: la SORES può modificarli in base alle caratteristiche dell’evento.</p>
           <p className="lib-src">
             Fonti: <SourceChips ids={['ACCORDO_EVENTI_2014', 'FVG_EVENTI_2025']} />
+          </p>
+        </section>
+        <section className="lib-page">
+          <h2>Procedura in Friuli Venezia Giulia</h2>
+          <dl className="numbers">
+            <div>
+              <dt>Registrazione su G.A.M.E.S.</dt>
+              <dd className="num">{proc.giorni} giorni prima</dd>
+            </div>
+            <div>
+              <dt>Piano di soccorso sanitario</dt>
+              <dd>{proc.piano ? 'da trasmettere' : 'non richiesto'}</dd>
+            </div>
+            <div>
+              <dt>Validazione SORES</dt>
+              <dd>{proc.validazione ? 'necessaria' : 'non necessaria'}</dd>
+            </div>
+          </dl>
+          <h3>Score SORES</h3>
+          <table className="lib-table">
+            <tbody>
+              <tr>
+                <td className="num">{sores.m}</td>
+                <td>Coefficiente di Maurer <span className="num">{String(okScore).replace('.', ',')}</span></td>
+              </tr>
+              <tr>
+                <td className="num">{sores.a}</td>
+                <td>Affluenza stimata <span className="num">{ev.expected.toLocaleString('it-IT')}</span> persone</td>
+              </tr>
+              <tr>
+                <td className="num">{sores.s}</td>
+                <td>Ambulanze MSA previste: <span className="num">{okRes.soccorso}</span> (fino a 3 vale 1)</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Score SORES <strong className="num">{sores.score}</strong>: {sores.operatore ? 'oltre 5, serve almeno un operatore SORES sul posto, a carico dell’organizzatore.' : 'fino a 5, non è richiesto un operatore SORES sul posto.'}
+          </p>
+          <p className="lib-src">
+            Fonte: <SourceChips ids={['FVG_EVENTI_2025']} />
           </p>
         </section>
       </div>

@@ -15,7 +15,7 @@ const TAB_SHORT: Record<ActionGroup, string> = {
   anamnesi: 'Anamnesi',
   trattamenti: 'Trattamenti',
   immobilizzazione: 'Immobilizza',
-  centrale: 'Centrale',
+  centrale: 'SORES',
 };
 
 function durationOf(a: ActionDef, sim: Sim) {

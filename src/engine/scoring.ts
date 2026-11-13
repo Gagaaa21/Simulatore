@@ -3,7 +3,7 @@ import type { Objective, Outcome, Penalty } from './types';
 import { EQUIPMENT } from '../data/equipment';
 import { PROTOCOLS } from '../data/protocols';
 
-const KEY_LABEL: Record<string, string> = {
+export const KEY_LABEL: Record<string, string> = {
   tq: 'ora del tourniquet',
   pa: 'pressione arteriosa',
   fc: 'frequenza cardiaca',
@@ -17,6 +17,8 @@ const KEY_LABEL: Record<string, string> = {
   pupille: 'pupille',
   ustione: 'estensione dell’ustione',
 };
+
+export const reportLabel = (k: string) => KEY_LABEL[k] ?? k;
 
 export const PENALTY_POINTS: Record<Penalty['severity'], number> = { critico: 15, grave: 8, lieve: 3 };
 
@@ -84,23 +86,23 @@ export function commonObjectives(sim: Sim, initialLoadout: string[]): Objective[
   });
   if (s.role !== 'laico') {
     out.push({
-      id: 'c_valutazione',
-      label: `Valutazione sanitaria comunicata alla Centrale (${s.valutazione.correct.join(' / ')})`,
+      id: 'c_sores',
+      label: 'Valutazione e parametri riferiti alla SORES',
       category: 'comunicazione',
       points: 8,
-      check: (x) => !!x.report && (s.valutazione.correct.includes(x.report.code) || !!s.valutazione.acceptable?.includes(x.report.code)),
-      why: 'La Centrale decide destinazione e risorse sulla base della tua valutazione (codici I0–I4, DM 15/05/1992).',
-      sources: ['DM_1992'],
+      check: (x) => !!x.report,
+      why: 'Il codice di rientro e la destinazione li assegna la SORES, sulla base di quello che l’equipaggio riferisce: valutazione ABCDE e parametri.',
+      sources: ['DGR_FVG_2039_2015'],
     });
     if (s.reportKeys.length) {
       out.push({
         id: 'c_report',
-        label: 'Report alla Centrale completo dei dati chiave',
+        label: 'Riferiti alla SORES i dati chiave del caso',
         category: 'comunicazione',
         points: 6,
         check: (x) => !!x.report && s.reportKeys.every((k) => x.report!.items.includes(k)),
-        why: `Per questo quadro la Centrale ha bisogno di: ${s.reportKeys.map((k) => KEY_LABEL[k] ?? k).join(', ')}.`,
-        sources: [],
+        why: `Per questo quadro la SORES ha bisogno di: ${s.reportKeys.map((k) => KEY_LABEL[k] ?? k).join(', ')}.`,
+        sources: ['DGR_FVG_2039_2015'],
       });
     }
   }

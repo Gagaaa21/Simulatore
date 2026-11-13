@@ -1,5 +1,5 @@
 import type { Scenario } from '../../engine/types';
-import { afterContact, contact, flagT } from './helpers';
+import { afterContact, contact, flagT, soresInformedAt } from './helpers';
 
 /** Sospetto infarto con evoluzione in fibrillazione ventricolare. */
 export const doloreToracico: Scenario = {
@@ -12,16 +12,17 @@ export const doloreToracico: Scenario = {
   setting: 'casa',
   timeOfDay: 'notte',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'K',
     patologia: 'C2',
     criticita: 'G',
-    address: 'Via Mazzini 40, secondo piano senza ascensore',
+    address: 'Tolmezzo, via Mazzini 40, secondo piano senza ascensore',
     caller: 'Il paziente',
     time: '03:12',
     travel: 540,
     text: 'Uomo di 62 anni con dolore al petto «come un peso» da circa 40 minuti, sudato. Cosciente, risponde al telefono.',
+    extra: 'SORES: «ALS impegnata su un altro intervento: inviamo la vostra BLS. Riferite appena avete i parametri».',
   },
   loadout: {
     essential: ['zaino', 'dae', 'sedia'],
@@ -72,12 +73,13 @@ export const doloreToracico: Scenario = {
   exam: {
     testaPiedi: 'Nessun trauma, nessun edema agli arti inferiori.',
     torace: 'Espansione simmetrica; nessuna dispnea evidente.',
-    extra: { ecg: 'Tracciato trasmesso. La Centrale: «Sopraslivellamento del tratto ST in sede inferiore. Attiviamo l’emodinamica, inviamo l’MSA»', motilita: 'Normale.' },
+    extra: { ecg: 'L’infermiere dell’ALS esegue l’ECG a 12 derivazioni e lo trasmette. SORES: «Sopraslivellamento del tratto ST in sede inferiore: attiviamo l’emodinamica».', motilita: 'Normale.' },
   },
   protocol: { correct: ['dolore_toracico'], acceptable: ['bls_adulto'] },
   valutazione: { correct: ['I2', 'I3'] },
   reportKeys: ['pa', 'esordio'],
-  msa: { available: true, eta: 480, label: 'L’MSA' },
+  msa: { available: true, eta: 480, label: 'L’ALS', onReport: true },
+  destination: 'l’emodinamica dell’ospedale hub',
   timeLimit: 1500,
   objectives: [
     {
@@ -95,7 +97,7 @@ export const doloreToracico: Scenario = {
       category: 'valutazione',
       points: 8,
       check: (s) => afterContact(s, 'saturimetro') <= 180 && afterContact(s, 'pressione') <= 180,
-      why: 'I parametri servono alla Centrale per decidere risorse e destinazione.',
+      why: 'I parametri servono alla SORES per decidere risorse e destinazione.',
       sources: ['ERC_FA_2025'],
     },
     {
@@ -121,22 +123,13 @@ export const doloreToracico: Scenario = {
       sources: ['ESC_ACS_2023'],
     },
     {
-      id: 'ecg',
-      label: 'ECG a 12 derivazioni trasmesso',
-      category: 'valutazione',
-      points: 8,
-      check: (s) => s.did('ecg'),
-      why: 'L’ECG precoce permette di attivare direttamente la sala di emodinamica.',
-      sources: ['ESC_ACS_2023'],
-    },
-    {
-      id: 'msa',
-      label: 'Mezzo avanzato richiesto entro 5 minuti dal contatto',
+      id: 'sores',
+      label: 'SORES informata entro 4 minuti dal contatto',
       category: 'comunicazione',
-      points: 6,
-      check: (s) => s.requests.msa !== undefined && s.requests.msa - contact(s) <= 300,
-      why: 'Il dolore toracico tipico richiede supporto avanzato e centralizzazione.',
-      sources: ['ESC_ACS_2023'],
+      points: 10,
+      check: (s) => soresInformedAt(s) - contact(s) <= 240,
+      why: 'Con ora di esordio e parametri la SORES invia l’ALS: l’infermiere esegue e trasmette l’ECG a 12 derivazioni e si attiva la rete dell’infarto.',
+      sources: ['ESC_ACS_2023', 'SORES_FVG'],
     },
     {
       id: 'dae_rapido',
@@ -165,15 +158,15 @@ export const doloreToracico: Scenario = {
   ],
   teaching: [
     'Il paziente con dolore toracico non deve camminare: sedia portantina anche per poche rampe di scale.',
-    'Ossigeno solo se la SpO₂ è sotto il 90%.',
-    'Ora di esordio e caratteristiche del dolore sono informazioni decisive per la Centrale.',
-    'Dove previsto, l’ECG a 12 derivazioni trasmesso attiva direttamente l’emodinamica.',
+    'Riferisci la saturazione alla SORES: con SpO₂ normale l’ossigeno non serve.',
+    'Ora di esordio e caratteristiche del dolore sono informazioni decisive per la SORES.',
+    'L’ECG a 12 derivazioni lo esegue e trasmette l’infermiere dell’ALS: riferire presto lo fa arrivare prima.',
+    'Aspirina e nitrati non sono di competenza del soccorritore, anche se il paziente li ha in casa.',
     'Nell’infarto acuto l’arresto può arrivare all’improvviso: DAE accanto al paziente, non nel mezzo.',
   ],
   sources: ['ESC_ACS_2023', 'ERC_FA_2025', 'ERC_BLS_2025'],
   hooks: {
     onStart: (s) => {
-      s.set('ecgDisponibile', true);
       s.set('nonCamminare', 'Nel sospetto di sindrome coronarica il paziente non deve camminare: lo sforzo aumenta il danno al cuore e il rischio di aritmie.');
     },
     tick: (s) => {
@@ -186,6 +179,9 @@ export const doloreToracico: Scenario = {
         s.enterArrest('fv', 'Il paziente si irrigidisce, ha uno scatto e si accascia: non risponde più!');
         s.hint('Arresto cardiaco testimoniato: RCP e DAE subito.');
       }
+    },
+    onAdvanced: (s) => {
+      if (!s.inArrest()) s.find(s.scenario.exam.extra?.ecg ?? '');
     },
     outcome: (s) => {
       if (s.arrest.startedAt !== null && s.arrest.roscAt !== null && !s.inArrest())

@@ -1,5 +1,5 @@
 import type { Scenario } from '../../engine/types';
-import { afterContact } from './helpers';
+import { afterContact, contact, soresInformedAt } from './helpers';
 
 /** Emorragia arteriosa della coscia da smerigliatrice in un cantiere. */
 export const emorragiaCantiere: Scenario = {
@@ -12,12 +12,12 @@ export const emorragiaCantiere: Scenario = {
   setting: 'cantiere',
   timeOfDay: 'giorno',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'L',
     patologia: 'C1',
     criticita: 'R',
-    address: 'Cantiere edile, via dell’Industria 7 (ingresso carraio)',
+    address: 'Pordenone, cantiere edile in via dell’Industria 7 (ingresso carraio)',
     caller: 'Capocantiere',
     time: '10:52',
     travel: 420,
@@ -82,7 +82,8 @@ export const emorragiaCantiere: Scenario = {
   protocol: { correct: ['emorragia'], acceptable: ['trauma'] },
   valutazione: { correct: ['I3'], acceptable: ['I2'] },
   reportKeys: ['tq', 'pa', 'fc'],
-  msa: { available: true, eta: 540 },
+  msa: { available: true, eta: 540, autoDispatched: true, label: 'L’automedica' },
+  oxygen: { critical: true },
   heli: { eta: 780 },
   timeLimit: 1200,
   objectives: [
@@ -144,10 +145,10 @@ export const emorragiaCantiere: Scenario = {
     },
     {
       id: 'avanzato',
-      label: 'Mezzo avanzato o elisoccorso richiesto',
+      label: 'SORES aggiornata entro 3 minuti dal contatto',
       category: 'comunicazione',
       points: 6,
-      check: (s) => s.requests.msa !== undefined || s.requests.elisoccorso !== undefined,
+      check: (s) => soresInformedAt(s) - contact(s) <= 180,
       why: 'Lo shock emorragico richiede cure avanzate (accessi venosi, acido tranexamico) e un Trauma Center.',
       sources: ['ISS_TRAUMA'],
     },

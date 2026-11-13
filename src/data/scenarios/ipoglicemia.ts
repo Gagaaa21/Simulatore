@@ -1,33 +1,34 @@
 import type { Scenario } from '../../engine/types';
-import { afterContact, contact, flagT } from './helpers';
+import { afterContact, contact, flagT, soresInformedAt } from './helpers';
 
-/** Ipoglicemia in diabetico insulino-trattato: finestra limitata per lo zucchero per bocca. */
+/** Sospetta ipoglicemia in un diabetico insulino-trattato: il soccorritore riconosce, protegge e riferisce; il glucosio lo dà l'infermiere dell'ALS. */
 export const ipoglicemia: Scenario = {
   id: 'ipoglicemia',
   title: 'Non è da lui',
-  subtitle: 'Diabetico confuso e sudato: il tempo per lo zucchero per bocca è poco',
+  subtitle: 'Diabetico confuso e sudato: riconoscere, proteggere e riferire alla SORES',
   category: '118',
   difficulty: 1,
-  minutes: 10,
+  minutes: 12,
   setting: 'casa',
   timeOfDay: 'sera',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'K',
     patologia: 'C4',
     criticita: 'G',
-    address: 'Via Verdi 9, terzo piano con ascensore',
+    address: 'Udine, via Verdi 9, terzo piano con ascensore',
     caller: 'Moglie del paziente',
     time: '19:05',
     travel: 480,
     text: 'Uomo di 45 anni diabetico, da mezz’ora «strano», confuso, sudatissimo. Risponde ma dice cose senza senso.',
+    extra: 'SORES: «ALS non disponibile in zona: inviamo la vostra BLS. Valutate e riferite subito».',
   },
   loadout: {
     essential: ['zaino'],
     recommended: ['ossigeno', 'dae', 'aspiratore'],
     fetchTime: 120,
-    note: 'Alterazione della coscienza in un diabetico: lo zaino contiene il glucometro, l’esame più importante.',
+    note: 'Alterazione della coscienza: nello zaino saturimetro, sfigmomanometro e telo; l’aspiratore serve se perde coscienza. Il glucometro non è un tuo presidio.',
   },
   scene: {
     room: 'cucina',
@@ -68,68 +69,84 @@ export const ipoglicemia: Scenario = {
   },
   exam: { testaPiedi: 'Nessun trauma. Segni di iniezioni sull’addome.' },
   protocol: { correct: ['ipoglicemia'], acceptable: ['abcde'] },
-  valutazione: { correct: ['I2'], acceptable: ['I1'] },
-  reportKeys: ['glicemia'],
-  msa: { available: true, eta: 540 },
+  valutazione: { correct: ['I2'] },
+  reportKeys: ['avpu', 'fc', 'pa'],
+  msa: { available: true, eta: 420, label: 'L’ALS', onReport: true },
   timeLimit: 1500,
   objectives: [
     {
-      id: 'glicemia_presto',
-      label: 'Glicemia misurata entro 3 minuti dal contatto',
+      id: 'anamnesi',
+      label: 'Diabete in terapia con insulina e pasto saltato raccolti entro 3 minuti',
       category: 'valutazione',
-      points: 12,
+      points: 10,
       critical: true,
-      check: (s) => afterContact(s, 'glicemia') <= 180,
-      why: 'In ogni alterazione della coscienza la glicemia è il primo controllo: l’ipoglicemia è rapidamente reversibile.',
+      check: (s) => afterContact(s, 'q_farmaci', 'q_pasto', 'q_testimoni') <= 180,
+      why: 'In un diabetico che fa l’insulina, confusione, sudorazione e pallore fanno sospettare un’ipoglicemia: è l’informazione chiave da riferire.',
       sources: ['ERC_FA_2025'],
     },
     {
-      id: 'zucchero',
-      label: 'Zucchero per bocca dato mentre il paziente è sveglio e deglutisce',
-      category: 'trattamento',
-      points: 14,
-      critical: true,
-      check: (s) => flagT(s, 'zuccheroAt') !== null,
-      why: '15–20 g di glucosio per bocca se sveglio e capace di deglutire.',
-      sources: ['ERC_FA_2025'],
-    },
-    {
-      id: 'ricontrollo',
-      label: 'Glicemia ricontrollata dopo lo zucchero',
+      id: 'parametri',
+      label: 'Coscienza, saturazione, frequenza e pressione rilevate',
       category: 'valutazione',
       points: 8,
+      check: (s) => s.did('coscienza') && s.pulseOx && s.did('pressione'),
+      why: 'Parametri non invasivi completi: servono alla SORES per decidere risorse e codice di rientro.',
+      sources: ['ERC_FA_2025', 'SORES_FVG'],
+    },
+    {
+      id: 'sores_presto',
+      label: 'SORES informata entro 4 minuti dal contatto',
+      category: 'comunicazione',
+      points: 12,
+      critical: true,
+      check: (s) => soresInformedAt(s) - contact(s) <= 240,
+      why: 'Il glucosio lo può dare solo l’infermiere o il medico: prima riferisci, prima la SORES manda l’ALS.',
+      sources: ['SORES_FVG', 'DGR_FVG_2039_2015'],
+    },
+    {
+      id: 'protezione',
+      label: 'Quando la coscienza peggiora: posizione laterale entro 1 minuto',
+      category: 'trattamento',
+      points: 10,
+      critical: true,
       check: (s) => {
-        const z = flagT(s, 'zuccheroAt');
-        return z !== null && (s.doneAt.get('glicemia') ?? []).some((t) => t - z >= 300);
+        const v = flagT(s, 'soporeAt');
+        if (v === null) return true;
+        const l = s.flags.pos_laterale === undefined ? null : Number(s.flags.pos_laterale);
+        return l !== null && l >= v && l - v <= 60;
       },
-      why: 'Si ricontrolla dopo il trattamento; se i sintomi persistono dopo 15 minuti si ripete lo zucchero.',
+      why: 'Se non risponde più e respira, la posizione laterale protegge le vie aeree dall’inalazione.',
       sources: ['ERC_FA_2025'],
     },
     {
-      id: 'causa',
-      label: 'Causa identificata: insulina senza pasto',
-      category: 'valutazione',
-      points: 4,
-      check: (s) => s.didAny('q_pasto', 'q_farmaci', 'q_testimoni'),
-      why: 'Capire la causa aiuta a prevenire una ricaduta (insulina a lunga durata).',
-      sources: ['ERC_FA_2025'],
+      id: 'consegna',
+      label: 'Consegne all’infermiere dell’ALS',
+      category: 'comunicazione',
+      points: 6,
+      check: (s) => s.ended?.reason === 'Consegna al mezzo avanzato',
+      why: 'Orari, parametri e anamnesi passano all’infermiere, che misura la glicemia e somministra il glucosio.',
+      sources: ['SORES_FVG'],
     },
   ],
   teaching: [
-    'Sospetta l’ipoglicemia in un diabetico con improvvisa alterazione della coscienza o del comportamento.',
-    'Misura la glicemia: sotto 70 mg/dL con sintomi è ipoglicemia.',
-    'Se è sveglio e deglutisce: 15–20 g di zuccheri semplici per bocca. Se non lo è: nulla per bocca e mezzo avanzato.',
-    'Ricontrolla dopo il trattamento e, appena riprende, uno spuntino con carboidrati.',
-    'L’insulina ad azione prolungata può far ricadere il paziente: la valutazione medica resta importante.',
+    'Sospetta l’ipoglicemia in un diabetico (soprattutto con insulina) con alterazione improvvisa della coscienza o del comportamento.',
+    'Raccogli farmaci, ultimo pasto e da quanto è così: sono le informazioni chiave per la SORES.',
+    'Rileva i parametri non invasivi (AVPU, SpO₂, FC, PA). La glicemia capillare è una manovra invasiva: la misura l’infermiere.',
+    'Non dare nulla per bocca, nemmeno acqua e zucchero: il soccorritore non somministra.',
+    'Se la coscienza peggiora: vie aeree, posizione laterale, aspiratore pronto, aggiorna la SORES.',
+    'All’arrivo dell’ALS passa le consegne: l’infermiere misura la glicemia e somministra il glucosio.',
   ],
-  sources: ['ERC_FA_2025'],
+  sources: ['ERC_FA_2025', 'SORES_FVG', 'DGR_FVG_2039_2015'],
   hooks: {
+    onStart: (s) => {
+      s.set('diabetico', true);
+    },
     tick: (s) => {
       const p = s.p;
       const c = contact(s);
-      const z = flagT(s, 'zuccheroAt');
-      if (z === null) {
-        // senza trattamento la glicemia continua a scendere
+      const g = flagT(s, 'glucosioEv');
+      if (g === null) {
+        // senza glucosio la glicemia continua a scendere
         s.base.glu = Math.max(24, s.base.glu - 0.02);
         if (c < 1e8 && s.t - c === 200 && p.avpu === 'A') {
           p.avpu = 'V';
@@ -142,30 +159,38 @@ export const ipoglicemia: Scenario = {
           p.canSwallow = false;
           p.position = 'supino';
           p.airway = 'russante';
-          s.say('paziente', 'Il paziente scivola dalla sedia: ora risponde solo al dolore e russa. Non è più in grado di deglutire.');
-          s.hint('Paziente che non deglutisce: nulla per bocca, vie aeree, posizione laterale e mezzo avanzato per il glucosio in vena.');
+          s.set('soporeAt', s.t);
+          s.say('paziente', 'Il paziente scivola dalla sedia: ora risponde solo al dolore e russa.');
+          s.hint('Coscienza ridotta e respiro presente: vie aeree, posizione laterale, aggiorna la SORES.');
         }
       } else {
-        s.base.glu = Math.min(112, s.base.glu + 0.1);
-        if (s.base.glu > 75 && p.speech === 'confuso') {
+        s.base.glu = Math.min(112, s.base.glu + 0.12);
+        if (s.base.glu > 70 && p.avpu !== 'A') {
+          p.avpu = 'A';
+          p.canSwallow = true;
+          p.airway = 'pervie';
+          p.speech = 'confuso';
+          s.say('paziente', 'Il paziente apre gli occhi e si guarda intorno, ancora confuso.');
+        }
+        if (s.base.glu > 80 && p.speech === 'confuso') {
           p.speech = 'normale';
           p.skin = { color: 'rosea', temp: 'normale', sweaty: false };
           s.base.hr = 86;
-          s.say('paziente', 'Il paziente si guarda intorno: «Che è successo? Ho fatto l’insulina e non ho mangiato… che stupido».');
+          s.say('paziente', 'Il paziente: «Che è successo? Ho fatto l’insulina e non ho mangiato… che stupido».');
         }
       }
-      // il mezzo avanzato somministra glucosio in vena
-      if (s.msaOnScene && p.avpu === 'P' && !s.flags.glucosioEv) {
-        s.set('glucosioEv', s.t);
-        s.say('evento', 'L’infermiere dell’MSA posiziona un accesso venoso e somministra glucosio.');
-        s.set('zuccheroAt', s.t);
-      }
-      if (s.flags.glucosioEv && s.base.glu > 70 && p.avpu === 'P') {
-        p.avpu = 'A';
-        p.canSwallow = true;
-        p.airway = 'pervie';
-        p.speech = 'confuso';
-      }
+    },
+    onAdvanced: (s) => {
+      const g = Math.round(s.p.v.glu);
+      s.measure('glicemia', 'Glicemia (infermiere ALS)', `${g} mg/dL`);
+      s.set('glucosioEv', s.t);
+      s.say('evento', `L’infermiere dell’ALS misura la glicemia: ${g} mg/dL. Posiziona un accesso venoso e somministra glucosio.`);
+    },
+    outcome: (s) => {
+      if (s.inArrest()) return { status: 'decesso', title: 'Arresto', text: 'Le vie aeree non sono state protette.' };
+      if (s.flags.glucosioEv !== undefined)
+        return { status: 'ottimo', title: 'Ipoglicemia trattata dall’ALS', text: 'Grazie al riconoscimento e alla segnalazione precoce l’infermiere ha misurato la glicemia e somministrato il glucosio: Marco si risveglia e va in pronto soccorso per l’osservazione.' };
+      return { status: 'critico', title: 'Ipoglicemia non trattata', text: 'Marco arriva in ospedale soporoso, senza glucosio: con una segnalazione più precoce la SORES avrebbe fatto arrivare l’ALS in tempo.' };
     },
   },
 };

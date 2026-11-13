@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Sim } from '../../engine/engine';
 import type { BodyRegion, O2Device, Position, ProtocolId } from '../../engine/types';
-import { VALUTAZIONE, type ValutazioneCode } from '../../data/codes';
+import { describeO2, VENTURI_FLOW } from '../../engine/oxygen';
 import { PROTOCOLS, PROTOCOL_ORDER } from '../../data/protocols';
 import { Modal } from './Modal';
 
@@ -9,16 +9,21 @@ type Confirm = (params: Record<string, unknown>) => void;
 
 // ───────────────────────── ossigeno
 const O2_INFO: Record<O2Device, { name: string; range: [number, number]; fio2: string; desc: string }> = {
-  occhialini: { name: 'Occhialini nasali', range: [1, 4], fio2: 'FiO₂ circa 24–40%', desc: 'Per ipossiemia lieve e per titolare con precisione bassi flussi.' },
-  maschera: { name: 'Maschera semplice', range: [5, 10], fio2: 'FiO₂ circa 40–60%', desc: 'Concentrazioni intermedie; sotto 5 L/min si respira di nuovo la propria CO₂.' },
-  reservoir: { name: 'Maschera con reservoir', range: [10, 15], fio2: 'FiO₂ circa 60–90%', desc: 'Alte concentrazioni nell’ipossiemia grave; il pallone deve restare gonfio.' },
+  occhialini: { name: 'Occhialini nasali', range: [1, 4], fio2: 'FiO₂ circa 24–40%', desc: 'Bassi flussi per ipossiemie lievi.' },
+  maschera: { name: 'Maschera semplice', range: [5, 10], fio2: 'FiO₂ circa 40–60%', desc: 'Sotto 5 L/min si respira di nuovo la propria CO₂.' },
+  venturi: { name: 'Maschera Venturi', range: [2, 15], fio2: 'Concentrazione fissa scelta con la valvola', desc: 'Concentrazione precisa: è quella che la SORES indica in percentuale.' },
+  reservoir: { name: 'Maschera con reservoir', range: [10, 15], fio2: 'FiO₂ circa 60–90%', desc: 'Alte concentrazioni; il pallone deve restare gonfio.' },
 };
+const VENTURI_STEPS = [24, 28, 31, 35, 40, 50, 60];
 
 export function OxygenPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm: Confirm; onCancel: () => void }) {
-  const [device, setDevice] = useState<O2Device>(sim.o2?.device ?? 'maschera');
+  const order = sim.o2Order;
+  const [device, setDevice] = useState<O2Device>(sim.o2?.device ?? (sim.inArrest() || sim.bvm ? 'reservoir' : 'maschera'));
   const [flow, setFlow] = useState<number>(sim.o2?.flow ?? 6);
+  const [fio2, setFio2] = useState<number>(sim.o2?.fio2 ?? 28);
   const info = O2_INFO[device];
-  const outOfRange = flow < info.range[0] || flow > info.range[1];
+  const realFlow = device === 'venturi' ? VENTURI_FLOW[fio2] : flow;
+  const outOfRange = device !== 'venturi' && (flow < info.range[0] || flow > info.range[1]);
   return (
     <Modal
       title="Ossigenoterapia"
@@ -31,12 +36,23 @@ export function OxygenPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm
               Sospendi l’ossigeno
             </button>
           )}
-          <button className="btn btn-arancio" onClick={() => onConfirm({ device, flow })}>
-            Somministra {flow} L/min
+          <button className="btn btn-arancio" onClick={() => onConfirm({ device, flow: realFlow, ...(device === 'venturi' ? { fio2 } : {}) })}>
+            {device === 'venturi' ? `Applica Venturi ${fio2}%` : `Somministra ${flow} L/min`}
           </button>
         </>
       }
     >
+      {order?.device ? (
+        <p className="sores-order">
+          <span className="sores-tag">SORES</span>
+          Indicazione: <strong>{describeO2(order.device, order.flow, order.fio2)}</strong>, obiettivo <span className="num">{order.target[0]}–{order.target[1]}%</span>.
+        </p>
+      ) : (sim.inArrest() || sim.bvm) ? (
+        <p className="sores-order">
+          <span className="sores-tag">BLSD</span>
+          Ventilazione con pallone: collega l’ossigeno ad alti flussi (reservoir, 15 L/min).
+        </p>
+      ) : null}
       <div className="o2-devices" role="radiogroup" aria-label="Presidio">
         {(Object.keys(O2_INFO) as O2Device[]).map((d) => (
           <button
@@ -46,31 +62,45 @@ export function OxygenPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm
             className={`o2-card${device === d ? ' on' : ''}`}
             onClick={() => {
               setDevice(d);
-              setFlow(Math.min(O2_INFO[d].range[1], Math.max(O2_INFO[d].range[0], flow)));
+              if (d !== 'venturi') setFlow(Math.min(O2_INFO[d].range[1], Math.max(O2_INFO[d].range[0], flow)));
             }}
           >
             <span className="o2-name">{O2_INFO[d].name}</span>
-            <span className="o2-range num">
-              {O2_INFO[d].range[0]}–{O2_INFO[d].range[1]} L/min
-            </span>
+            <span className="o2-range num">{d === 'venturi' ? '24–60%' : `${O2_INFO[d].range[0]}–${O2_INFO[d].range[1]} L/min`}</span>
             <span className="o2-desc">{O2_INFO[d].desc}</span>
           </button>
         ))}
       </div>
-      <div className="flow">
-        <label htmlFor="flow-slider">Flussimetro</label>
-        <div className="flow-row">
-          <input id="flow-slider" type="range" min={1} max={15} step={1} value={flow} onChange={(e) => setFlow(Number(e.target.value))} />
-          <span className="num flow-val">{flow}</span>
-          <span>L/min</span>
+      {device === 'venturi' ? (
+        <div className="flow">
+          <span className="flow-label">Valvola della maschera Venturi</span>
+          <div className="seg seg-wrap" role="radiogroup" aria-label="Concentrazione">
+            {VENTURI_STEPS.map((v) => (
+              <button key={v} role="radio" aria-checked={fio2 === v} className={fio2 === v ? 'on' : ''} onClick={() => setFio2(v)}>
+                <span className="num">{v}%</span>
+              </button>
+            ))}
+          </div>
+          <p className="flow-note">
+            Flussimetro a <span className="num">{VENTURI_FLOW[fio2]}</span> L/min, come riportato sulla valvola.
+          </p>
         </div>
-        <p className={`flow-note${outOfRange ? ' warn' : ''}`}>
-          {outOfRange ? `Flusso fuori dall’intervallo del presidio (${info.range[0]}–${info.range[1]} L/min).` : info.fio2}
-        </p>
-      </div>
+      ) : (
+        <div className="flow">
+          <label htmlFor="flow-slider">Flussimetro</label>
+          <div className="flow-row">
+            <input id="flow-slider" type="range" min={1} max={15} step={1} value={flow} onChange={(e) => setFlow(Number(e.target.value))} />
+            <span className="num flow-val">{flow}</span>
+            <span>L/min</span>
+          </div>
+          <p className={`flow-note${outOfRange ? ' warn' : ''}`}>
+            {outOfRange ? `Flusso fuori dall’intervallo del presidio (${info.range[0]}–${info.range[1]} L/min).` : info.fio2}
+          </p>
+        </div>
+      )}
       {sim.pulseOx && !sim.inArrest() && (
         <p className="muted">
-          SpO₂ attuale: <strong className="num">{Math.round(sim.p.v.spo2)}%</strong>. Scegli il presidio in base al target del paziente.
+          SpO₂ attuale: <strong className="num">{Math.round(sim.p.v.spo2)}%</strong>.
         </p>
       )}
     </Modal>
@@ -244,38 +274,27 @@ export function PadsPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm: 
   );
 }
 
-// ───────────────────────── comunicazione alla Centrale
+// ───────────────────────── comunicazione alla SORES
 export function CentralePicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm: Confirm; onCancel: () => void }) {
-  const [code, setCode] = useState<ValutazioneCode | null>(null);
   const meas = useMemo(() => Array.from(sim.measurements.values()), [sim]);
   const [items, setItems] = useState<string[]>([]);
   const toggle = (k: string) => setItems((a) => (a.includes(k) ? a.filter((x) => x !== k) : [...a, k]));
   return (
     <Modal
-      title="Comunicazione alla Centrale"
-      kicker="Radio · canale 118"
+      title="Riferisci alla SORES"
+      kicker="Radio · SORES FVG"
       onClose={onCancel}
       wide
       footer={
-        <button className="btn btn-arancio" disabled={!code} onClick={() => onConfirm({ code, items })}>
+        <button className="btn btn-arancio" onClick={() => onConfirm({ items })}>
           Trasmetti
         </button>
       }
     >
-      <h3 className="mini-h">Valutazione sanitaria</h3>
-      <p className="muted">Codifica del DM 15/05/1992: la Centrale la usa per decidere risorse e destinazione. Il colore è la corrispondenza indicativa usata da molte Centrali.</p>
-      <div className="code-grid" role="radiogroup" aria-label="Valutazione sanitaria">
-        {(Object.keys(VALUTAZIONE) as ValutazioneCode[]).map((c) => (
-          <button key={c} role="radio" aria-checked={code === c} className={`code-card${code === c ? ' on' : ''}`} onClick={() => setCode(c)} style={{ ['--cc' as string]: VALUTAZIONE[c].hex }}>
-            <span className="code-id num">{c}</span>
-            <span className="code-def">{VALUTAZIONE[c].def}</span>
-            <span className="code-col">{VALUTAZIONE[c].colore}</span>
-          </button>
-        ))}
-      </div>
+      <p className="muted">Riferisci la valutazione ABCDE e i parametri rilevati. Il codice di rientro e la destinazione li assegna la SORES in base a quello che trasmetti.</p>
       <h3 className="mini-h">Dati da trasmettere</h3>
       {meas.length === 0 ? (
-        <p className="muted">Non hai ancora rilevato parametri: la Centrale riceverà solo la valutazione.</p>
+        <p className="muted">Non hai ancora rilevato parametri: la SORES riceverà solo la chiamata di aggiornamento.</p>
       ) : (
         <div className="meas-list">
           {meas.map((m) => (
@@ -306,7 +325,7 @@ export function TransportPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConf
   return (
     <Modal
       title="Carico e trasporto"
-      kicker="Centrale"
+      kicker="SORES"
       onClose={onCancel}
       footer={
         <button className="btn btn-arancio" onClick={() => onConfirm({ mode, pos })}>
@@ -331,7 +350,7 @@ export function TransportPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConf
           </button>
         ))}
       </div>
-      {!sim.report && <p className="flow-note warn">Non hai ancora comunicato la valutazione alla Centrale.</p>}
+      {!sim.report && <p className="flow-note warn">Non hai ancora riferito la valutazione alla SORES.</p>}
     </Modal>
   );
 }

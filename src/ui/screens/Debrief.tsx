@@ -40,15 +40,16 @@ function timeline(sim: Sim): { label: string; t: number }[] {
   push('Tourniquet', sim.tourniquet?.at ?? null);
   push('Saturimetro', f('saturimetroAt'));
   push('Ossigeno', f('o2At'));
-  push('Glicemia', f('glicemiaAt'));
   push('Scala di Cincinnati', f('cincinnatiAt'));
-  push('Zucchero per bocca', f('zuccheroAt'));
+  push('SpO₂ riferita alla SORES', f('o2RiferitoAt'));
+  push('Arrivo del mezzo avanzato', sim.msaOnScene && sim.msaAt !== null ? sim.msaAt : null);
+  push('Glucosio dall’infermiere', f('glucosioEv'));
   push('Temperatura', f('temperaturaAt'));
   push('Raffreddamento attivo', f('raffreddamentoAt'));
-  push('Adrenalina (1ª dose)', f('adrenalina1At'));
-  push('Adrenalina (2ª dose)', f('adrenalina2At'));
+  push('Adrenalina dall’équipe (1ª dose)', f('adrenalina1At'));
+  push('Adrenalina dall’équipe (2ª dose)', f('adrenalina2At'));
   push('Protocollo scelto', sim.protocol?.t ?? null);
-  push('Report alla Centrale', sim.report?.t ?? null);
+  push('Riferito alla SORES', sim.report?.t ?? null);
   push('Mezzo avanzato sul posto', sim.msaOnScene && sim.msaAt !== null ? sim.msaAt : null);
   push('Fine missione', sim.ended?.t ?? null);
   return out.sort((a, b) => a.t - b.t);
@@ -151,7 +152,7 @@ export function Debrief({
       <article className="scheda" aria-label="Scheda di intervento">
         <header className="scheda-head">
           <div>
-            <p className="scheda-org">Servizio Emergenza Territoriale 118 · esercitazione</p>
+            <p className="scheda-org">Emergenza sanitaria 118 FVG · esercitazione</p>
             <h2>Scheda di intervento</h2>
           </div>
           <div className="scheda-codes">
@@ -200,13 +201,13 @@ export function Debrief({
             ) : (
               <>
                 <div className="field">
-                  <small>Valutazione sanitaria comunicata</small>
-                  <span className="mano">{sim.report ? `${sim.report.code} – ${VALUTAZIONE[sim.report.code].def}` : 'non comunicata'}</span>
+                  <small>Riferito alla SORES</small>
+                  <span className="mano">{sim.report ? (sim.report.items.length ? sim.report.items.map((k) => sim.measurements.get(k)?.label ?? k).join(', ') : 'solo aggiornamento, senza parametri') : 'non riferito'}</span>
                 </div>
                 <div className="field">
-                  <small>Attesa</small>
+                  <small>Codice di rientro (assegnato dalla SORES)</small>
                   <span className="mano">
-                    {correctCode} – {VALUTAZIONE[correctCode].def}
+                    {VALUTAZIONE[correctCode].colore.charAt(0).toUpperCase() + VALUTAZIONE[correctCode].colore.slice(1)} – {VALUTAZIONE[correctCode].def}
                   </span>
                 </div>
               </>

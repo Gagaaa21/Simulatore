@@ -1,5 +1,5 @@
 import type { Scenario } from '../../engine/types';
-import { afterContact, contact } from './helpers';
+import { afterContact, contact, soresInformedAt } from './helpers';
 
 /** Sovradosaggio da oppioidi: ventilare e chiamare il mezzo avanzato. */
 export const oppioidi: Scenario = {
@@ -12,16 +12,17 @@ export const oppioidi: Scenario = {
   setting: 'parcheggio',
   timeOfDay: 'notte',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'S',
     patologia: 'C7',
     criticita: 'R',
-    address: 'Parcheggio del palazzetto dello sport, settore B',
+    address: 'Trieste, parcheggio del palazzetto dello sport, settore B',
     caller: 'Passante',
     time: '00:18',
     travel: 420,
     text: 'Uomo a terra accanto a un’auto, «non si sveglia e fa un rumore strano». Il passante ha visto una siringa.',
+    extra: 'SORES: «ALS non disponibile, siete i più vicini. Parte anche l’automedica, arrivo stimato 8 minuti».',
   },
   loadout: {
     essential: ['zaino', 'pallone', 'ossigeno'],
@@ -72,7 +73,7 @@ export const oppioidi: Scenario = {
   protocol: { correct: ['oppioidi'], acceptable: ['intossicazione'] },
   valutazione: { correct: ['I3'] },
   reportKeys: ['fr', 'spo2', 'pupille'],
-  msa: { available: true, eta: 480 },
+  msa: { available: true, eta: 480, autoDispatched: true, label: 'L’automedica' },
   timeLimit: 1500,
   objectives: [
     {
@@ -104,28 +105,28 @@ export const oppioidi: Scenario = {
       sources: ['ERC_FA_2025'],
     },
     {
-      id: 'glicemia',
-      label: 'Glicemia controllata',
-      category: 'valutazione',
-      points: 6,
-      check: (s) => s.did('glicemia'),
-      why: 'In ogni alterazione della coscienza si esclude l’ipoglicemia.',
-      sources: ['ERC_FA_2025'],
-    },
-    {
-      id: 'msa',
-      label: 'Mezzo avanzato richiesto entro 3 minuti (naloxone)',
+      id: 'sores',
+      label: 'SORES aggiornata entro 4 minuti: respiro, saturazione e pupille',
       category: 'comunicazione',
       points: 8,
-      check: (s) => s.requests.msa !== undefined && s.requests.msa - contact(s) <= 180,
-      why: 'Il naloxone lo somministra il personale sanitario o chi è formato; fino ad allora si ventila.',
-      sources: ['ERC_FA_2025'],
+      check: (s) => soresInformedAt(s) - contact(s) <= 240,
+      why: 'Il naloxone lo somministra il medico dell’automedica: con il quadro riferito presto arriva preparato. Fino ad allora si ventila.',
+      sources: ['ERC_FA_2025', 'SORES_FVG'],
+    },
+    {
+      id: 'consegna',
+      label: 'Consegne al medico dell’automedica',
+      category: 'comunicazione',
+      points: 6,
+      check: (s) => s.ended?.reason === 'Consegna al mezzo avanzato',
+      why: 'Orario del ritrovamento, ventilazioni, parametri e siringa trovata passano all’équipe.',
+      sources: ['SORES_FVG'],
     },
   ],
   teaching: [
     'Respiro lento o assente, sopore estremo e pupille a punta di spillo: sospetta un sovradosaggio da oppioidi.',
     'Se il respiro è inefficace si ventila con pallone e ossigeno; se non respira normalmente si inizia la RCP.',
-    'Il naloxone (se disponibile e se sei formato) antagonizza l’oppioide, ma il suo effetto può finire prima.',
+    'Il naloxone lo somministra il medico o l’infermiere: antagonizza l’oppioide, ma il suo effetto può finire prima. Tu ventili.',
     'Siringhe e aghi: guanti, contenitore rigido, mai reincappucciare.',
   ],
   sources: ['ERC_FA_2025', 'ERC_LAY_2025'],
@@ -135,7 +136,7 @@ export const oppioidi: Scenario = {
       if (!s.bvm && !s.flags.naloxone) p.spo2Air = Math.max(45, p.spo2Air - 0.04);
       if (s.msaOnScene && !s.flags.naloxone) {
         s.set('naloxone', s.t);
-        s.say('evento', 'L’infermiere dell’MSA somministra naloxone.');
+        s.say('evento', 'Il medico dell’automedica somministra naloxone.');
       }
       const n = s.flags.naloxone === undefined ? null : Number(s.flags.naloxone);
       if (n !== null && s.t - n === 60) {

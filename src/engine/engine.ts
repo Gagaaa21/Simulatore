@@ -10,6 +10,7 @@ import type {
   Measurement,
   Mode,
   O2Device,
+  O2Order,
   O2State,
   Patient,
   Penalty,
@@ -21,6 +22,7 @@ import type {
 } from './types';
 import { ACTIONS } from './actions';
 import { PROTOCOLS } from '../data/protocols';
+import { describeO2 } from './oxygen';
 
 export const ARREST_RHYTHMS = ['fv', 'tv_senza_polso', 'asistolia', 'aesp'] as const;
 
@@ -67,6 +69,8 @@ export class Sim {
   flags: Record<string, number | boolean | string> = {};
   doneAt = new Map<string, number[]>();
   o2: O2State | null = null;
+  /** indicazione della SORES sull'ossigeno */
+  o2Order: O2Order | null = null;
   pulseOx = false;
   bvm = false;
   pressure = false;
@@ -84,6 +88,7 @@ export class Sim {
   msaOnScene = false;
   heliAt: number | null = null;
   protocol: { id: ProtocolId; t: number } | null = null;
+  /** dati trasmessi alla SORES; il codice di rientro lo assegna la SORES */
   report: { code: ValutazioneCode; items: string[]; t: number } | null = null;
   transport: { mode: string; position: Position; t: number } | null = null;
   ended: { reason: string; t: number } | null = null;
@@ -248,6 +253,7 @@ export class Sim {
   o2Boost(): number {
     if (!this.o2 || !this.has('ossigeno')) return 0;
     const { device, flow } = this.o2;
+    if (device === 'venturi') return Math.min(18, Math.max(0, ((this.o2.fio2 ?? 24) - 21) * 0.75));
     if (device === 'occhialini') return Math.min(flow, 4) * 1.6;
     if (device === 'maschera') return flow < 5 ? 2 : 6 + (Math.min(flow, 10) - 5) * 0.9;
     // reservoir: sotto i 10 L/min il pallone non si riempie
@@ -286,13 +292,16 @@ export class Sim {
     // arrivi
     if (this.msaAt !== null && !this.msaOnScene && this.t >= this.msaAt) {
       this.msaOnScene = true;
-      this.say('radio', `${this.scenario.msa.label ?? 'Il mezzo avanzato (MSA)'} è sul posto: prepara il passaggio di consegne.`);
+      this.say('radio', `${this.scenario.msa.label ?? 'Il mezzo avanzato'} è sul posto: prepara il passaggio di consegne.`);
       this.soundQueue.push('sirena');
+      this.scenario.hooks?.onAdvanced?.(this);
     }
     if (this.heliAt !== null && this.t === this.heliAt) {
       this.say('radio', 'L’elisoccorso è atterrato nella zona indicata: l’équipe medica è con voi.');
+      const first = !this.msaOnScene;
       this.msaOnScene = true;
       this.soundQueue.push('sirena');
+      if (first) this.scenario.hooks?.onAdvanced?.(this);
     }
     // presidi recuperati
     if (this.aedFetchAt !== null && this.t >= this.aedFetchAt) {
@@ -761,15 +770,14 @@ export class Sim {
   }
 
   // ───────────────────────── ossigeno
-  setO2(device: O2Device | null, flow: number) {
+  setO2(device: O2Device | null, flow: number, fio2?: number) {
     if (!device || flow <= 0) {
       if (this.o2) this.say('azione', 'Sospendi l’ossigeno.');
       this.o2 = null;
       return;
     }
-    this.o2 = { device, flow, since: this.t };
-    const names: Record<O2Device, string> = { occhialini: 'occhialini nasali', maschera: 'maschera semplice', reservoir: 'maschera con reservoir' };
-    this.say('azione', `Ossigeno con ${names[device]} a ${flow} L/min.`);
+    this.o2 = { device, flow, since: this.t, ...(device === 'venturi' ? { fio2: fio2 ?? 28 } : {}) };
+    this.say('azione', `Ossigeno: ${describeO2(device, flow, fio2)}.`);
     if (device === 'reservoir' && flow < 10) {
       this.say('consiglio', 'Il reservoir resta sgonfio: con la maschera con reservoir servono 10–15 L/min.');
     }
@@ -802,3 +810,4 @@ export class Sim {
     this.emit();
   }
 }
+

@@ -12,22 +12,23 @@ export const ictus: Scenario = {
   setting: 'casa',
   timeOfDay: 'giorno',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'K',
     patologia: 'C4',
     criticita: 'G',
-    address: 'Viale Europa 112, primo piano con ascensore',
+    address: 'Gorizia, viale Europa 112, primo piano con ascensore',
     caller: 'Figlia della paziente',
     time: '10:24',
     travel: 480,
     text: 'Donna di 74 anni che «non riesce a parlare bene» e non muove bene il braccio destro. La figlia l’ha trovata così rientrando a casa.',
+    extra: 'SORES: «ALS non disponibile: inviamo la vostra BLS. Riferite subito Cincinnati e ora di esordio».',
   },
   loadout: {
     essential: ['zaino'],
     recommended: ['ossigeno', 'dae', 'sedia'],
     fetchTime: 120,
-    note: 'Per un sospetto ictus servono soprattutto lo zaino (glicemia, parametri) e la rapidità: il tempo è cervello.',
+    note: 'Per un sospetto ictus servono soprattutto lo zaino (parametri) e la rapidità: il tempo è cervello.',
   },
   scene: {
     intro: 'Soggiorno luminoso. La paziente è seduta in poltrona, la figlia le tiene la mano. Sul tavolo una tazza rovesciata.',
@@ -73,8 +74,9 @@ export const ictus: Scenario = {
   },
   protocol: { correct: ['ictus'] },
   valutazione: { correct: ['I2'], acceptable: ['I3'] },
-  reportKeys: ['cincinnati', 'esordio', 'glicemia'],
-  msa: { available: true, eta: 600 },
+  reportKeys: ['cincinnati', 'esordio'],
+  destination: 'la Stroke Unit dell’ospedale hub',
+  msa: { available: true, eta: 600, label: 'L’ALS' },
   timeLimit: 1200,
   objectives: [
     {
@@ -98,13 +100,13 @@ export const ictus: Scenario = {
       sources: ['AHA_STROKE_2019'],
     },
     {
-      id: 'glicemia',
-      label: 'Glicemia misurata per escludere un’ipoglicemia',
+      id: 'patologie',
+      label: 'Patologie note raccolte (diabete, aritmie)',
       category: 'valutazione',
-      points: 8,
-      check: (s) => s.did('glicemia'),
-      why: 'L’ipoglicemia può simulare un ictus ed è subito trattabile.',
-      sources: ['AHA_STROKE_2019', 'ERC_FA_2025'],
+      points: 6,
+      check: (s) => s.did('q_patologie'),
+      why: 'Un’ipoglicemia può simulare un ictus: se la paziente è diabetica va riferito, la glicemia la misura l’infermiere o il pronto soccorso.',
+      sources: ['AHA_STROKE_2019', 'SORES_FVG'],
     },
     {
       id: 'farmaci',
@@ -126,7 +128,7 @@ export const ictus: Scenario = {
     },
     {
       id: 'veloce',
-      label: 'Comunicazione alla Centrale entro 10 minuti dal contatto',
+      label: 'SORES pre-allertata entro 10 minuti dal contatto',
       category: 'tempi',
       points: 8,
       check: (s) => s.report !== null && s.report.t - contact(s) <= 600,
@@ -146,9 +148,9 @@ export const ictus: Scenario = {
   teaching: [
     'Cincinnati: mimica facciale, slivellamento delle braccia, linguaggio.',
     'L’ora che conta è l’ultima volta in cui la paziente è stata vista in benessere, non quella del ritrovamento.',
-    'Misura sempre la glicemia; nulla per bocca (rischio di disfagia).',
+    'Chiedi se è diabetica (l’ipoglicemia può simulare un ictus): la glicemia la misura l’infermiere. Nulla per bocca, rischio di disfagia.',
     'Raccogli la terapia: gli anticoagulanti vanno comunicati.',
-    'Pre-allerta la Centrale presto e riduci il tempo sulla scena; porta con te la figlia o il suo numero.',
+    'Riferisci presto alla SORES Cincinnati e ora di esordio e riduci il tempo sulla scena; porta con te la figlia o il suo numero.',
   ],
   sources: ['ERC_FA_2025', 'CPSS', 'AHA_STROKE_2019'],
   hooks: {
@@ -175,7 +177,7 @@ export const ictus: Scenario = {
     outcome: (s) => {
       const ok = s.did('q_esordio') && s.did('cincinnati') && s.report !== null && afterContact(s, 'trasporta') <= 900;
       return ok
-        ? { status: 'ottimo', title: 'Centralizzata alla Stroke Unit', text: 'Pre-allertata dalla Centrale, la Stroke Unit accoglie Anna con la TC già pronta: rientra nella finestra per la trombectomia.' }
+        ? { status: 'ottimo', title: 'Centralizzata alla Stroke Unit', text: 'Pre-allertata dalla SORES, la Stroke Unit accoglie Anna con la TC già pronta: rientra nella finestra per la trombectomia.' }
         : { status: 'buono', title: 'Trasportata in ospedale', text: 'Informazioni incomplete o ritardi riducono le possibilità di trattamento.' };
     },
   },

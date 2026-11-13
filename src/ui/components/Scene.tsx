@@ -10,7 +10,7 @@ import { KitIcon, OverPatient, UnderPatient } from '../art/Overlays';
 import { ActionButton } from './ActionPanel';
 
 const KIT_ACTIONS: Partial<Record<EquipmentId, string[]>> = {
-  zaino: ['saturimetro', 'pressione', 'glicemia', 'temperatura', 'pupille', 'telo', 'guedel'],
+  zaino: ['saturimetro', 'pressione', 'temperatura', 'pupille', 'telo', 'guedel'],
   dae: ['dae_accendi', 'dae_piastre', 'allontanatevi'],
   ossigeno: ['ossigeno'],
   pallone: ['pallone', 'ventilazioni_iniziali'],

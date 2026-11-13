@@ -12,12 +12,12 @@ export const fbaoAdulto: Scenario = {
   setting: 'ristorante',
   timeOfDay: 'sera',
   role: 'msb',
-  crew: 3,
+  crew: 2,
   dispatch: {
     luogo: 'P',
     patologia: 'C3',
     criticita: 'R',
-    address: 'Trattoria «Il Glicine», via Garibaldi 21',
+    address: 'Cividale del Friuli, trattoria «Il Glicine», via Garibaldi 21',
     caller: 'Titolare del locale',
     time: '20:41',
     travel: 240,
@@ -74,7 +74,7 @@ export const fbaoAdulto: Scenario = {
   protocol: { correct: ['fbao_adulto'] },
   valutazione: { correct: ['I1', 'I2'] },
   reportKeys: ['spo2'],
-  msa: { available: true, eta: 600 },
+  msa: { available: true, eta: 600, autoDispatched: true, label: 'L’automedica' },
   timeLimit: 1080,
   objectives: [
     {

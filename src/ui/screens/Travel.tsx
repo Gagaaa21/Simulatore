@@ -141,7 +141,7 @@ export function Travel({ scenario, onArrive }: { scenario: Scenario; onArrive: (
         </svg>
       </div>
       <div className="travel-foot">
-        <p className="muted">{scenario.dispatch.extra ?? 'La Centrale vi aggiornerà via radio durante il tragitto.'}</p>
+        <p className="muted">{scenario.dispatch.extra ?? 'La SORES vi aggiornerà via radio durante il tragitto.'}</p>
         <button className="btn" onClick={onArrive}>
           Salta il tragitto
         </button>
