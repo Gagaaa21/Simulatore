@@ -2357,12 +2357,14 @@ const list: ActionDef[] = [
     available: needPatient,
     run: ({ sim }) => {
       const p = sim.p;
+      sim.measure('avpu', 'Coscienza (AVPU)', p.avpu);
+      if (!sim.inArrest()) sim.measure('fr', 'FR', `${Math.round(p.v.rr)}/min`);
       sim.find(`Dopo 3 minuti: coscienza ${p.avpu}, ${breathingText(p, sim)}${sim.pulseOx && !sim.inArrest() ? ` SpO₂ ${Math.round(p.v.spo2)}%, FC ${Math.round(p.v.hr)}/min.` : ''}${sim.cooling ? ` Temperatura ${p.v.temp.toFixed(1).replace('.', ',')} °C.` : ''}`);
     },
   },
   {
     id: 'rivaluta',
-    label: 'Rivaluta ABCDE e attendi 1 minuto',
+    label: 'Rivaluta ABCDE e parametri (1 minuto)',
     short: 'Rivaluta (1 min)',
     group: 'centrale',
     section: 'Attesa e rivalutazione',
@@ -2370,7 +2372,26 @@ const list: ActionDef[] = [
     available: needPatient,
     run: ({ sim }) => {
       const p = sim.p;
-      sim.find(`Rivalutazione: coscienza ${p.avpu}, ${breathingText(p, sim)} ${sim.pulseOx && !sim.inArrest() ? `SpO₂ ${Math.round(p.v.spo2)}%, FC ${Math.round(p.v.hr)}/min.` : ''}`);
+      // la rivalutazione rimisura coscienza, frequenza respiratoria e (con lo zaino) pressione
+      const parti = [`coscienza ${p.avpu}`];
+      sim.measure('avpu', 'Coscienza (AVPU)', p.avpu);
+      if (!sim.inArrest()) {
+        const rr = Math.round(p.v.rr);
+        sim.measure('fr', 'FR', `${rr}/min`);
+        parti.push(`FR ${rr}/min`);
+        if (sim.has('zaino')) {
+          if (p.v.sbp < 50) {
+            sim.measure('pa', 'PA', 'non rilevabile');
+            parti.push('PA non rilevabile');
+          } else {
+            const pa = `${Math.round(p.v.sbp / 5) * 5}/${Math.round(p.v.dbp / 5) * 5} mmHg`;
+            sim.measure('pa', 'PA', pa);
+            parti.push(`PA ${pa}`);
+          }
+        }
+      }
+      const sat = sim.pulseOx && sim.spo2Lettura() === 'ok' ? ` SpO₂ ${Math.round(p.v.spo2)}%, FC ${Math.round(p.v.hr)}/min.` : '';
+      sim.find(`Rivalutazione: ${parti.join(', ')}. ${breathingText(p, sim)}${sat}`);
     },
   },
   {

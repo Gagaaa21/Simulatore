@@ -2492,6 +2492,16 @@ a.chip:hover {
   font-weight: 600;
   color: var(--m-spo2);
 }
+/* da quanto tempo è stato misurato: i valori vecchi si vedono */
+.meas-t {
+  grid-column: 2 / 4;
+  margin-top: -6px;
+  font-size: var(--t-12);
+  color: var(--testo-3);
+}
+.meas-t.stale {
+  color: var(--warn);
+}
 .proto-fam + .proto-fam {
   margin-top: 4px;
 }

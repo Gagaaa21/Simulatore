@@ -91,3 +91,23 @@ describe('cambiamenti di stato del paziente', () => {
     expect(sim.changes.some((x) => x.key === 'arresto' && x.dir === 'peggiora')).toBe(true);
   });
 });
+
+describe('parametri aggiornati per la SORES', () => {
+  it('SpO₂ e FC seguono il monitor; la rivalutazione rimisura pressione e FR', async () => {
+    const { SCENARIO_BY_ID } = await import('../src/data/scenarios');
+    const sim = new Sim(SCENARIO_BY_ID['sca-atipica'], 'esame', ['zaino', 'dae']);
+    sim.start();
+    for (const id of ['valuta_scena', 'guanti', 'avvicinati', 'saturimetro', 'pressione']) run(sim, id);
+    const spo2Prima = sim.measurements.get('spo2')!.value;
+    const paPrima = sim.measurements.get('pa')!.value;
+    // la paziente peggiora dopo 5 minuti dal contatto
+    sim.advance(330);
+    expect(sim.flags.peggioratoAt).toBeDefined();
+    expect(sim.measurements.get('spo2')!.value).not.toBe(spo2Prima);
+    expect(sim.measurements.get('spo2')!.t).toBe(sim.t);
+    expect(sim.measurements.get('pa')!.value).toBe(paPrima);
+    run(sim, 'rivaluta');
+    expect(sim.measurements.get('pa')!.value).not.toBe(paPrima);
+    expect(sim.measurements.get('fr')).toBeDefined();
+  });
+});

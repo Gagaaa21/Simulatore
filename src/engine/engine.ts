@@ -209,6 +209,20 @@ export class Sim {
   set(k: string, v: number | boolean | string) {
     this.flags[k] = v;
   }
+  /**
+   * Il saturimetro applicato legge di continuo: SpO₂ e frequenza cardiaca riferite alla SORES sono sempre
+   * quelle del monitor in quel momento. Pressione, FR e coscienza invece vanno rimisurate.
+   */
+  private refreshLive() {
+    if (!this.pulseOx || !this.measurements.has('spo2')) return;
+    const l = this.spo2Lettura();
+    if (l === 'ok') {
+      this.measure('spo2', 'SpO₂', `${Math.round(this.p.v.spo2)}% ${this.o2 ? 'in O₂' : this.bvm ? 'in ventilazione' : 'in aria'}`);
+      this.measure('fc', 'FC', `${Math.round(this.p.v.hr)}/min`);
+    } else {
+      this.measure('spo2', 'SpO₂', l === 'instabile' ? 'non rilevabile (segnale instabile)' : 'nessun segnale');
+    }
+  }
   measure(key: string, label: string, value: string) {
     this.measurements.set(key, { key, label, value, t: this.t });
   }
@@ -317,6 +331,7 @@ export class Sim {
     this.aedTick();
     this.scenario.hooks?.tick?.(this);
     this.detectChanges();
+    this.refreshLive();
     // arrivi
     if (this.msaAt !== null && !this.msaOnScene && this.t >= this.msaAt) {
       this.msaOnScene = true;

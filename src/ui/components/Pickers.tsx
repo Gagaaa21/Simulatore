@@ -297,6 +297,7 @@ export function CentralePicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfi
               <input type="checkbox" id={`m-${m.key}`} checked={items.includes(m.key)} onChange={() => toggle(m.key)} />
               <span className="meas-l">{m.label}</span>
               <span className="meas-v num">{m.value}</span>
+              <span className={`meas-t${sim.t - m.t >= 300 ? ' stale' : ''}`}>{sim.t - m.t < 60 ? 'ora' : `${Math.floor((sim.t - m.t) / 60)} min fa`}</span>
             </label>
           ))}
           <button className="btn btn-small" onClick={() => setItems(meas.map((m) => m.key))}>
