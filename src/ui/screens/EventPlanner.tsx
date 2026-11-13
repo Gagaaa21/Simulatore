@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { A1, EVENTS, MAURER_TYPES, a1Score, maurerA, maurerB, maurerResources, maurerScore, riskClass, type A1Selection, type EventCase } from '../../data/events';
 import { SourceChips } from '../components/SourceChip';
-import { loadExtra, saveExtra } from '../store';
+import { loadCareer, loadExtra, saveCareer, saveExtra } from '../store';
+import { unlockBadge } from '../../data/career';
 import { sfx } from '../audio';
 
 type Step = 'scegli' | 'a1' | 'a2' | 'esito';
@@ -229,6 +230,10 @@ export function EventPlanner({ onBack }: { onBack: () => void }) {
   const score = Math.round((a1ok / groups.length) * 45 + (classOk ? 15 : 0) + (a2ok / fields.length) * 40);
   const best = Math.max(loadExtra().eventiBest ?? 0, score);
   saveExtra({ eventiBest: best });
+  if (score >= 90) {
+    const u = unlockBadge(loadCareer(), 'planner');
+    if (u.earned) saveCareer(u.career);
+  }
   const resRows: { k: keyof ReturnType<typeof maurerResources>; label: string }[] = [
     { k: 'soccorso', label: 'Ambulanze di soccorso' },
     { k: 'trasporto', label: 'Ambulanze di trasporto' },

@@ -5,7 +5,8 @@ import { Floor, W, H } from '../art/Floors';
 import { PatientFigure } from '../art/Patient';
 import { bodyGeometry } from '../art/body';
 import type { Patient } from '../../engine/types';
-import { loadExtra, saveExtra } from '../store';
+import { loadCareer, loadExtra, saveCareer, saveExtra } from '../store';
+import { unlockBadge } from '../../data/career';
 import { sfx } from '../audio';
 
 type Victim = 'adulto' | 'bambino' | 'lattante';
@@ -91,6 +92,10 @@ export function CprTrainer({ onBack }: { onBack: () => void }) {
     const pct = st.compressions ? Math.round((st.inRange / st.compressions) * 100) : 0;
     const best = Math.max(loadExtra().cprBest ?? 0, pct);
     saveExtra({ cprBest: best });
+    if (pct >= 85) {
+      const u = unlockBadge(loadCareer(), 'ritmo');
+      if (u.earned) saveCareer(u.career);
+    }
     sfx('ok');
   }, []);
 

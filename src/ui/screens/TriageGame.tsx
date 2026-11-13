@@ -4,7 +4,8 @@ import { Floor, W, H } from '../art/Floors';
 import { PatientFigure } from '../art/Patient';
 import type { Patient } from '../../engine/types';
 import { fmtClock } from '../../engine/engine';
-import { loadExtra, saveExtra } from '../store';
+import { loadCareer, loadExtra, saveCareer, saveExtra } from '../store';
+import { unlockBadge } from '../../data/career';
 import { SourceChips } from '../components/SourceChip';
 import { sfx } from '../audio';
 
@@ -305,6 +306,10 @@ export function TriageGame({ onBack }: { onBack: () => void }) {
           })}
           <button className="btn btn-arancio" disabled={!done} onClick={() => {
             saveExtra({ triageBest: Math.max(loadExtra().triageBest ?? 0, score) });
+            if (score >= 85) {
+              const u = unlockBadge(loadCareer(), 'triage');
+              if (u.earned) saveCareer(u.career);
+            }
             setPhase('esito');
           }}>
             {done ? 'Chiudi il triage' : `Mancano ${VICTIMS.length - tagged} feriti`}

@@ -9,6 +9,8 @@ import type { EquipmentId } from '../../data/equipment';
 import { EQUIPMENT } from '../../data/equipment';
 import { SourceChips } from '../components/SourceChip';
 import { VitalsStrip } from '../components/VitalsStrip';
+import { BADGE_BY_ID, rankFor, type MissionOutcome } from '../../data/career';
+import { BadgeMedal, RankInsignia } from '../components/Insignia';
 
 const CAT_LABEL: Record<string, string> = {
   sicurezza: 'Sicurezza',
@@ -60,6 +62,9 @@ export function Debrief({
   onRetry,
   onMenu,
   onProtocol,
+  outcome,
+  shift,
+  onNext,
 }: {
   scenario: Scenario;
   sim: Sim;
@@ -68,6 +73,9 @@ export function Debrief({
   onRetry: () => void;
   onMenu: () => void;
   onProtocol: (id: ProtocolId) => void;
+  outcome?: MissionOutcome;
+  shift?: { index: number; total: number };
+  onNext?: () => void;
 }) {
   const d = scenario.dispatch;
   const c = CRITICITA[d.criticita];
@@ -94,11 +102,51 @@ export function Debrief({
           <button className="btn" onClick={() => onProtocol(scenario.protocol.correct[0])}>
             Rivedi il protocollo
           </button>
-          <button className="btn btn-arancio" onClick={onRetry}>
-            Riprova
-          </button>
+          {onNext && shift ? (
+            <button className="btn btn-arancio" onClick={onNext}>
+              {shift.index + 1 < shift.total ? `Prossima chiamata (${shift.index + 2} di ${shift.total})` : 'Chiudi il turno'}
+            </button>
+          ) : (
+            <button className="btn btn-arancio" onClick={onRetry}>
+              Riprova
+            </button>
+          )}
         </div>
       </header>
+
+      {outcome && (
+        <section className="reward" aria-label="Esperienza e distintivi">
+          <RankInsignia stripes={outcome.after.stripes} size={52} />
+          <div className="reward-main">
+            <p className="reward-xp">
+              <span className="num">+{outcome.xpGained}</span> punti esperienza
+            </p>
+            {outcome.after.id !== outcome.before.id ? (
+              <p className="reward-rank">Promozione: ora sei {outcome.after.name}!</p>
+            ) : (
+              (() => {
+                const r = rankFor(outcome.career.xp);
+                return (
+                  <div className="xp-bar" aria-label={`Progresso verso ${r.next?.name ?? 'il grado massimo'}`}>
+                    <div style={{ width: `${Math.round(r.progress * 100)}%` }} />
+                    <span>{r.next ? `${outcome.career.xp}/${r.next.xp} verso ${r.next.name}` : 'Grado massimo raggiunto'}</span>
+                  </div>
+                );
+              })()
+            )}
+          </div>
+          {outcome.newBadges.length > 0 && (
+            <div className="reward-badges">
+              {outcome.newBadges.map((id) => (
+                <div key={id} className="reward-badge pop">
+                  <BadgeMedal badge={BADGE_BY_ID[id]} size={48} />
+                  <span>{BADGE_BY_ID[id].name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <article className="scheda" aria-label="Scheda di intervento">
         <header className="scheda-head">

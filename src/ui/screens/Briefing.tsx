@@ -11,7 +11,7 @@ const ROLE_TXT: Record<Scenario['role'], string> = {
 };
 
 /** Chiamata in arrivo sul tablet di bordo: codici e note dell'operatore compaiono in sequenza. */
-function IncomingCall({ scenario, onAccept, onBack }: { scenario: Scenario; onAccept: () => void; onBack: () => void }) {
+function IncomingCall({ scenario, onAccept, onBack, shiftInfo }: { scenario: Scenario; onAccept: () => void; onBack: () => void; shiftInfo?: { index: number; total: number } }) {
   const d = scenario.dispatch;
   const c = CRITICITA[d.criticita];
   const [typed, setTyped] = useState(0);
@@ -38,7 +38,10 @@ function IncomingCall({ scenario, onAccept, onBack }: { scenario: Scenario; onAc
       <section className="tablet tablet-big" aria-label="Nuova missione">
         <div className="tablet-bar">
           <span className="ring-dot" aria-hidden="true" />
-          <span>{laico ? 'Emergenza davanti a te' : scenario.role === 'squadra' ? 'Coordinamento sanitario dell’evento' : 'Centrale Operativa 118 · nuova missione'}</span>
+          <span>
+            {laico ? 'Emergenza davanti a te' : scenario.role === 'squadra' ? 'Coordinamento sanitario dell’evento' : 'Centrale Operativa 118 · nuova missione'}
+            {shiftInfo ? ` · chiamata ${shiftInfo.index + 1} di ${shiftInfo.total} del turno` : ''}
+          </span>
           <span className="num">{d.time}</span>
         </div>
         <div className="tablet-body">
@@ -66,7 +69,7 @@ function IncomingCall({ scenario, onAccept, onBack }: { scenario: Scenario; onAc
           {done && d.extra && <p className="incoming-extra">{d.extra}</p>}
           <div className="incoming-actions">
             <button className="btn" onClick={onBack}>
-              Annulla
+              {shiftInfo ? 'Chiudi il turno' : 'Annulla'}
             </button>
             <button className="btn btn-big btn-arancio" onClick={onAccept} autoFocus>
               {laico ? 'Intervieni' : 'Prendi la missione'}
@@ -78,7 +81,7 @@ function IncomingCall({ scenario, onAccept, onBack }: { scenario: Scenario; onAc
   );
 }
 
-export function Briefing({ scenario, mode, onBack, onStart }: { scenario: Scenario; mode: Mode; onBack: () => void; onStart: (brought: EquipmentId[]) => void }) {
+export function Briefing({ scenario, mode, onBack, onStart, shiftInfo }: { scenario: Scenario; mode: Mode; onBack: () => void; onStart: (brought: EquipmentId[]) => void; shiftInfo?: { index: number; total: number } }) {
   const [stage, setStage] = useState<'chiamata' | 'presidi'>('chiamata');
   const [sel, setSel] = useState<EquipmentId[]>([]);
   const d = scenario.dispatch;
@@ -91,7 +94,7 @@ export function Briefing({ scenario, mode, onBack, onStart }: { scenario: Scenar
   };
   const items = EQUIPMENT_ORDER.filter((e) => !lo?.unavailable?.includes(e));
   if (stage === 'chiamata') {
-    return <IncomingCall scenario={scenario} onBack={onBack} onAccept={() => (scenario.role === 'laico' ? onStart([]) : setStage('presidi'))} />;
+    return <IncomingCall scenario={scenario} shiftInfo={shiftInfo} onBack={onBack} onAccept={() => (scenario.role === 'laico' ? onStart([]) : setStage('presidi'))} />;
   }
   return (
     <div className="page briefing">

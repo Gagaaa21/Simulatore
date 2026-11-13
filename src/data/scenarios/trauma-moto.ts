@@ -62,7 +62,7 @@ export const traumaMoto: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#d9a882', hair: '#2b211b', hairStyle: 'corti', shirt: '#1d2027', pants: '#24364f', build: 'adulto', helmet: true, top: 'giacca', shoes: '#141414' },
+    look: { skinTone: '#d9a882', hair: '#2b211b', hairStyle: 'corti', shirt: '#7d2a26', pants: '#24364f', build: 'adulto', helmet: true, top: 'giacca', shoes: '#141414' },
   },
   trauma: true,
   answers: {

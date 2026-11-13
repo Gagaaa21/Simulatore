@@ -1,4 +1,5 @@
 import type { Mode } from '../engine/types';
+import { EMPTY_CAREER, type Career } from '../data/career';
 
 export interface Settings {
   mode: Mode;
@@ -72,4 +73,21 @@ export function loadExtra(): ExtraRecords {
 }
 export function saveExtra(patch: ExtraRecords) {
   write(KEY_EXTRA, { ...loadExtra(), ...patch });
+}
+
+// ───────────────────────── carriera
+const KEY_CAREER = 'sirena118.career.v1';
+export function loadCareer(): Career {
+  const c = read<Career>(KEY_CAREER, EMPTY_CAREER);
+  return { ...EMPTY_CAREER, ...c, badges: { ...(c.badges ?? {}) }, history: c.history ?? [], shifts: c.shifts ?? [] };
+}
+export function saveCareer(c: Career) {
+  write(KEY_CAREER, c);
+}
+export function resetAll() {
+  try {
+    ['sirena118.settings.v1', KEY_PROGRESS, KEY_EXTRA, KEY_CAREER, 'sirena118.coach.v1'].forEach((k) => window.localStorage.removeItem(k));
+  } catch {
+    /* archiviazione non disponibile */
+  }
 }
