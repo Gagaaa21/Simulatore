@@ -62,7 +62,7 @@ export const annegamento: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#e9c09c', hair: '#3b2a1c', hairStyle: 'corti', shirt: '#e9c09c', pants: '#1d6fb0', build: 'adolescente' },
+    look: { skinTone: '#e9c09c', hair: '#3b2a1c', hairStyle: 'corti', shirt: '#e9c09c', pants: '#1d6fb0', build: 'adolescente', top: 'nudo', bottom: 'shorts', shoes: '#e9c09c' },
   },
   trauma: false,
   arrest: { shockable: false, roscAfterCprSeconds: 100, needsVentilation: true },

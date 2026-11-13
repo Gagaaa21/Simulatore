@@ -60,7 +60,7 @@ export const convulsioni: Scenario = {
     canSwallow: false,
     seizing: true,
     vomitInMouth: false,
-    look: { skinTone: '#e6bc98', hair: '#151515', hairStyle: 'corti', shirt: '#121214', pants: '#2f3f5e', build: 'adulto', wristband: '#3fe0ff' },
+    look: { skinTone: '#e6bc98', hair: '#151515', hairStyle: 'corti', shirt: '#121214', pants: '#2f3f5e', build: 'adulto', wristband: '#3fe0ff', top: 'tshirt', shoes: '#f2f2f2' },
   },
   trauma: false,
   answers: {

@@ -3,6 +3,7 @@ import { RateGauge } from '../components/CprPanel';
 import { SourceChips } from '../components/SourceChip';
 import { Floor, W, H } from '../art/Floors';
 import { PatientFigure } from '../art/Patient';
+import { bodyGeometry } from '../art/body';
 import type { Patient } from '../../engine/types';
 import { loadExtra, saveExtra } from '../store';
 import { sfx } from '../audio';
@@ -171,8 +172,8 @@ export function CprTrainer({ onBack }: { onBack: () => void }) {
   const info = VICTIM_INFO[victim];
   const pct = result && result.compressions ? Math.round((result.inRange / result.compressions) * 100) : 0;
   const avgRate = result && result.intervals.length ? Math.round(60000 / (result.intervals.reduce((a, b) => a + b, 0) / result.intervals.length)) : 0;
-  const scale = victim === 'adulto' ? 1 : victim === 'bambino' ? 0.72 : 0.56;
-  const hx = 450 - (450 - 352) * scale;
+  const geoM = bodyGeometry(victim === 'adulto' ? 'adulto' : victim === 'bambino' ? 'bambino' : 'neonato');
+  const hx = geoM.sternum.x;
 
   return (
     <div className="page rcp">

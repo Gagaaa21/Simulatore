@@ -3104,3 +3104,19 @@ kbd {
   border: 1px solid var(--filo-2);
   background: var(--notte-3);
 }
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+}
+.gallery figure {
+  margin: 0;
+  border: 1px solid var(--filo);
+  border-radius: var(--r-m);
+  overflow: hidden;
+}
+.gallery figcaption {
+  padding: 6px 10px;
+  font-family: var(--f-display);
+}

@@ -54,7 +54,7 @@ export const fbaoLattante: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#f0c8a8', hair: '#c79a5e', hairStyle: 'bimbo', shirt: '#9fd3c7', pants: '#9fd3c7', build: 'neonato' },
+    look: { skinTone: '#f0c8a8', hair: '#c79a5e', hairStyle: 'bimbo', shirt: '#9fd3c7', pants: '#9fd3c7', build: 'neonato', top: 'body' },
   },
   trauma: false,
   arrest: { shockable: false, roscAfterCprSeconds: 45, needsVentilation: true },

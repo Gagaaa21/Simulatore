@@ -54,7 +54,7 @@ export const fbaoAdulto: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#e2b48f', hair: '#3a2c22', hairStyle: 'corti', shirt: '#f2f2f0', pants: '#2c3340', build: 'robusto' },
+    look: { skinTone: '#e2b48f', hair: '#3a2c22', hairStyle: 'corti', shirt: '#f2f2f0', pants: '#2c3340', build: 'robusto', top: 'camicia' },
   },
   trauma: false,
   arrest: { shockable: false, roscAfterCprSeconds: 60, needsVentilation: true },

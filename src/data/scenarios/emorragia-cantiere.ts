@@ -62,7 +62,7 @@ export const emorragiaCantiere: Scenario = {
     seizing: false,
     vomitInMouth: false,
     bleeding: { region: 'gamba_dx', label: 'ferita profonda della coscia destra, al terzo medio', rate: 420, arterial: true, pos: 0.3 },
-    look: { skinTone: '#e3b995', hair: '#4a3626', hairStyle: 'corti', shirt: '#f1a21c', pants: '#3b4a63', build: 'adulto' },
+    look: { skinTone: '#e3b995', hair: '#4a3626', hairStyle: 'corti', shirt: '#f1a21c', pants: '#3b4a63', build: 'adulto', top: 'tshirt', shoes: '#5a4632' },
   },
   trauma: true,
   arrest: { shockable: false },

@@ -54,7 +54,7 @@ export const bpco: Scenario = {
     canSwallow: true,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#d9b293', hair: '#e4e4e8', hairStyle: 'calvo', shirt: '#6f7d64', pants: '#3a3a44', build: 'adulto' },
+    look: { skinTone: '#d9b293', hair: '#e4e4e8', hairStyle: 'calvo', shirt: '#6f7d64', pants: '#3a3a44', build: 'adulto', top: 'felpa', shoes: '#4a3b2f' },
   },
   trauma: false,
   answers: {

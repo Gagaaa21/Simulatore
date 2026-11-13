@@ -62,7 +62,7 @@ export const acrConcerto: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#c98f66', hair: '#141414', hairStyle: 'corti', shirt: '#7a1f2a', pants: '#1e2433', build: 'adulto', wristband: '#3fe0ff' },
+    look: { skinTone: '#c98f66', hair: '#141414', hairStyle: 'corti', shirt: '#7a1f2a', pants: '#1e2433', build: 'adulto', wristband: '#3fe0ff', top: 'tshirt', shoes: '#1b1b1b' },
   },
   trauma: false,
   arrest: { shockable: true, roscAfterShocks: 1 },

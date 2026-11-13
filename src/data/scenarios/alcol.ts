@@ -53,7 +53,7 @@ export const alcol: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: true,
-    look: { skinTone: '#f0c7a7', hair: '#c49a62', hairStyle: 'lunghi', shirt: '#e8e8ee', pants: '#2a2e45', build: 'adolescente' },
+    look: { skinTone: '#f0c7a7', hair: '#c49a62', hairStyle: 'lunghi', shirt: '#e8e8ee', pants: '#2a2e45', build: 'adolescente', top: 'tshirt', bottom: 'gonna', shoes: '#c94f7c' },
   },
   trauma: false,
   answers: {

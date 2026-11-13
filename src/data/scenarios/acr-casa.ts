@@ -53,7 +53,7 @@ export const acrCasa: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#d8a47f', hair: '#a7adb3', hairStyle: 'corti', shirt: '#3c6e9f', pants: '#3a3a48', build: 'robusto' },
+    look: { skinTone: '#d8a47f', hair: '#a7adb3', hairStyle: 'corti', shirt: '#3c6e9f', pants: '#3a3a48', build: 'robusto', top: 'camicia', sleeves: 'lunghe', shoes: '#3b2e25' },
   },
   trauma: false,
   arrest: { shockable: true, roscAfterShocks: 2 },

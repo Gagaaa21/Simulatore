@@ -54,7 +54,7 @@ export const ictus: Scenario = {
     seizing: false,
     vomitInMouth: false,
     stroke: { face: true, arm: true, speech: true },
-    look: { skinTone: '#ebc3a6', hair: '#cfcfd4', hairStyle: 'raccolti', shirt: '#b5657a', pants: '#3f4656', build: 'adulto' },
+    look: { skinTone: '#ebc3a6', hair: '#cfcfd4', hairStyle: 'raccolti', shirt: '#b5657a', pants: '#3f4656', build: 'adulto', top: 'felpa', bottom: 'gonna', shoes: '#7a3b4a' },
   },
   trauma: false,
   answers: {

@@ -17,6 +17,7 @@ import { TriageGame } from './screens/TriageGame';
 import { EventPlanner } from './screens/EventPlanner';
 import { CprTrainer } from './screens/CprTrainer';
 import { Sources } from './screens/Sources';
+import { Gallery } from './screens/Gallery';
 
 export type Screen =
   | { name: 'menu' }
@@ -28,9 +29,10 @@ export type Screen =
   | { name: 'triage' }
   | { name: 'eventi' }
   | { name: 'rcp' }
-  | { name: 'fonti' };
+  | { name: 'fonti' }
+  | { name: 'galleria' };
 
-const HASH_SCREENS = ['scenari', 'protocolli', 'triage', 'eventi', 'rcp', 'fonti'] as const;
+const HASH_SCREENS = ['scenari', 'protocolli', 'triage', 'eventi', 'rcp', 'fonti', 'galleria'] as const;
 
 function screenFromHash(): Screen {
   try {
@@ -131,6 +133,8 @@ export function App() {
       return <CprTrainer onBack={() => go({ name: 'menu' })} />;
     case 'fonti':
       return <Sources onBack={() => go({ name: 'menu' })} />;
+    case 'galleria':
+      return <Gallery />;
     default:
       return null;
   }

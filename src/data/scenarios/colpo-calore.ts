@@ -61,7 +61,7 @@ export const colpoCalore: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#efc19d', hair: '#7a4b2a', hairStyle: 'lunghi', shirt: '#f2d14b', pants: '#4c6aa8', build: 'adulto', wristband: '#ff3fa6' },
+    look: { skinTone: '#efc19d', hair: '#7a4b2a', hairStyle: 'lunghi', shirt: '#f2d14b', pants: '#4c6aa8', build: 'adulto', wristband: '#ff3fa6', top: 'tshirt', bottom: 'shorts', shoes: '#f2f2f2' },
   },
   trauma: false,
   answers: {

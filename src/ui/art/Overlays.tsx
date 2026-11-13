@@ -1,67 +1,81 @@
 import type { Sim } from '../../engine/engine';
-import type { BodyRegion } from '../../engine/types';
 import type { EquipmentId } from '../../data/equipment';
+import { bodyGeometry, capsule, limbWidthAt, pointOnLimb, type BodyGeo, type Pt } from './body';
+import { skinFor } from './Patient';
+import { shade } from './color';
 
-/** Coordinate (nel disegno supino) della radice e dell'estremità di ogni arto. */
-const LIMB: Partial<Record<BodyRegion, { x0: number; y0: number; x1: number; y1: number; side: number }>> = {
-  braccio_sx: { x0: 300, y0: 230, x1: 468, y1: 220, side: -1 },
-  braccio_dx: { x0: 300, y0: 370, x1: 468, y1: 380, side: 1 },
-  gamba_sx: { x0: 488, y0: 276, x1: 704, y1: 268, side: -1 },
-  gamba_dx: { x0: 488, y0: 324, x1: 704, y1: 332, side: 1 },
-};
-
-export function limbPoint(region: BodyRegion, pos: number) {
-  const l = LIMB[region];
-  if (!l) return { x: 400, y: 300, side: 1 };
-  return { x: l.x0 + (l.x1 - l.x0) * pos, y: l.y0 + (l.y1 - l.y0) * pos, side: l.side };
+function geo(sim: Sim): BodyGeo {
+  return bodyGeometry(sim.p.look.build, sim.p.position);
 }
 
+/** Ancoraggi per la posizione laterale (disegno adulto). */
+const LAT = {
+  mouth: { x: 264, y: 318 },
+  face: { x: 258, y: 312 },
+  hand: { x: 254, y: 342 },
+};
+
 export function UnderPatient({ sim }: { sim: Sim }) {
+  const g = geo(sim);
   const im = sim.immob;
   const b = sim.p.bleeding;
   const loss = sim.p.bloodLossMl;
+  const x0 = g.head.c.x - g.head.rx - 30;
+  const x1 = g.legL.tip.x + 30;
+  const hw = g.torso.hwTop + 34 * g.s;
   const els: JSX.Element[] = [];
   if (sim.cooling?.method === 'immersione') {
     els.push(
       <g key="vasca">
-        <rect x="150" y="190" width="600" height="220" rx="40" fill="#cfd8e0" />
-        <rect x="164" y="204" width="572" height="192" rx="32" fill="#2d7fae" opacity="0.85" />
-        <path d="M190 240 q 30 -10 60 0 t 60 0 M520 360 q 30 -10 60 0 t 60 0" stroke="#bfe9ff" strokeWidth="3" fill="none" opacity="0.6" className="onda" />
+        <rect x={x0 - 14} y={300 - hw - 24} width={x1 - x0 + 28} height={(hw + 24) * 2} rx="44" fill="#cfd8e0" stroke="#9fb0c0" strokeWidth="3" />
+        <rect x={x0} y={300 - hw - 10} width={x1 - x0} height={(hw + 10) * 2} rx="34" fill="#2d7fae" opacity="0.88" />
+        <path d={`M${x0 + 30} ${300 - hw + 10} q 30 -10 60 0 t 60 0 M${x1 - 200} ${300 + hw - 10} q 30 -10 60 0 t 60 0`} stroke="#bfe9ff" strokeWidth="3" fill="none" opacity="0.6" className="onda" />
       </g>,
     );
   }
   if (sim.cooling?.method === 'taco') {
-    els.push(<rect key="taco" x="160" y="200" width="580" height="200" rx="24" fill="#2f6fb0" opacity="0.8" />);
+    els.push(<rect key="taco" x={x0} y={300 - hw} width={x1 - x0} height={hw * 2} rx="26" fill="#2f6fb0" opacity="0.82" stroke="#1f4f80" strokeWidth="3" />);
   }
   if (im.has('materasso')) {
     els.push(
       <g key="mat">
-        <rect x="168" y="200" width="572" height="200" rx="60" fill="#e5641e" />
-        <rect x="186" y="218" width="536" height="164" rx="50" fill="#f07a35" />
-        {Array.from({ length: 9 }).map((_, i) => (
-          <circle key={i} cx={220 + i * 60} cy={300} r="4" fill="#c4520f" opacity="0.6" />
+        <rect x={x0} y={300 - hw} width={x1 - x0} height={hw * 2} rx={hw} fill="#d9561a" />
+        <rect x={x0 + 14} y={300 - hw + 14} width={x1 - x0 - 28} height={hw * 2 - 28} rx={hw - 14} fill="#f07a35" />
+        {Array.from({ length: 10 }).map((_, i) => (
+          <circle key={i} cx={x0 + 40 + i * ((x1 - x0 - 80) / 9)} cy={300 - hw + 7} r="3" fill="#9c3a0c" opacity="0.7" />
+        ))}
+        {Array.from({ length: 10 }).map((_, i) => (
+          <circle key={`b${i}`} cx={x0 + 40 + i * ((x1 - x0 - 80) / 9)} cy={300 + hw - 7} r="3" fill="#9c3a0c" opacity="0.7" />
         ))}
       </g>,
     );
   }
   if (im.has('tavola')) {
-    els.push(<rect key="tav" x="170" y="236" width="560" height="128" rx="28" fill="#f2c21b" stroke="#c49a10" strokeWidth="4" />);
-  }
-  if (im.has('cucchiaio') && !im.has('materasso')) {
     els.push(
-      <g key="cuc" stroke="#9ea8b3" strokeWidth="9" fill="none" strokeLinecap="round">
-        <path d="M180 250 Q 170 300 180 350 M180 250 L720 250 M180 350 L720 350 M720 250 Q 734 300 720 350" />
+      <g key="tav">
+        <rect x={x0} y={300 - g.torso.hwTop - 14} width={x1 - x0} height={(g.torso.hwTop + 14) * 2} rx="30" fill="#f2c21b" stroke="#c49a10" strokeWidth="4" />
+        {[0.15, 0.35, 0.55, 0.75].map((t) => (
+          <rect key={t} x={x0 + (x1 - x0) * t} y={300 - g.torso.hwTop - 8} width="18" height="10" rx="3" fill="#1d1f22" />
+        ))}
       </g>,
     );
   }
-  if (b && loss > 40) {
-    const w = b.region;
-    const pt = limbPoint(w, b.pos);
-    const r = Math.min(110, 14 + Math.sqrt(loss) * 2.6);
+  if (im.has('cucchiaio') && !im.has('materasso')) {
+    els.push(
+      <g key="cuc" fill="none" strokeLinecap="round">
+        <path d={`M${x0 + 10} ${300 - hw + 18} Q ${x0 - 4} 300 ${x0 + 10} ${300 + hw - 18} M${x0 + 10} ${300 - hw + 18} L${x1 - 10} ${300 - hw + 18} M${x0 + 10} ${300 + hw - 18} L${x1 - 10} ${300 + hw - 18} M${x1 - 10} ${300 - hw + 18} Q ${x1 + 6} 300 ${x1 - 10} ${300 + hw - 18}`} stroke="#8a95a1" strokeWidth="11" />
+        <path d={`M${x0 + 10} ${300 - hw + 18} L${x1 - 10} ${300 - hw + 18} M${x0 + 10} ${300 + hw - 18} L${x1 - 10} ${300 + hw - 18}`} stroke="#c3cbd3" strokeWidth="4" />
+      </g>,
+    );
+  }
+  if (b && loss > 40 && sim.p.position !== 'laterale' && sim.p.position !== 'in_piedi') {
+    const pt = pointOnLimb(g, b.region, b.pos);
+    const r = Math.min(120, 14 + Math.sqrt(loss) * 2.6) * Math.max(0.6, g.s);
     els.push(
       <g key="sangue">
-        <ellipse cx={pt.x + 10} cy={pt.y + pt.side * (r * 0.55)} rx={r * 1.15} ry={r * 0.75} fill="#5e0d14" opacity="0.92" />
-        <ellipse cx={pt.x} cy={pt.y + pt.side * (r * 0.45)} rx={r * 0.7} ry={r * 0.42} fill="#7a1119" opacity="0.8" />
+        <ellipse cx={pt.x + 10} cy={pt.y + pt.side * (r * 0.5)} rx={r * 1.18} ry={r * 0.74} fill="#4f0a11" opacity="0.95" />
+        <ellipse cx={pt.x} cy={pt.y + pt.side * (r * 0.42)} rx={r * 0.74} ry={r * 0.44} fill="#6e0f18" opacity="0.85" />
+        <ellipse cx={pt.x - r * 0.2} cy={pt.y + pt.side * (r * 0.3)} rx={r * 0.22} ry={r * 0.1} fill="#c84a52" opacity="0.35" />
       </g>,
     );
   }
@@ -71,190 +85,243 @@ export function UnderPatient({ sim }: { sim: Sim }) {
 /** Soccorritore inginocchiato visto dall'alto: spalle, testa e bande rifrangenti della divisa. */
 function Rescuer({ x, y, facing, uniform }: { x: number; y: number; facing: 'giu' | 'destra'; uniform: 'divisa' | 'civile' }) {
   const body = uniform === 'divisa' ? '#d9461b' : '#6b4f8f';
-  const band = uniform === 'divisa' ? '#e9f04a' : 'none';
+  const band = '#e9f04a';
   const vertical = facing === 'giu';
   return (
-    <g opacity="0.96">
-      <ellipse cx={x + 6} cy={y + 8} rx={vertical ? 54 : 34} ry={vertical ? 34 : 54} fill="#000" opacity="0.25" />
-      <ellipse cx={x} cy={y} rx={vertical ? 50 : 28} ry={vertical ? 28 : 50} fill={body} />
+    <g opacity="0.97">
+      <ellipse cx={x + 6} cy={y + 8} rx={vertical ? 56 : 36} ry={vertical ? 36 : 56} fill="#000" opacity="0.28" />
+      <ellipse cx={x} cy={y} rx={vertical ? 50 : 28} ry={vertical ? 28 : 50} fill={body} stroke={shade(body, -0.4)} strokeWidth="1.5" />
+      <ellipse cx={x - (vertical ? 0 : 6)} cy={y - (vertical ? 6 : 0)} rx={vertical ? 42 : 20} ry={vertical ? 18 : 42} fill={shade(body, 0.12)} opacity="0.5" />
       {uniform === 'divisa' &&
         (vertical ? (
-          <rect x={x - 48} y={y - 4} width="96" height="8" fill={band} opacity="0.9" />
+          <>
+            <rect x={x - 48} y={y - 4} width="96" height="7" fill={band} opacity="0.95" />
+            <rect x={x - 48} y={y - 4} width="96" height="2" fill="#ffffff" opacity="0.7" />
+          </>
         ) : (
-          <rect x={x - 4} y={y - 48} width="8" height="96" fill={band} opacity="0.9" />
+          <>
+            <rect x={x - 4} y={y - 48} width="7" height="96" fill={band} opacity="0.95" />
+            <rect x={x - 4} y={y - 48} width="2" height="96" fill="#ffffff" opacity="0.7" />
+          </>
         ))}
-      <circle cx={vertical ? x : x - 6} cy={vertical ? y - 6 : y} r="19" fill={uniform === 'divisa' ? '#2a211b' : '#8a5a33'} />
+      <circle cx={vertical ? x : x - 6} cy={vertical ? y - 6 : y} r="19" fill={uniform === 'divisa' ? '#2a211b' : '#8a5a33'} stroke="#000" strokeOpacity="0.25" />
+      <path d={vertical ? `M${x - 10} ${y - 16} q 10 -6 20 0` : `M${x - 16} ${y - 10} q -6 10 0 20`} stroke="#ffffff" strokeOpacity="0.25" strokeWidth="2" fill="none" />
     </g>
   );
 }
 
-function Hands({ x, y, anim }: { x: number; y: number; anim?: string }) {
+/** Mani guantate (nitrile blu) con le braccia del soccorritore. */
+function Hands({ x, y, k, from, anim }: { x: number; y: number; k: number; from: number; anim?: string }) {
   return (
     <g className={anim}>
-      <path d={`M${x - 6} ${y - 150} L${x - 10} ${y - 18}`} stroke="#3d4f6a" strokeWidth="26" strokeLinecap="round" />
-      <path d={`M${x + 14} ${y - 150} L${x + 10} ${y - 18}`} stroke="#34445c" strokeWidth="26" strokeLinecap="round" />
-      <ellipse cx={x} cy={y} rx="20" ry="24" fill="#4f7fd6" stroke="#2f5cac" strokeWidth="2" />
-      <ellipse cx={x + 3} cy={y - 4} rx="17" ry="20" fill="#6a96e6" />
+      <path d={capsule({ x: x - 8, y: from }, { x: x - 6, y: y - 16 * k }, 13, 10 * k + 2)} fill="#3d4f6a" />
+      <path d={capsule({ x: x + 12, y: from }, { x: x + 8, y: y - 16 * k }, 13, 10 * k + 2)} fill="#34445c" />
+      <ellipse cx={x} cy={y} rx={20 * k} ry={24 * k} fill="#4f7fd6" stroke="#2f5cac" strokeWidth="2" />
+      <ellipse cx={x + 3 * k} cy={y - 4 * k} rx={16 * k} ry={19 * k} fill="#6a96e6" />
+      <path d={`M${x - 10 * k} ${y + 12 * k} q ${10 * k} ${8 * k} ${20 * k} 0`} stroke="#2f5cac" strokeWidth="1.5" fill="none" />
+    </g>
+  );
+}
+
+function Mask({ at, k, color, stroke }: { at: Pt; k: number; color: string; stroke: string }) {
+  return (
+    <g>
+      <ellipse cx={at.x} cy={at.y} rx={19 * k} ry={23 * k} fill={color} opacity="0.55" stroke={stroke} strokeWidth="2" />
+      <ellipse cx={at.x - 2 * k} cy={at.y - 4 * k} rx={9 * k} ry={10 * k} fill="#ffffff" opacity="0.25" />
+      <path d={`M${at.x - 18 * k} ${at.y - 20 * k} q ${-12 * k} ${20 * k} 0 ${40 * k}`} stroke="#d8e2ea" strokeWidth="1.5" fill="none" opacity="0.8" />
     </g>
   );
 }
 
 export function OverPatient({ sim, now }: { sim: Sim; now: number }) {
   const p = sim.p;
+  const g = geo(sim);
+  const k = g.s;
   const pos = p.position;
   const supine = pos === 'supino' || pos === 'semiseduto' || pos === 'seduto' || pos === 'prono';
+  const face: Pt = pos === 'laterale' ? LAT.face : { x: g.head.c.x + g.head.rx * 0.5, y: 300 };
   const els: JSX.Element[] = [];
+  const skin = skinFor(p);
 
   if (p.vomitInMouth) {
-    els.push(<path key="vomito" d="M266 312 q 18 8 30 30 q -20 12 -36 -2 q -8 -14 6 -28z" fill="#b9a94f" opacity="0.9" />);
+    const m = pos === 'laterale' ? LAT.mouth : g.mouth;
+    els.push(
+      <g key="vomito">
+        <path d={`M${m.x + 2} ${m.y + 8 * k} q ${18 * k} ${8 * k} ${30 * k} ${30 * k} q ${-20 * k} ${12 * k} ${-36 * k} ${-2 * k} q ${-8 * k} ${-14 * k} ${6 * k} ${-28 * k}z`} fill="#b9a94f" opacity="0.92" />
+        <circle cx={m.x + 16 * k} cy={m.y + 26 * k} r={3 * k} fill="#8c7d34" />
+      </g>,
+    );
   }
   if (supine && sim.covered) {
+    const x0 = g.neck.x1 + 4;
+    const x1 = g.legL.tip.x + 14;
+    const hw = g.torso.hwTop + 6;
     els.push(
-      <g key="telo" opacity="0.92">
-        <path d="M296 226 L716 236 L722 366 L296 376 Z" fill="url(#oro)" />
-        <path d="M330 240 l 40 60 l 50 -50 l 60 70 l 70 -60 l 60 70 l 60 -40" stroke="#fff3c4" strokeWidth="1.5" fill="none" opacity="0.5" />
+      <g key="telo" opacity="0.94">
+        <path d={`M${x0} ${300 - hw} L${x1} ${300 - hw * 0.62} L${x1 + 6} ${300 + hw * 0.62} L${x0} ${300 + hw} Z`} fill="url(#oro)" stroke="#a37a1f" strokeWidth="1.5" />
+        <path d={`M${x0 + 30} ${300 - hw * 0.6} l 40 ${hw * 0.9} l 50 ${-hw * 0.7} l 60 ${hw * 1.0} l 70 ${-hw * 0.9} l 60 ${hw * 0.8}`} stroke="#fff3c4" strokeWidth="1.5" fill="none" opacity="0.55" />
       </g>,
     );
   }
   if (supine && sim.cooling && sim.cooling.method !== 'immersione') {
     if (sim.cooling.method === 'impacchi' || sim.cooling.method === 'taco') {
+      const pts: Pt[] = [
+        { x: g.neck.x0 + 6, y: 300 - g.neck.hw - 12 * k },
+        { x: g.neck.x0 + 6, y: 300 + g.neck.hw + 12 * k },
+        { x: g.armL.root.x + 10, y: g.armL.root.y + 14 * k },
+        { x: g.armR.root.x + 10, y: g.armR.root.y - 14 * k },
+        { x: g.legL.root.x - 6, y: g.legL.root.y },
+        { x: g.legR.root.x - 6, y: g.legR.root.y },
+      ];
       els.push(
         <g key="ghiaccio">
-          {[
-            [276, 268],
-            [276, 332],
-            [318, 238],
-            [318, 362],
-            [470, 268],
-            [470, 332],
-          ].map(([x, y], i) => (
-            <rect key={i} x={x - 12} y={y - 9} width="24" height="18" rx="5" fill="#e9f6ff" stroke="#9cc7e6" strokeWidth="2" />
+          <path d={`M${g.neck.x1} ${300 - g.torso.hwTop} L${g.legL.end.x} ${300 - g.torso.hwTop * 0.7} L${g.legL.end.x} ${300 + g.torso.hwTop * 0.7} L${g.neck.x1} ${300 + g.torso.hwTop} Z`} fill="#7fc4f0" opacity="0.3" />
+          {pts.map((pt, i) => (
+            <rect key={i} x={pt.x - 12 * k} y={pt.y - 9 * k} width={24 * k} height={18 * k} rx={5 * k} fill="#e9f6ff" stroke="#9cc7e6" strokeWidth="2" />
           ))}
-          <path d="M300 230 L700 240 L700 360 L300 372 Z" fill="#7fc4f0" opacity="0.32" />
         </g>,
       );
     } else {
       els.push(
         <g key="nebbia" className="nebbia">
-          {Array.from({ length: 18 }).map((_, i) => (
-            <circle key={i} cx={300 + ((i * 47) % 400)} cy={240 + ((i * 31) % 120)} r={4 + (i % 4)} fill="#d6f0ff" opacity="0.5" />
+          {Array.from({ length: 22 }).map((_, i) => (
+            <circle key={i} cx={g.torso.x0 + ((i * 47) % (g.legL.end.x - g.torso.x0))} cy={300 - g.torso.hwTop + ((i * 31) % (g.torso.hwTop * 2))} r={4 + (i % 4)} fill="#d6f0ff" opacity="0.5" />
           ))}
         </g>,
       );
     }
   }
-  // cintura pelvica
   if (supine && sim.immob.has('pelvica')) {
-    els.push(<rect key="pelvica" x="452" y="244" width="30" height="112" rx="6" fill="#1b1d20" stroke="#ff7a1a" strokeWidth="3" />);
+    const cx = (g.pelvis.x0 + g.pelvis.x1) / 2;
+    els.push(
+      <g key="pelvica">
+        <rect x={cx - 16} y={300 - g.pelvis.hw - 8} width="32" height={(g.pelvis.hw + 8) * 2} rx="7" fill="#1b1d20" stroke="#ff7a1a" strokeWidth="3" />
+        <rect x={cx - 8} y={292} width="16" height="16" rx="3" fill="#ff7a1a" />
+      </g>,
+    );
   }
-  // emorragia e medicazione sull'arto
+  // ferita, medicazione, compressione
   const b = p.bleeding;
   if (b && supine) {
-    const pt = limbPoint(b.region, b.pos);
-    if (sim.dressing) els.push(<rect key="med" x={pt.x - 16} y={pt.y - 16} width="32" height="32" rx="6" fill="#f4f4f2" stroke="#c9c9c4" strokeWidth="2" />);
-    else els.push(<ellipse key="ferita" cx={pt.x} cy={pt.y} rx="14" ry="9" fill="#8d0f1b" />);
+    const pt = pointOnLimb(g, b.region, b.pos);
+    const w = limbWidthAt(g, b.region, b.pos);
+    if (sim.dressing) els.push(<rect key="med" x={pt.x - w - 4} y={pt.y - w - 4} width={(w + 4) * 2} height={(w + 4) * 2} rx="6" fill="#f4f4f2" stroke="#c9c9c4" strokeWidth="2" />);
+    else els.push(<path key="ferita" d={`M${pt.x - w * 0.8} ${pt.y - 2} q ${w * 0.8} ${-w * 0.6} ${w * 1.6} 0 q ${-w * 0.8} ${w * 0.6} ${-w * 1.6} 0z`} fill="#7d0b16" stroke="#3d0208" strokeWidth="1.5" />);
     if (sim.pressure && !sim.tourniquet?.ok) {
-      els.push(<ellipse key="pressione" cx={pt.x} cy={pt.y - 4} rx="20" ry="16" fill="#4f7fd6" stroke="#2f5cac" strokeWidth="2" />);
+      els.push(<ellipse key="pressione" cx={pt.x} cy={pt.y - 4} rx={w + 8} ry={w + 4} fill="#4f7fd6" stroke="#2f5cac" strokeWidth="2" />);
     }
   }
   if (sim.tourniquet && supine) {
-    const pt = limbPoint(sim.tourniquet.region, sim.tourniquet.pos);
+    const pt = pointOnLimb(g, sim.tourniquet.region, sim.tourniquet.pos);
+    const w = limbWidthAt(g, sim.tourniquet.region, sim.tourniquet.pos);
     const ora = sim.clock(sim.tourniquet.at);
     els.push(
       <g key="tq">
-        <rect x={pt.x - 9} y={pt.y - 26} width="18" height="52" rx="4" fill="#15171a" />
-        <rect x={pt.x - 22} y={pt.y - 4} width="44" height="8" rx="3" fill="#2b2f35" />
-        <g transform={`translate(${pt.x + 8} ${pt.y + pt.side * 40})`}>
-          <rect x="-4" y="-12" width="66" height="24" rx="4" fill="#d32f2f" />
-          <text x="29" y="5" textAnchor="middle" fontSize="13" fontFamily="var(--f-display)" fontWeight="700" fill="#fff">
-            T {ora}
+        <rect x={pt.x - 8} y={pt.y - w - 5} width="16" height={(w + 5) * 2} rx="4" fill="#15171a" stroke="#000" />
+        <rect x={pt.x - 3} y={pt.y - w - 5} width="2" height={(w + 5) * 2} fill="#ff7a1a" opacity="0.8" />
+        <rect x={pt.x - 22} y={pt.y + pt.side * (w + 2) - 4} width="44" height="8" rx="3" fill="#2b2f35" />
+        <g transform={`translate(${pt.x + 8} ${pt.y + pt.side * (w + 34)})`}>
+          <rect x="-4" y="-12" width="70" height="24" rx="4" fill="#d32f2f" stroke="#7f1717" />
+          <text x="31" y="5" textAnchor="middle" fontSize="13" fontFamily="var(--f-display)" fontWeight="700" fill="#fff">
+            TQ {ora}
           </text>
         </g>
       </g>,
     );
   }
   if (supine && sim.immob.has('stecca')) {
-    els.push(<rect key="stecca" x="520" y="306" width="170" height="40" rx="10" fill="#f39c3d" opacity="0.85" />);
+    const l = g.legR;
+    els.push(<path key="stecca" d={capsule({ x: l.root.x + 30, y: l.root.y + 2 }, l.end, l.w[0] + 6, l.w[2] + 6)} fill="#f39c3d" opacity="0.8" stroke="#b5631a" strokeWidth="2" />);
   }
-  // collare
   if (supine && sim.immob.has('collare')) {
+    const nx = (g.neck.x0 + g.neck.x1) / 2;
     els.push(
       <g key="collare">
-        <rect x="258" y="270" width="36" height="60" rx="10" fill="#f0f0ee" stroke="#b9bcc0" strokeWidth="2" />
-        <rect x="268" y="290" width="16" height="20" rx="4" fill="#ff7a1a" />
+        <rect x={nx - 18 * k} y={300 - g.neck.hw - 16 * k} width={36 * k} height={(g.neck.hw + 16 * k) * 2} rx={10 * k} fill="#f0f0ee" stroke="#9ea4aa" strokeWidth="2" />
+        <rect x={nx - 7 * k} y={300 - 10 * k} width={14 * k} height={20 * k} rx={4 * k} fill="#ff7a1a" />
+        <line x1={nx - 18 * k} y1={300 - g.neck.hw - 4} x2={nx + 18 * k} y2={300 - g.neck.hw - 4} stroke="#c8ccd0" />
       </g>,
     );
   }
-  // casco
   if (p.look.helmet && supine) {
+    const c = g.head.c;
     els.push(
       <g key="casco">
-        <ellipse cx="228" cy="300" rx="52" ry="46" fill="#1d2430" stroke="#0e1218" strokeWidth="3" />
-        <path d="M244 266 Q 286 300 244 334 L 236 330 Q 270 300 236 270 Z" fill="#2c4a6e" opacity="0.9" />
-        <path d="M188 280 Q 200 300 188 320" stroke="#c4271f" strokeWidth="6" fill="none" />
+        <ellipse cx={c.x - 4} cy={c.y} rx={g.head.rx * 1.35} ry={g.head.ry * 1.42} fill="#1d2430" stroke="#0a0d12" strokeWidth="3" />
+        <ellipse cx={c.x - 12} cy={c.y - 10} rx={g.head.rx * 0.8} ry={g.head.ry * 0.7} fill="#ffffff" opacity="0.08" />
+        <path d={`M${c.x + 12} ${c.y - g.head.ry * 1.05} Q ${c.x + g.head.rx * 1.45} ${c.y} ${c.x + 12} ${c.y + g.head.ry * 1.05} L ${c.x + 4} ${c.y + g.head.ry * 0.95} Q ${c.x + g.head.rx * 1.1} ${c.y} ${c.x + 4} ${c.y - g.head.ry * 0.95} Z`} fill="#2c4a6e" opacity="0.95" />
+        <path d={`M${c.x - g.head.rx * 1.05} ${c.y - 22} Q ${c.x - g.head.rx * 0.9} ${c.y} ${c.x - g.head.rx * 1.05} ${c.y + 22}`} stroke="#c4271f" strokeWidth="7" fill="none" />
       </g>,
     );
   }
-  // stabilizzazione manuale del capo
+  const bvmVisible = (sim.bvm || (sim.cpr.active && sim.cpr.ventilation === 'pallone')) && supine;
+  // soccorritore alla testa (ventilazione o stabilizzazione)
+  if (supine && (bvmVisible || sim.immob.has('mils'))) {
+    els.push(<Rescuer key="testa" x={g.head.c.x - g.head.rx - 80} y={300} facing="destra" uniform={sim.scenario.role === 'laico' ? 'civile' : 'divisa'} />);
+  }
   if (sim.immob.has('mils') && supine) {
+    const c = g.head.c;
     els.push(
       <g key="mils">
-        <ellipse cx="206" cy="262" rx="18" ry="13" fill="#4f7fd6" stroke="#2f5cac" strokeWidth="2" />
-        <ellipse cx="206" cy="338" rx="18" ry="13" fill="#4f7fd6" stroke="#2f5cac" strokeWidth="2" />
-        <path d="M150 250 L196 262 M150 350 L196 338" stroke="#3d4f6a" strokeWidth="18" strokeLinecap="round" />
+        <path d={capsule({ x: c.x - g.head.rx - 60, y: 270 }, { x: c.x - g.head.rx * 0.5, y: c.y - g.head.ry - 4 }, 12, 9)} fill="#3d4f6a" />
+        <path d={capsule({ x: c.x - g.head.rx - 60, y: 330 }, { x: c.x - g.head.rx * 0.5, y: c.y + g.head.ry + 4 }, 12, 9)} fill="#34445c" />
+        <ellipse cx={c.x - g.head.rx * 0.3} cy={c.y - g.head.ry - 2} rx={18 * k + 2} ry={12 * k + 2} fill="#4f7fd6" stroke="#2f5cac" strokeWidth="2" />
+        <ellipse cx={c.x - g.head.rx * 0.3} cy={c.y + g.head.ry + 2} rx={18 * k + 2} ry={12 * k + 2} fill="#4f7fd6" stroke="#2f5cac" strokeWidth="2" />
       </g>,
     );
   }
   // piastre DAE
   if (sim.aed.pads && supine) {
-    const ap = sim.aed.pads === 'anteroposteriore';
-    const pads = ap
-      ? [
-          { x: 332, y: 268, w: 40, h: 30 },
-          { x: 300, y: 214, w: 40, h: 30, back: true },
-        ]
-      : sim.aed.pads === 'errata'
+    const pw = 40 * Math.max(0.7, k);
+    const ph = 30 * Math.max(0.7, k);
+    const pads =
+      sim.aed.pads === 'anteroposteriore'
         ? [
-            { x: 330, y: 240, w: 40, h: 30 },
-            { x: 384, y: 236, w: 40, h: 30 },
+            { c: g.padAP, back: false },
+            { c: { x: g.sternum.x, y: 300 - g.torso.hwTop - ph * 0.2 }, back: true },
           ]
-        : [
-            { x: 296, y: 316, w: 40, h: 30 },
-            { x: 372, y: 236, w: 40, h: 30 },
-          ];
+        : sim.aed.pads === 'errata'
+          ? [
+              { c: { x: g.torso.x0 + 40 * k, y: 300 - g.torso.hwTop * 0.55 }, back: false },
+              { c: { x: g.torso.x0 + 82 * k, y: 300 - g.torso.hwTop * 0.55 }, back: false },
+            ]
+          : [
+              { c: g.padR, back: false },
+              { c: g.padL, back: false },
+            ];
     els.push(
       <g key="piastre">
         {pads.map((d, i) => (
-          <g key={i} opacity={d.back ? 0.55 : 1}>
-            <rect x={d.x} y={d.y} width={d.w} height={d.h} rx="6" fill="#f7f7f5" stroke={d.back ? '#ff7a1a' : '#9aa3ad'} strokeWidth="2" strokeDasharray={d.back ? '4 3' : undefined} />
-            <path d={`M${d.x + d.w / 2} ${d.y + 8} l 6 6 l -6 6 l -6 -6 z`} fill="#d32f2f" />
-            <path d={`M${d.x + d.w / 2} ${d.y + d.h} C ${d.x} ${d.y + 120}, 240 470, 230 476`} stroke="#d9dde2" strokeWidth="3" fill="none" />
+          <g key={i} opacity={d.back ? 0.6 : 1}>
+            <path d={`M${d.c.x} ${d.c.y + ph / 2} C ${d.c.x - 10} ${d.c.y + 120}, ${g.head.c.x + 10} 470, ${g.head.c.x} 476`} stroke="#d9dde2" strokeWidth="3" fill="none" />
+            <rect x={d.c.x - pw / 2} y={d.c.y - ph / 2} width={pw} height={ph} rx="7" fill="#f7f7f5" stroke={d.back ? '#ff7a1a' : '#8f98a2'} strokeWidth="2" strokeDasharray={d.back ? '4 3' : undefined} />
+            <rect x={d.c.x - pw / 2 + 4} y={d.c.y - ph / 2 + 4} width={pw - 8} height={ph - 8} rx="5" fill="none" stroke="#dfe3e7" />
+            <path d={`M${d.c.x - 2} ${d.c.y - 7} l 6 7 l -5 0 l 4 7`} stroke="#d32f2f" strokeWidth="2" fill="none" />
           </g>
         ))}
       </g>,
     );
   }
-  // saturimetro
+  // saturimetro sul dito
   if (sim.pulseOx) {
-    const hx = pos === 'laterale' ? 252 : pos === 'in_piedi' ? 484 : 468;
-    const hy = pos === 'laterale' ? 340 : pos === 'in_piedi' ? 308 : 380;
+    const h = pos === 'laterale' ? LAT.hand : pos === 'in_piedi' ? { x: 486, y: 308 } : g.armR.tip;
     els.push(
       <g key="spo2">
-        <path d={`M${hx + 10} ${hy + 6} C ${hx + 60} ${hy + 90}, 820 470, 900 480`} stroke="#9ab0c8" strokeWidth="3" fill="none" />
-        <rect x={hx - 6} y={hy - 9} width="22" height="18" rx="5" fill="#2f6fd0" />
-        <circle cx={hx + 9} cy={hy} r="2.6" fill="#ff3d55" className="spo2-led" />
+        <path d={`M${h.x + 10} ${h.y + 6} C ${h.x + 60} ${h.y + 90}, 820 470, 900 480`} stroke="#9ab0c8" strokeWidth="3" fill="none" />
+        <rect x={h.x + 2} y={h.y - 8} width="22" height="16" rx="6" fill="#2f6fd0" stroke="#1b4489" strokeWidth="1.5" />
+        <circle cx={h.x + 18} cy={h.y} r="2.6" fill="#ff3d55" className="spo2-led" />
       </g>,
     );
   }
   // ossigeno
   if (sim.o2 && !sim.bvm && pos !== 'in_piedi') {
-    const fx = pos === 'laterale' ? 258 : 262;
-    const fy = pos === 'laterale' ? 312 : 300;
     if (sim.o2.device === 'occhialini') {
       els.push(
         <g key="o2">
-          <path d={`M${fx - 12} ${fy - 30} Q ${fx + 2} ${fy} ${fx - 12} ${fy + 30}`} stroke="#9fe2c4" strokeWidth="3" fill="none" />
-          <path d={`M${fx - 12} ${fy - 30} C 180 200, 140 170, 100 150`} stroke="#9fe2c4" strokeWidth="3" fill="none" />
+          <path d={`M${face.x - 10 * k} ${face.y - 30 * k} Q ${face.x + 4 * k} ${face.y} ${face.x - 10 * k} ${face.y + 30 * k}`} stroke="#9fe2c4" strokeWidth="3" fill="none" />
+          <circle cx={face.x - 4 * k} cy={face.y - 4 * k} r="2.5" fill="#9fe2c4" />
+          <circle cx={face.x - 4 * k} cy={face.y + 4 * k} r="2.5" fill="#9fe2c4" />
+          <path d={`M${face.x - 10 * k} ${face.y - 30 * k} C 180 200, 140 170, 100 150`} stroke="#9fe2c4" strokeWidth="3" fill="none" />
         </g>,
       );
     } else {
@@ -262,39 +329,38 @@ export function OverPatient({ sim, now }: { sim: Sim; now: number }) {
       const full = sim.o2.flow >= 10;
       els.push(
         <g key="o2">
-          <path d={`M${fx + 4} ${fy} C 200 200, 140 170, 100 150`} stroke="#9fe2c4" strokeWidth="3" fill="none" />
-          {res && <ellipse cx={fx + 52} cy={fy} rx={full ? 26 : 12} ry={full ? 18 : 8} fill="#bfe8d6" opacity="0.8" stroke="#7fc9a8" />}
-          <ellipse cx={fx} cy={fy} rx="20" ry="24" fill="#c7f0dc" opacity="0.55" stroke="#7fc9a8" strokeWidth="2" />
+          <path d={`M${face.x + 4} ${face.y} C 200 200, 140 170, 100 150`} stroke="#9fe2c4" strokeWidth="3" fill="none" />
+          {res && <ellipse cx={face.x + 50 * k} cy={face.y} rx={(full ? 26 : 12) * k} ry={(full ? 18 : 8) * k} fill="#bfe8d6" opacity="0.85" stroke="#7fc9a8" strokeWidth="1.5" />}
+          <Mask at={face} k={k} color="#c7f0dc" stroke="#7fc9a8" />
         </g>,
       );
     }
   }
-  // pallone
-  const bvmVisible = (sim.bvm || (sim.cpr.active && sim.cpr.ventilation === 'pallone')) && supine;
+  // pallone autoespansibile
   if (bvmVisible) {
+    const c = g.head.c;
     els.push(
       <g key="bvm">
-        <ellipse cx="262" cy="300" rx="22" ry="26" fill="#cfe6f6" opacity="0.65" stroke="#7aa6c8" strokeWidth="2" />
-        <rect x="160" y="286" width="84" height="28" rx="14" fill="#2d6ec9" className="bvm-anim" />
-        <ellipse cx="150" cy="300" rx="16" ry="12" fill="#bfe8d6" opacity="0.85" />
-        <path d="M150 300 C 130 260, 120 200, 100 150" stroke="#9fe2c4" strokeWidth="3" fill="none" />
+        <Mask at={face} k={k} color="#cfe6f6" stroke="#7aa6c8" />
+        <path d={`M${face.x - 18 * k} ${face.y} L ${c.x - g.head.rx - 6} ${c.y}`} stroke="#7aa6c8" strokeWidth={6 * k} />
+        <rect x={c.x - g.head.rx - 92 * k} y={c.y - 15 * k} width={86 * k} height={30 * k} rx={15 * k} fill="#2d6ec9" stroke="#1b4c96" strokeWidth="1.5" className="bvm-anim" />
+        <ellipse cx={c.x - g.head.rx - 100 * k} cy={c.y} rx={16 * k} ry={12 * k} fill="#bfe8d6" opacity="0.88" />
+        <path d={`M${c.x - g.head.rx - 100 * k} ${c.y} C 130 260, 120 200, 100 150`} stroke="#9fe2c4" strokeWidth="3" fill="none" />
       </g>,
     );
   }
   if (sim.flags.guedel && supine) {
-    els.push(<rect key="guedel" x="272" y="294" width="12" height="12" rx="3" fill="#ffd84d" />);
-  }
-  // soccorritore alla testa (ventilazione o stabilizzazione)
-  if (supine && (bvmVisible || sim.immob.has('mils'))) {
-    els.unshift(<Rescuer key="testa" x={118} y={300} facing="destra" uniform={sim.scenario.role === 'laico' ? 'civile' : 'divisa'} />);
+    els.push(<rect key="guedel" x={g.mouth.x - 4 * k} y={g.mouth.y - 6 * k} width={12 * k} height={12 * k} rx={3 * k} fill="#ffd84d" stroke="#b38e12" />);
   }
   // chi comprime e le sue mani
   if (sim.cpr.active && supine) {
     const civ = sim.cpr.by === 'astante' || sim.scenario.role === 'laico';
-    els.push(<Rescuer key="compressore" x={352} y={132} facing="giu" uniform={civ ? 'civile' : 'divisa'} />);
-    els.push(<Hands key="rcp" x={352} y={300} anim="cpr-hands" />);
+    const ry = 300 - g.torso.hwTop - 72;
+    els.push(<Rescuer key="compressore" x={g.sternum.x} y={ry} facing="giu" uniform={civ ? 'civile' : 'divisa'} />);
+    els.push(<Hands key="rcp" x={g.sternum.x} y={300} k={Math.max(0.6, k)} from={ry + 16} anim="cpr-hands" />);
   }
   void now;
+  void skin;
   return <g pointerEvents="none">{els}</g>;
 }
 

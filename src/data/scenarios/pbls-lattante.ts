@@ -55,7 +55,7 @@ export const pblsLattante: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#f2cdb0', hair: '#3a2c22', hairStyle: 'bimbo', shirt: '#f4c6d9', pants: '#f4c6d9', build: 'neonato' },
+    look: { skinTone: '#f2cdb0', hair: '#3a2c22', hairStyle: 'bimbo', shirt: '#f4c6d9', pants: '#f4c6d9', build: 'neonato', top: 'body' },
   },
   trauma: false,
   arrest: { shockable: false, roscAfterCprSeconds: 75, needsVentilation: true },

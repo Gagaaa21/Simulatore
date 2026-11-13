@@ -53,7 +53,7 @@ export const ipoglicemia: Scenario = {
     canSwallow: true,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#d2a07a', hair: '#1f1a17', hairStyle: 'corti', shirt: '#4e7a52', pants: '#2b2f38', build: 'adulto' },
+    look: { skinTone: '#d2a07a', hair: '#1f1a17', hairStyle: 'corti', shirt: '#4e7a52', pants: '#2b2f38', build: 'adulto', top: 'camicia', sleeves: 'corte' },
   },
   trauma: false,
   answers: {

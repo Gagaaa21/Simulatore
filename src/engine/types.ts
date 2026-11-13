@@ -50,6 +50,12 @@ export interface Look {
   build: 'neonato' | 'bambino' | 'adolescente' | 'adulto' | 'robusto';
   helmet?: boolean;
   wristband?: string;
+  /** capo superiore: t-shirt (default), camicia, felpa, torso nudo, body da neonato */
+  top?: 'tshirt' | 'camicia' | 'felpa' | 'nudo' | 'body' | 'giacca';
+  /** maniche (default: lunghe per camicia/felpa/giacca, corte per t-shirt) */
+  sleeves?: 'corte' | 'lunghe';
+  bottom?: 'pantaloni' | 'shorts' | 'gonna';
+  shoes?: string;
 }
 
 export interface Bleeding {

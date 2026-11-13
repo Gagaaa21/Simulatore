@@ -50,7 +50,7 @@ export const acrSupermercato: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#dcad8a', hair: '#bfc3c7', hairStyle: 'calvo', shirt: '#5b4a3a', pants: '#3a3a3f', build: 'adulto' },
+    look: { skinTone: '#dcad8a', hair: '#bfc3c7', hairStyle: 'calvo', shirt: '#5b4a3a', pants: '#3a3a3f', build: 'adulto', top: 'giacca', shoes: '#3a2e25' },
   },
   trauma: false,
   arrest: { shockable: true, roscAfterShocks: 1 },

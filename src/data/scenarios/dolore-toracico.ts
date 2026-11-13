@@ -53,7 +53,7 @@ export const doloreToracico: Scenario = {
     canSwallow: true,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#dcaa84', hair: '#5f5a55', hairStyle: 'corti', shirt: '#7b8fa6', pants: '#2f3a4a', build: 'robusto' },
+    look: { skinTone: '#dcaa84', hair: '#5f5a55', hairStyle: 'corti', shirt: '#7b8fa6', pants: '#2f3a4a', build: 'robusto', top: 'tshirt', shoes: '#6b5a48' },
   },
   trauma: false,
   arrest: { shockable: true, roscAfterShocks: 1 },

@@ -61,7 +61,7 @@ export const oppioidi: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#d8b08e', hair: '#5a3e2b', hairStyle: 'corti', shirt: '#3d3d46', pants: '#2b3549', build: 'adulto' },
+    look: { skinTone: '#d8b08e', hair: '#5a3e2b', hairStyle: 'corti', shirt: '#3d3d46', pants: '#2b3549', build: 'adulto', top: 'felpa', shoes: '#33363d' },
   },
   trauma: false,
   answers: {

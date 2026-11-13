@@ -53,7 +53,7 @@ export const anafilassi: Scenario = {
     canSwallow: false,
     seizing: false,
     vomitInMouth: false,
-    look: { skinTone: '#e9b998', hair: '#2a1d14', hairStyle: 'corti', shirt: '#3b8f6a', pants: '#2c2f38', build: 'adulto', wristband: '#ffd84d' },
+    look: { skinTone: '#e9b998', hair: '#2a1d14', hairStyle: 'corti', shirt: '#3b8f6a', pants: '#2c2f38', build: 'adulto', wristband: '#ffd84d', top: 'tshirt', bottom: 'shorts', shoes: '#e8e8e8' },
   },
   trauma: false,
   answers: {
