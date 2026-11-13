@@ -91,7 +91,7 @@ export const oppioidi: Scenario = {
       label: 'Pallone collegato all’ossigeno ad alti flussi',
       category: 'trattamento',
       points: 8,
-      check: (s) => s.bvm && !!s.o2 && s.o2.flow >= 10,
+      check: (s) => s.did('pallone') && s.flags.o2PalloneAlto !== undefined,
       why: 'La ventilazione con ossigeno corregge rapidamente l’ipossiemia.',
       sources: ['ERC_FA_2025', 'BTS_O2_2017'],
     },

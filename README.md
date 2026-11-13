@@ -32,7 +32,9 @@ Le indicazioni operative interne della SORES non sono pubbliche: dove il simulat
 | **Protocolli** | Algoritmi, numeri chiave ed errori frequenti; codici del 118 (DM 15/05/1992); aspetti legali. |
 | **Fonti** | Bibliografia di ogni regola usata dal simulatore. |
 
-Due modalità: **Addestramento** (errori e suggerimenti in tempo reale, con la fonte) ed **Esame** (nessun aiuto durante la missione, tutto nel debriefing; l’esperienza guadagnata vale il 20% in più).
+In missione le azioni sono divise come nella procedura del corso (Scena, A, B, C, D, E, Anamnesi, SORES e trasporto) e compaiono solo quelle pertinenti al caso; una spunta segnala ogni fase svolta.
+
+Due modalità: **Addestramento** (il riquadro «Prossimo passo» indica e illumina l’azione giusta; errori e suggerimenti in tempo reale, con la fonte) ed **Esame** (nessun aiuto durante la missione, tutto nel debriefing; l’esperienza guadagnata vale il 20% in più).
 
 Dalle **Impostazioni** (icona a ingranaggio, anche durante la missione) si regolano volume, sottofondo ambientale sintetizzato per ogni luogo, voce del DAE, tempo reale, dimensione del testo e animazioni ridotte.
 
@@ -79,7 +81,7 @@ Serve Node.js 20 o successivo.
 ```bash
 npm install
 npm run dev        # sviluppo su http://localhost:5173
-npm test           # 73 test: motore, tabelle ufficiali, carriera e percorso ideale di ogni scenario
+npm test           # 92 test: motore, tabelle ufficiali, carriera e percorso ideale di ogni scenario
 npm run build      # build statica in dist/
 npm run build:artifact   # pagina HTML unica in dist-artifact/sirena-118.html
 ```

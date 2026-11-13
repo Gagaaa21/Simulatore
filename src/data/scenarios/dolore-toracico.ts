@@ -87,7 +87,7 @@ export const doloreToracico: Scenario = {
       label: 'Paziente a riposo, seduto o semiseduto, mai a piedi',
       category: 'trattamento',
       points: 8,
-      check: (s) => !s.penalties.some((p) => p.id === 'fatto_camminare') && (s.p.position === 'semiseduto' || s.p.position === 'seduto' || s.p.position === 'supino'),
+      check: (s) => !s.penalties.some((p) => p.id === 'fatto_camminare') && s.p.position !== 'in_piedi',
       why: 'Lo sforzo aumenta il consumo di ossigeno del cuore ischemico.',
       sources: ['ERC_FA_2025'],
     },

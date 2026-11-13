@@ -429,6 +429,8 @@ export class Sim {
 
   enterArrest(rhythm: 'fv' | 'tv_senza_polso' | 'asistolia' | 'aesp', text: string) {
     const p = this.p;
+    // un'attesa si interrompe subito: il paziente ha bisogno di te
+    if (this.busy && ['attendi', 'attendi_lungo', 'rivaluta'].includes(this.busy.actionId)) this.busy = null;
     p.rhythm = rhythm;
     p.avpu = 'U';
     p.breathing = 'agonico';
@@ -785,6 +787,7 @@ export class Sim {
       this.say('consiglio', 'Con gli occhialini nasali oltre 4 L/min non aumenti l’ossigenazione e irriti le mucose.');
     }
     if (!this.flags.o2At) this.set('o2At', this.t);
+    if ((this.bvm || this.cpr.ventilation === 'pallone') && flow >= 10) this.set('o2PalloneAlto', this.t);
   }
 
   // ───────────────────────── protocollo

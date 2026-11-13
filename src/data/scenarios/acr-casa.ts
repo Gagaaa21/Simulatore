@@ -134,7 +134,7 @@ export const acrCasa: Scenario = {
       label: 'Ventilazione con pallone collegato all’ossigeno ad alti flussi',
       category: 'trattamento',
       points: 6,
-      check: (s) => s.did('pallone') && !!s.o2 && s.o2.flow >= 10,
+      check: (s) => s.did('pallone') && s.flags.o2PalloneAlto !== undefined,
       why: 'L’equipaggio addestrato ventila con pallone e maschera arricchiti di ossigeno (30:2).',
       sources: ['ERC_BLS_2025'],
     },

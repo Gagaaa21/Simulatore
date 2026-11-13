@@ -363,8 +363,6 @@ export type ActionGroup =
   | 'D'
   | 'E'
   | 'anamnesi'
-  | 'trattamenti'
-  | 'immobilizzazione'
   | 'centrale';
 
 export interface ActionDef {

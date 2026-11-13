@@ -112,7 +112,7 @@ export const pblsLattante: Scenario = {
       label: 'Ventilazione con pallone pediatrico e ossigeno',
       category: 'trattamento',
       points: 8,
-      check: (s) => s.cpr.ventilation === 'pallone' && !!s.o2 && s.o2.flow >= 10,
+      check: (s) => s.did('pallone') && s.flags.o2PalloneAlto !== undefined,
       why: 'I soccorritori addestrati ventilano con pallone e maschera della misura giusta, collegati all’ossigeno.',
       sources: ['ERC_PLS_2025'],
     },

@@ -73,6 +73,19 @@ function fuoriCompetenza(sim: Sim, id: string, cosa: string, why: string) {
   sim.penalize(`competenza_${id}`, 'grave', `${cosa}: non è competenza del soccorritore`, why, ['SORES_FVG', 'DGR_FVG_2039_2015']);
 }
 
+/** Paziente che soffoca (o scenario di disostruzione): mostra le manovre per il corpo estraneo. */
+function soffoca(s: Sim): boolean {
+  return s.p.airway.startsWith('ostruzione') || s.scenario.protocol.correct.some((p) => p.startsWith('fbao')) || s.didAny('incoraggia_tosse', 'colpi_dorsali', 'compressioni_addominali', 'compressioni_toraciche_lattante', 'rimuovi_corpo_estraneo');
+}
+/** Il DAE è con te, in arrivo o è già stato usato. */
+function conDae(s: Sim): boolean {
+  return s.has('dae') || s.aedFetchAt !== null || s.aed.phase !== 'spento';
+}
+/** Ipertermia o scenario da caldo. */
+function caldo(s: Sim): boolean {
+  return s.p.v.temp >= 38.5 || s.scenario.protocol.correct.includes('colpo_calore');
+}
+
 function needPatient(sim: Sim): true | string {
   if (sim.phase !== 'paziente') return 'Prima avvicinati al paziente.';
   return true;
@@ -325,6 +338,7 @@ const list: ActionDef[] = [
     label: 'Sublussazione della mandibola (capo in posizione neutra)',
     short: 'Sublussazione mandibola',
     group: 'A',
+    visible: (s) => s.scenario.trauma || s.did('sublussazione'),
     duration: 4,
     contact: true,
     available: needPatient,
@@ -399,6 +413,7 @@ const list: ActionDef[] = [
     label: 'Stabilizza manualmente il capo in posizione neutra',
     short: 'Stabilizzazione del capo',
     group: 'A',
+    visible: (s) => s.scenario.trauma || s.did('mils'),
     duration: 5,
     contact: true,
     available: (s) => (s.immob.has('mils') ? 'Un collega sta già stabilizzando il capo.' : needPatient(s)),
@@ -415,7 +430,7 @@ const list: ActionDef[] = [
     group: 'A',
     duration: 40,
     contact: true,
-    visible: (s) => !!s.p.look.helmet,
+    visible: (s) => !!s.p.look.helmet || s.did('rimuovi_casco'),
     available: (s) => {
       const n = needPatient(s);
       if (n !== true) return n;
@@ -436,6 +451,7 @@ const list: ActionDef[] = [
     id: 'incoraggia_tosse',
     label: 'Incoraggia a tossire',
     group: 'A',
+    visible: (s) => soffoca(s),
     duration: 6,
     available: needPatient,
     run: ({ sim }) => {
@@ -450,6 +466,7 @@ const list: ActionDef[] = [
     label: '5 colpi interscapolari (paziente inclinato in avanti)',
     short: '5 colpi dorsali',
     group: 'A',
+    visible: (s) => soffoca(s),
     duration: 8,
     contact: true,
     available: (s) => (s.p.avpu === 'U' ? 'Il paziente è incosciente: i colpi dorsali non sono più indicati.' : needPatient(s)),
@@ -465,6 +482,7 @@ const list: ActionDef[] = [
     label: '5 compressioni addominali (manovra di Heimlich)',
     short: '5 compressioni addominali',
     group: 'A',
+    visible: (s) => soffoca(s) && s.p.age >= 1,
     duration: 8,
     contact: true,
     available: (s) => {
@@ -486,7 +504,7 @@ const list: ActionDef[] = [
     group: 'A',
     duration: 8,
     contact: true,
-    visible: (s) => s.p.age < 1,
+    visible: (s) => soffoca(s) && s.p.age < 1,
     available: (s) => (s.p.avpu === 'U' ? 'Il lattante è incosciente: inizia la RCP.' : needPatient(s)),
     run: ({ sim }) => {
       sim.find('Lattante supino sulle tue ginocchia, capo in basso: 5 compressioni toraciche secche con la tecnica a due pollici.');
@@ -497,6 +515,7 @@ const list: ActionDef[] = [
     label: 'Rimuovi il corpo estraneo visibile (un solo tentativo, niente dita alla cieca)',
     short: 'Rimuovi oggetto visibile',
     group: 'A',
+    visible: (s) => soffoca(s),
     duration: 4,
     contact: true,
     available: needPatient,
@@ -693,6 +712,7 @@ const list: ActionDef[] = [
     label: '5 ventilazioni di soccorso iniziali',
     short: '5 ventilazioni iniziali',
     group: 'B',
+    visible: (s) => s.inArrest() || s.p.breathing === 'assente' || s.p.breathing === 'agonico' || s.did('ventilazioni_iniziali'),
     duration: 12,
     contact: true,
     available: needPatient,
@@ -816,6 +836,7 @@ const list: ActionDef[] = [
     label: 'Compressione manuale diretta e decisa sulla ferita',
     short: 'Compressione diretta',
     group: 'C',
+    visible: (s) => !!s.p.bleeding || s.scenario.trauma || s.did('compressione_diretta'),
     duration: 5,
     contact: true,
     available: (s) => {
@@ -837,6 +858,7 @@ const list: ActionDef[] = [
     label: 'Garza emostatica nella ferita e bendaggio compressivo',
     short: 'Medicazione emostatica',
     group: 'C',
+    visible: (s) => !!s.p.bleeding || s.did('medicazione'),
     duration: 45,
     needs: ['kit_emorragie'],
     contact: true,
@@ -854,6 +876,7 @@ const list: ActionDef[] = [
     label: 'Applica il tourniquet (scegli la posizione)',
     short: 'Tourniquet',
     group: 'C',
+    visible: (s) => !!s.p.bleeding || s.scenario.trauma || s.did('tourniquet'),
     duration: 25,
     needs: ['kit_emorragie'],
     contact: true,
@@ -903,6 +926,7 @@ const list: ActionDef[] = [
     label: 'Applica la cintura pelvica all’altezza dei grandi trocanteri',
     short: 'Cintura pelvica',
     group: 'C',
+    visible: (s) => s.scenario.trauma || s.did('cintura_pelvica'),
     duration: 60,
     needs: ['cintura_pelvica'],
     contact: true,
@@ -959,6 +983,7 @@ const list: ActionDef[] = [
     label: 'Accendi il DAE',
     short: 'Accendi DAE',
     group: 'C',
+    visible: (s) => conDae(s),
     duration: 3,
     needs: ['dae'],
     available: (s) => (s.aed.phase !== 'spento' ? 'Il DAE è già acceso.' : needPatient(s)),
@@ -973,6 +998,7 @@ const list: ActionDef[] = [
     label: 'Applica le piastre del DAE (scegli la posizione)',
     short: 'Piastre DAE',
     group: 'C',
+    visible: (s) => conDae(s),
     duration: 15,
     needs: ['dae'],
     contact: true,
@@ -994,6 +1020,7 @@ const list: ActionDef[] = [
     label: '«Via tutti! Nessuno tocchi il paziente»',
     short: 'Via tutti!',
     group: 'C',
+    visible: (s) => conDae(s) && s.aed.phase !== 'spento',
     duration: 1,
     available: (s) => (s.aed.phase === 'spento' ? 'Il DAE non è acceso.' : true),
     run: ({ sim }) => {
@@ -1030,6 +1057,7 @@ const list: ActionDef[] = [
     label: 'Misura la glicemia capillare',
     short: 'Glicemia',
     group: 'D',
+    visible: (s) => !!s.flags.diabetico || s.p.avpu !== 'A' || s.p.speech !== 'normale' || s.did('glicemia'),
     duration: 10,
     needs: ['zaino'],
     contact: true,
@@ -1111,6 +1139,7 @@ const list: ActionDef[] = [
     label: 'Proteggi il capo, allontana gli oggetti e non trattenere',
     short: 'Proteggi durante la crisi',
     group: 'D',
+    visible: (s) => s.p.seizing || s.did('proteggi_crisi'),
     duration: 6,
     available: (s) => (!s.p.seizing ? 'Non è in corso una crisi.' : needPatient(s)),
     run: ({ sim }) => {
@@ -1123,6 +1152,7 @@ const list: ActionDef[] = [
     label: 'Annota l’ora di inizio della crisi e cronometra',
     short: 'Cronometra la crisi',
     group: 'D',
+    visible: (s) => s.p.seizing || s.did('cronometra'),
     duration: 2,
     available: (s) => (!s.p.seizing ? 'Non è in corso una crisi.' : true),
     run: ({ sim }) => {
@@ -1195,6 +1225,7 @@ const list: ActionDef[] = [
     label: 'Togli gli indumenti in eccesso e porta all’ombra',
     short: 'Togli indumenti, ombra',
     group: 'E',
+    visible: (s) => caldo(s) || s.did('scopri'),
     duration: 20,
     contact: true,
     available: needPatient,
@@ -1210,6 +1241,7 @@ const list: ActionDef[] = [
     label: 'Raffreddamento attivo (scegli il metodo)',
     short: 'Raffreddamento attivo',
     group: 'E',
+    visible: (s) => caldo(s) || s.did('raffredda'),
     duration: 30,
     contact: true,
     picker: 'raffreddamento',
@@ -1289,7 +1321,7 @@ const list: ActionDef[] = [
     id: 'copri_ustione',
     label: 'Copri l’ustione con medicazione non aderente o pellicola, senza stringere',
     short: 'Medica l’ustione',
-    group: 'trattamenti',
+    group: 'E',
     duration: 30,
     needs: ['kit_ustioni'],
     contact: true,
@@ -1307,7 +1339,7 @@ const list: ActionDef[] = [
     id: 'ghiaccio_ustione',
     label: 'Applica il ghiaccio sull’ustione',
     short: 'Ghiaccio',
-    group: 'trattamenti',
+    group: 'E',
     duration: 10,
     contact: true,
     visible: (s) => !!s.scenario.exam.extra?.ustione,
@@ -1321,7 +1353,7 @@ const list: ActionDef[] = [
     id: 'rimedio_casalingo',
     label: 'Spalma un rimedio casalingo (burro, olio, dentifricio)',
     short: 'Rimedio casalingo',
-    group: 'trattamenti',
+    group: 'E',
     duration: 10,
     contact: true,
     visible: (s) => !!s.scenario.exam.extra?.ustione,
@@ -1439,7 +1471,7 @@ const list: ActionDef[] = [
     id: 'posizione',
     label: 'Posiziona il paziente (supino, semiseduto, PLS…)',
     short: 'Posizione',
-    group: 'trattamenti',
+    group: 'A',
     duration: 15,
     contact: true,
     picker: 'posizione',
@@ -1477,7 +1509,7 @@ const list: ActionDef[] = [
     id: 'glucosio_os',
     label: 'Dai zucchero per bocca (bustine, succo, caramelle)',
     short: 'Zucchero per bocca',
-    group: 'trattamenti',
+    group: 'D',
     duration: 10,
     contact: true,
     visible: (s) => !!s.flags.diabetico,
@@ -1493,7 +1525,7 @@ const list: ActionDef[] = [
     id: 'autoiniettore',
     label: 'Aiuta il paziente a usare il suo autoiniettore di adrenalina',
     short: 'Autoiniettore del paziente',
-    group: 'trattamenti',
+    group: 'C',
     duration: 10,
     contact: true,
     visible: (s) => !!s.flags.haAutoiniettore,
@@ -1506,7 +1538,7 @@ const list: ActionDef[] = [
     id: 'inalatore',
     label: 'Aiuta il paziente a usare il suo spray broncodilatatore',
     short: 'Spray del paziente',
-    group: 'trattamenti',
+    group: 'B',
     duration: 10,
     contact: true,
     visible: (s) => !!s.flags.haInalatore,
@@ -1519,7 +1551,8 @@ const list: ActionDef[] = [
     id: 'dai_acqua',
     label: 'Dai da bere un po’ d’acqua',
     short: 'Acqua',
-    group: 'trattamenti',
+    group: 'E',
+    visible: (s) => (['colpo_calore', 'ictus', 'ipoglicemia', 'intossicazione', 'convulsioni'] as const).some((p) => s.scenario.protocol.correct.includes(p)) || s.did('dai_acqua'),
     duration: 10,
     available: needPatient,
     run: ({ sim }) => {
@@ -1535,7 +1568,8 @@ const list: ActionDef[] = [
     id: 'collare',
     label: 'Applica il collare cervicale della misura corretta',
     short: 'Collare cervicale',
-    group: 'immobilizzazione',
+    group: 'A',
+    visible: (s) => s.scenario.trauma || s.did('collare'),
     duration: 30,
     needs: ['collari'],
     contact: true,
@@ -1558,7 +1592,8 @@ const list: ActionDef[] = [
     id: 'cucchiaio',
     label: 'Carica sulla barella a cucchiaio',
     short: 'Barella a cucchiaio',
-    group: 'immobilizzazione',
+    group: 'centrale',
+    visible: (s) => s.scenario.trauma || s.did('cucchiaio'),
     duration: 60,
     needs: ['cucchiaio'],
     contact: true,
@@ -1572,7 +1607,8 @@ const list: ActionDef[] = [
     id: 'materasso',
     label: 'Immobilizza nel materassino a depressione',
     short: 'Materassino a depressione',
-    group: 'immobilizzazione',
+    group: 'centrale',
+    visible: (s) => s.scenario.trauma || s.did('materasso'),
     duration: 90,
     needs: ['materasso'],
     contact: true,
@@ -1589,7 +1625,8 @@ const list: ActionDef[] = [
     id: 'tavola',
     label: 'Immobilizza sulla tavola spinale con fermacapo e cinghie',
     short: 'Tavola spinale',
-    group: 'immobilizzazione',
+    group: 'centrale',
+    visible: (s) => s.scenario.trauma || s.did('tavola'),
     duration: 90,
     needs: ['tavola'],
     contact: true,
@@ -1604,7 +1641,8 @@ const list: ActionDef[] = [
     id: 'steccobende',
     label: 'Immobilizza l’arto con la steccobenda',
     short: 'Steccobenda',
-    group: 'immobilizzazione',
+    group: 'E',
+    visible: (s) => s.scenario.trauma || s.did('steccobende'),
     duration: 45,
     needs: ['steccobende'],
     contact: true,
@@ -1714,6 +1752,7 @@ const list: ActionDef[] = [
     label: 'Prosegui e attendi 30 secondi',
     short: 'Attendi 30 s',
     group: 'centrale',
+    visible: (s) => s.inArrest() || s.cpr.active || !!s.cooling || s.did('attendi'),
     duration: 30,
     available: needPatient,
     run: ({ sim }) => {
@@ -1796,14 +1835,12 @@ export const ACTIONS: Record<string, ActionDef> = Object.fromEntries(list.map((a
 export const ACTION_LIST = list;
 
 export const GROUP_LABEL: Record<ActionDef['group'], string> = {
-  scena: 'Scena',
-  A: 'A · Vie aeree',
-  B: 'B · Respiro',
-  C: 'C · Circolo',
-  D: 'D · Neurologico',
-  E: 'E · Esposizione',
+  scena: 'Arrivo e sicurezza',
+  A: 'A – Coscienza e vie aeree',
+  B: 'B – Respiro',
+  C: 'C – Circolo',
+  D: 'D – Neurologico',
+  E: 'E – Esposizione',
   anamnesi: 'Anamnesi',
-  trattamenti: 'Trattamenti',
-  immobilizzazione: 'Immobilizzazione',
-  centrale: 'SORES',
+  centrale: 'SORES e trasporto',
 };

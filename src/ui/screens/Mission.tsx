@@ -4,7 +4,7 @@ import type { Scenario } from '../../engine/types';
 import type { EquipmentId } from '../../data/equipment';
 import { EQUIPMENT } from '../../data/equipment';
 import { ACTIONS } from '../../engine/actions';
-import { commonObjectives, evaluate, type Report } from '../../engine/scoring';
+import { evaluate, type Report } from '../../engine/scoring';
 import { CRITICITA } from '../../data/codes';
 import { PROTOCOLS } from '../../data/protocols';
 import type { Settings } from '../store';
@@ -84,25 +84,6 @@ export function Mission({
     } catch {
       /* archiviazione non disponibile */
     }
-  };
-
-  const showHint = () => {
-    const common = commonObjectives(sim, brought);
-    const order = [
-      ...common.filter((o) => o.category === 'sicurezza'),
-      ...sim.scenario.objectives,
-      ...common.filter((o) => o.id === 'c_protocollo'),
-      ...common.filter((o) => o.category === 'comunicazione'),
-    ];
-    const next = order.find((o) => {
-      try {
-        return !o.check(sim);
-      } catch {
-        return true;
-      }
-    });
-    sim.set('suggerimenti', Number(sim.flags.suggerimenti ?? 0) + 1);
-    setFlash(next ? `consiglio|Prossimo obiettivo: ${next.label}. ${next.why}` : 'ok|Hai già raggiunto gli obiettivi principali: completa la missione con la SORES.');
   };
 
   // guida del tutorial: primo passo non ancora completato ed evidenziazione del comando
@@ -226,6 +207,9 @@ export function Mission({
 
   const d = scenario.dispatch;
   const crit = CRITICITA[d.criticita];
+  // nome del mezzo avanzato senza articolo: «L’automedica» → «Automedica»
+  const advRaw = (scenario.msa.label ?? 'Mezzo avanzato').replace(/^(L’|L'|Il |La |Lo )/, '');
+  const advName = advRaw.charAt(0).toUpperCase() + advRaw.slice(1);
   const showAed = sim.has('dae') || sim.aedFetchAt !== null || !!scenario.scene.publicAed || scenario.loadout !== null;
   const examHidden = settings.mode === 'esame' && paused;
 
@@ -251,18 +235,12 @@ export function Mission({
             <button className={`btn btn-small hud-proto${sim.protocol ? ' btn-on' : ' btn-pulse'}`} onClick={() => setProtoOpen(true)} disabled={sim.phase === 'scena'} title="Dichiara il protocollo">
               {sim.protocol ? PROTOCOLS[sim.protocol.id].name : 'Scegli protocollo'}
             </button>
-            {settings.mode === 'addestramento' && (
-              <button className="btn btn-small hud-hint" onClick={showHint} title="Mostra il prossimo obiettivo da raggiungere" aria-label="Suggerimento">
-                <span className="lbl-long">Suggerimento</span>
-                <span className="lbl-short" aria-hidden="true">?</span>
-              </button>
-            )}
             {sim.msaAt !== null && !sim.msaOnScene && (
               <span className="hud-eta" title="Mezzo avanzato in arrivo">
-                Avanzato <span className="num">{fmtClock(Math.max(0, sim.msaAt - sim.t))}</span>
+                {advName} <span className="num">{fmtClock(Math.max(0, sim.msaAt - sim.t))}</span>
               </span>
             )}
-            {sim.msaOnScene && <span className="hud-eta on">Avanzato sul posto</span>}
+            {sim.msaOnScene && <span className="hud-eta on">{advName} sul posto</span>}
             <button className="icon-btn" onClick={() => setPaused((x) => !x)} aria-label={paused ? 'Riprendi' : 'Pausa'} title="Pausa (P)">
               {paused ? '▶' : '❚❚'}
             </button>
@@ -281,7 +259,7 @@ export function Mission({
 
       <div className={`mission-grid mt-${mobileTab}`}>
         <aside className="col-actions">
-          <ActionPanel sim={sim} onAction={trigger} />
+          <ActionPanel sim={sim} onAction={trigger} coach={settings.mode === 'addestramento' && !scenario.tutorial} onProtocol={() => setProtoOpen(true)} />
         </aside>
         <main className="col-scene">
           {scenario.tutorial && (
@@ -400,7 +378,7 @@ export function Mission({
               <strong>Prima la scena.</strong> Valuta la sicurezza, indossa i guanti e solo dopo avvicinati al paziente.
             </li>
             <li>
-              <strong>Agisci.</strong> A sinistra trovi le azioni divise per ABCDE; puoi anche cliccare direttamente sul corpo del paziente o sui presidi a terra. Ogni azione richiede tempo: il paziente intanto cambia.
+              <strong>Segui le fasi.</strong> A sinistra le azioni sono divise come nel corso: Scena, A, B, C, D, E, Anamnesi, SORES e trasporto; una spunta indica la fase svolta. Puoi anche cliccare sul corpo del paziente o sui presidi a terra. Ogni azione richiede tempo: il paziente intanto cambia.
             </li>
             <li>
               <strong>Leggi gli strumenti.</strong> A destra il monitor (saturimetro e pressione; la glicemia compare quando la misura l’infermiere), il DAE e la RCP; sotto la scena il diario con reperti e messaggi radio.
@@ -409,7 +387,7 @@ export function Mission({
               <strong>Decidi.</strong> In alto scegli il protocollo; dal gruppo «SORES» riferisci valutazione e parametri, chiedi rinforzi, trasporti o passi le consegne. L’ossigeno lo applichi con presidio e concentrazione indicati dalla SORES.
             </li>
             <li>
-              Il tempo scorre: <kbd>P</kbd> mette in pausa, <kbd>/</kbd> cerca un’azione.{settings.mode === 'addestramento' ? ' In addestramento il pulsante «Suggerimento» indica il prossimo obiettivo.' : ''}
+              Il tempo scorre: <kbd>P</kbd> mette in pausa, <kbd>/</kbd> cerca un’azione.{settings.mode === 'addestramento' ? ' In addestramento il riquadro «Prossimo passo» ti indica cosa fare e illumina il comando.' : ''}
             </li>
           </ol>
         </Modal>

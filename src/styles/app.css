@@ -4424,3 +4424,84 @@ kbd {
   font-weight: 600;
   margin-bottom: 8px;
 }
+
+/* ───────────────────────── fasi della procedura e prossimo passo */
+.tabs {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+.tabs .tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 4px;
+}
+.tabs .tab-anamnesi {
+  grid-column: span 2;
+}
+.tabs .tab-centrale {
+  grid-column: span 4;
+}
+.tab.done:not(.on) {
+  color: var(--testo);
+  background: rgba(75, 227, 138, 0.12);
+  border-color: rgba(75, 227, 138, 0.35);
+}
+.tab-check {
+  font-size: var(--t-12);
+  color: var(--m-fc);
+}
+.tab.on .tab-check {
+  color: inherit;
+}
+.tab.suggested::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--arancio);
+  box-shadow: 0 0 0 2px var(--notte-2);
+}
+.tab.suggested.on::after {
+  background: var(--notte);
+}
+.next-step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--r-m);
+  background: rgba(255, 122, 26, 0.1);
+  border: 1px solid rgba(255, 122, 26, 0.45);
+}
+.next-step-h {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-14);
+  color: var(--arancio-2);
+}
+.next-step p {
+  font-size: var(--t-14);
+  line-height: 1.45;
+  color: var(--testo);
+}
+.act.act-next {
+  border-color: var(--arancio);
+  box-shadow: 0 0 0 1px var(--arancio), 0 0 18px rgba(255, 122, 26, 0.25);
+}
+.act.act-next .act-label::before {
+  content: '▸ ';
+  color: var(--arancio-2);
+}
+.actions .search {
+  margin-top: 4px;
+  opacity: 0.85;
+}
