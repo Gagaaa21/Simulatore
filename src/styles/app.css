@@ -694,6 +694,9 @@ a.chip:hover {
   gap: 6px;
   flex-wrap: wrap;
 }
+.hud-hint .lbl-short {
+  display: none;
+}
 .hud-eta {
   font-family: var(--f-display);
   font-weight: 600;
@@ -2650,6 +2653,38 @@ a.chip:hover {
     font-size: var(--t-24);
   }
   .hud-clock-l {
+    display: none;
+  }
+  .hud-row {
+    gap: 8px 12px;
+  }
+  .hud-tools {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .hud-tools .hud-proto {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hud-eta {
+    flex: none;
+    white-space: nowrap;
+  }
+  .hud-hint {
+    flex: none;
+    min-width: 40px;
+  }
+  .hud-hint .lbl-long,
+  .hud-audio {
+    display: none;
+  }
+  .hud-hint .lbl-short {
+    display: inline;
+  }
+  .top-brand-text {
     display: none;
   }
 }

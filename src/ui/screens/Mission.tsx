@@ -248,12 +248,13 @@ export function Mission({
             <span className="hud-clock-l num">{sim.clock()}</span>
           </div>
           <div className="hud-tools">
-            <button className={`btn btn-small${sim.protocol ? ' btn-on' : ' btn-pulse'}`} onClick={() => setProtoOpen(true)} disabled={sim.phase === 'scena'} title="Dichiara il protocollo">
+            <button className={`btn btn-small hud-proto${sim.protocol ? ' btn-on' : ' btn-pulse'}`} onClick={() => setProtoOpen(true)} disabled={sim.phase === 'scena'} title="Dichiara il protocollo">
               {sim.protocol ? PROTOCOLS[sim.protocol.id].name : 'Scegli protocollo'}
             </button>
             {settings.mode === 'addestramento' && (
-              <button className="btn btn-small" onClick={showHint} title="Mostra il prossimo obiettivo da raggiungere">
-                Suggerimento
+              <button className="btn btn-small hud-hint" onClick={showHint} title="Mostra il prossimo obiettivo da raggiungere" aria-label="Suggerimento">
+                <span className="lbl-long">Suggerimento</span>
+                <span className="lbl-short" aria-hidden="true">?</span>
               </button>
             )}
             {sim.msaAt !== null && !sim.msaOnScene && (
@@ -265,7 +266,7 @@ export function Mission({
             <button className="icon-btn" onClick={() => setPaused((x) => !x)} aria-label={paused ? 'Riprendi' : 'Pausa'} title="Pausa (P)">
               {paused ? '▶' : '❚❚'}
             </button>
-            <button className="icon-btn" onClick={() => setSettings({ sound: !settings.sound })} aria-label={settings.sound ? 'Disattiva audio' : 'Attiva audio'} title="Audio">
+            <button className="icon-btn hud-audio" onClick={() => setSettings({ sound: !settings.sound })} aria-label={settings.sound ? 'Disattiva audio' : 'Attiva audio'} title="Audio">
               {settings.sound ? '♪' : '–'}
             </button>
             <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Impostazioni" title="Impostazioni">

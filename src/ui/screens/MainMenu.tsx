@@ -53,21 +53,21 @@ export function MainMenu({
       <div className="topbar">
         <div className="brand">
           <LogoMark size={34} />
-          <span>Sirena 118</span>
+          <span className="top-brand-text">Sirena 118</span>
         </div>
         <div className="topbar-right">
-        <button className="icon-btn gear" onClick={() => setShowSettings(true)} aria-label="Impostazioni" title="Impostazioni">
-          ⚙
-        </button>
-        <button className="rank-chip" onClick={() => go({ name: 'profilo' })} title="Apri il profilo">
-          <RankInsignia stripes={rk.rank.stripes} size={30} />
-          <span className="rank-chip-text">
-            <strong>{rk.rank.name}</strong>
-            <span className="xp-mini">
-              <span style={{ width: `${Math.round(rk.progress * 100)}%` }} />
+          <button className="icon-btn gear" onClick={() => setShowSettings(true)} aria-label="Impostazioni" title="Impostazioni">
+            ⚙
+          </button>
+          <button className="rank-chip" onClick={() => go({ name: 'profilo' })} title="Apri il profilo">
+            <RankInsignia stripes={rk.rank.stripes} size={30} />
+            <span className="rank-chip-text">
+              <strong>{rk.rank.name}</strong>
+              <span className="xp-mini">
+                <span style={{ width: `${Math.round(rk.progress * 100)}%` }} />
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
         </div>
       </div>
       {showSettings && <SettingsModal settings={settings} setSettings={setSettings} onClose={() => setShowSettings(false)} />}

@@ -47,9 +47,6 @@ export const VALUTAZIONE: Record<ValutazioneCode, { def: string; colore: string;
   I4: { def: 'Deceduto', colore: 'nero', hex: '#2A2F36' },
 };
 
-export const ETA_CODE = (anni: number): string =>
-  anni <= 14 ? 'H00 (0–14 anni)' : anni <= 60 ? 'H15 (15–60 anni)' : anni <= 75 ? 'H61 (61–75 anni)' : 'H76 (> 75 anni)';
-
 export function giudizioSintesi(l: LuogoCode, p: PatologiaCode, c: CriticitaCode): string {
   return `${l}${p}${c}`;
 }

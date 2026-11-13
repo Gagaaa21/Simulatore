@@ -3,7 +3,7 @@ import { fmtClock } from '../../engine/engine';
 import type { Report } from '../../engine/scoring';
 import { PENALTY_POINTS } from '../../engine/scoring';
 import type { ProtocolId, Scenario } from '../../engine/types';
-import { CRITICITA, ETA_CODE, LUOGO, PATOLOGIA, VALUTAZIONE } from '../../data/codes';
+import { CRITICITA, LUOGO, PATOLOGIA, VALUTAZIONE } from '../../data/codes';
 import { PROTOCOLS } from '../../data/protocols';
 import type { EquipmentId } from '../../data/equipment';
 import { EQUIPMENT } from '../../data/equipment';
@@ -171,7 +171,8 @@ export function Debrief({
             </span>
             <span className="box">
               <small>Età</small>
-              <b className="num">{ETA_CODE(scenario.patient.age).split(' ')[0]}</b>
+              <b className="num">{scenario.patient.age < 1 ? Math.max(1, Math.round(scenario.patient.age * 12)) : Math.floor(scenario.patient.age)}</b>
+              <em>{scenario.patient.age < 1 ? 'mesi' : 'anni'}</em>
             </span>
           </div>
         </header>
