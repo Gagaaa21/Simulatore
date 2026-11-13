@@ -25,7 +25,7 @@ export function PatientAlert({ sim }: { sim: Sim }) {
   // descrizione dello scenario nello stesso istante, se c'è
   const story = [...sim.log].reverse().find((l) => l.kind === 'paziente' && Math.abs(l.t - t) <= 1);
   return (
-    <div className={`p-alert p-alert-${kind}`} role="alert">
+    <div className={`p-alert p-alert-${kind}${sim.busy ? ' p-alert-low' : ''}`} role="alert">
       <span className="p-alert-ico" aria-hidden="true">
         {kind === 'migliora' ? '▲' : '▼'}
       </span>

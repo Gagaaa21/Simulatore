@@ -45,7 +45,6 @@ function followCoach(id: string, soloEssenziali = false) {
   let last = '';
   let same = 0;
   for (let i = 0; i < 600 && !sim.ended; i++) {
-    if (sim.aed.phase === 'pronto' && sim.aed.clearCalledAt !== null && sim.aed.clearCalledAt >= sim.aed.phaseAt) sim.aedShock();
     const st = nextStep(sim);
     if (!st) break;
     if (st.protocol) {
@@ -58,7 +57,11 @@ function followCoach(id: string, soloEssenziali = false) {
       continue;
     }
     if (!st.action) {
-      sim.advance(5);
+      // l'unico passo «a mano» è il pulsante Shock del DAE: lo preme solo quando la guida lo dice
+      if (/premi Shock/.test(st.text)) {
+        sim.advance(1);
+        sim.aedShock();
+      } else sim.advance(/DAE/.test(st.text) ? 1 : 5);
       continue;
     }
     same = st.action === last ? same + 1 : 0;

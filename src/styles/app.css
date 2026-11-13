@@ -4832,6 +4832,11 @@ kbd {
   border: 2px solid var(--pa);
   box-shadow: 0 12px 34px rgba(2, 6, 14, 0.6), 0 0 0 4px color-mix(in srgb, var(--pa) 25%, transparent);
   animation: p-alert-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: top 0.25s ease;
+}
+/* sotto la barra dell'azione in corso, che resta visibile */
+.p-alert-low {
+  top: 60px;
 }
 .p-alert-peggiora {
   --pa: #ff9f43;

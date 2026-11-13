@@ -36,6 +36,20 @@ function make(sim: Sim, id: string, text: string, pos?: Position): CoachStep | n
   return usable(sim, id) ? { text, action: id, group: ACTIONS[id].group, ...(pos ? { pos } : {}) } : null;
 }
 
+/** Come caricare il paziente, in base al caso: modalità e posizione da scegliere nel pannello del trasporto. */
+function trasportoTesto(sim: Sim): string {
+  const proto = sim.scenario.protocol.correct[0];
+  const sedia = sim.has('sedia');
+  if (sim.scenario.trauma) return 'Il paziente è immobilizzato: caricalo in barella sul materassino e trasporta.';
+  if (proto === 'dispnea')
+    return sedia
+      ? 'Trasporto: sedia portantina, paziente seduto. Con questa dispnea non deve fare le scale a piedi.'
+      : 'Trasporto: in barella, paziente seduto. Con questa dispnea non deve camminare.';
+  if (proto === 'dolore_toracico') return 'Trasporto: in barella, semiseduto. Con il dolore toracico non deve camminare.';
+  if (sim.flags.nonCamminare) return 'Trasporto: in barella, non a piedi. ' + String(sim.flags.nonCamminare);
+  return 'Il paziente è pronto: carica e trasporta.';
+}
+
 function first(...xs: Array<CoachStep | null | false | undefined>): CoachStep | null {
   for (const x of xs) if (x) return x;
   return null;
@@ -93,6 +107,16 @@ export function nextStep(sim: Sim): CoachStep | null {
     // RCP fatta dall'equipaggio (un astante che comprime va sostituito)
     const crewCpr = sim.cpr.active && sim.cpr.by !== 'astante';
     const child = p.age < 18;
+    // shock in arrivo: viene prima di tutto, comprese le compressioni (dopo «Via tutti!» nessuno riprende a comprimere)
+    if (shockPending) {
+      const clear = aed.clearCalledAt !== null && aed.clearCalledAt >= aed.phaseAt && !sim.cpr.active;
+      const s = first(
+        !clear && step('allontanatevi', 'Shock consigliato: «Via tutti!», nessuno deve toccare il paziente.'),
+        clear && aed.phase === 'carica' && { text: 'Il DAE si sta caricando: nessuno tocchi il paziente, tra poco premi Shock.' },
+        clear && aed.phase === 'pronto' && { text: 'Nessuno tocca il paziente: premi Shock nel pannello del DAE.' },
+      );
+      if (s) return s;
+    }
     return first(
       sc.role === 'laico' && !did('chiama_112') && step('chiama_112', 'Non risponde: chiama subito il 112 in vivavoce.'),
       sc.role === 'laico' && step('manda_dae', 'Manda qualcuno a prendere il DAE più vicino.'),
@@ -104,8 +128,6 @@ export function nextStep(sim: Sim): CoachStep | null {
       child && crewCpr && sc.role !== 'laico' && sim.cpr.ratio !== '15:2' && { text: 'Bambino: con un equipaggio addestrato il rapporto è 15:2. Impostalo nel pannello della RCP.', cprRatio: '15:2' as const },
       sim.has('dae') && aed.phase === 'spento' && step('dae_accendi', 'Accendi il DAE mentre si continua a comprimere.'),
       sim.has('dae') && !aed.pads && step('dae_piastre', child && p.weightKg < 25 ? 'Applica le piastre in posizione antero-posteriore, modalità pediatrica.' : 'Applica le piastre del DAE sul torace nudo.'),
-      shockPending && (aed.clearCalledAt === null || aed.clearCalledAt < aed.phaseAt) && step('allontanatevi', 'Il DAE sta per erogare lo shock: allontana tutti.'),
-      aed.phase === 'pronto' && { text: 'Nessuno tocca il paziente: premi Shock nel pannello del DAE.' },
       sim.has('pallone') && crewCpr && !did('pallone') && step('pallone', 'Ventila con il pallone autoespansibile durante la RCP.'),
       (sim.bvm || sim.cpr.ventilation === 'pallone') && sim.has('ossigeno') && !sim.o2 && step('ossigeno', 'Collega l’ossigeno ad alti flussi al pallone: reservoir a 15 L/min.'),
       !sim.protocol && { text: 'In alto dichiara il protocollo che stai applicando.', protocol: true },
@@ -215,6 +237,6 @@ export function nextStep(sim: Sim): CoachStep | null {
     sim.msaOnScene && step('consegna', 'L’équipe avanzata è arrivata: passa le consegne.'),
     sim.msaAt !== null && step('rivaluta', 'Il mezzo avanzato è in arrivo: resta con il paziente e rivalutalo.'),
     sc.role === 'laico' && step('rivaluta', 'Resta con la persona e rivalutala finché arriva l’ambulanza.'),
-    step('trasporta', 'Il paziente è pronto: carica e trasporta.'),
+    step('trasporta', trasportoTesto(sim)),
   );
 }
