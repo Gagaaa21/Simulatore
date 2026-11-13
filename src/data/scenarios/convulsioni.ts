@@ -1,3 +1,4 @@
+import { o2Adeguato } from '../../engine/oxygen';
 import type { Scenario } from '../../engine/types';
 import { afterContact, flagT } from './helpers';
 
@@ -137,11 +138,11 @@ export const convulsioni: Scenario = {
     },
     {
       id: 'ossigeno',
-      label: 'Saturazione riferita e ossigeno come indicato',
+      label: 'Ossigeno adeguato: come indicato dalla SORES, o al 100% in emergenza e poi riferito',
       category: 'trattamento',
       points: 6,
-      check: (s) => s.pulseOx && !!s.o2Order && (s.o2Order.device === null || (!!s.o2 && s.o2.device === s.o2Order.device)),
-      why: 'Dopo una crisi l’ossigenazione può essere ridotta: riferisci la saturazione, presidio e concentrazione li indica la SORES (target 94–98%).',
+      check: (s) => s.pulseOx && o2Adeguato(s),
+      why: 'Dopo una crisi l’ossigenazione può essere ridotta: con la coscienza compromessa l’equipaggio può dare subito ossigeno al 100%, altrimenti presidio e concentrazione li indica la SORES (target 94–98%).',
       sources: ['BTS_O2_2017', 'SORES_FVG'],
     },
   ],

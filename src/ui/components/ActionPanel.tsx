@@ -4,6 +4,7 @@ import { ACTION_LIST, ACTIONS, GROUP_LABEL, SECTION_ORDER } from '../../engine/a
 import { nextStep } from '../../engine/coach';
 import type { ActionDef, ActionGroup } from '../../engine/types';
 import { EQUIPMENT } from '../../data/equipment';
+import { GuideNote } from './GuideNote';
 
 /** Schede del pannello: dall'arrivo sulla scena al trasporto. */
 const GROUPS: ActionGroup[] = ['scena', 'valutazione', 'parametri', 'anamnesi', 'trattamenti', 'centrale'];
@@ -126,6 +127,7 @@ export function ActionPanel({ sim, onAction, coach, onProtocol, hintAction }: { 
         <div className="next-step" role="status" aria-live="polite">
           <span className="next-step-h">Prossimo passo</span>
           <p>{step.text}</p>
+          <GuideNote sim={sim} />
           {step.protocol && (
             <button className="btn btn-small btn-arancio" onClick={onProtocol}>
               Scegli il protocollo

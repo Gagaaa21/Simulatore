@@ -15,6 +15,7 @@ import { Scene } from '../components/Scene';
 import { ActionPanel } from '../components/ActionPanel';
 import { PatientAlert, PatientStatus } from '../components/PatientStatus';
 import { LogFeed } from '../components/LogFeed';
+import { GuideNote } from '../components/GuideNote';
 import { Monitor } from '../components/Monitor';
 import { AedPanel } from '../components/AedPanel';
 import { CprPanel } from '../components/CprPanel';
@@ -158,17 +159,12 @@ export function Mission({
     return undefined;
   });
 
-  // messaggi in sovraimpressione per errori e suggerimenti (solo addestramento)
-  const lastLog = sim.log[sim.log.length - 1];
+  // motivo per cui un'azione non si può fare adesso (es. dalla scena): sparisce da solo
   useEffect(() => {
-    if (!lastLog) return;
-    if (lastLog.kind === 'errore' || lastLog.kind === 'consiglio' || lastLog.kind === 'ok') {
-      setFlash(`${lastLog.kind}|${lastLog.text}`);
-      const id = window.setTimeout(() => setFlash(null), 5200);
-      return () => window.clearTimeout(id);
-    }
-    return undefined;
-  }, [lastLog?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!flash) return;
+    const id = window.setTimeout(() => setFlash(null), 4000);
+    return () => window.clearTimeout(id);
+  }, [flash]);
 
   const trigger = useCallback(
     (id: string, params?: Record<string, unknown>) => {
@@ -186,7 +182,7 @@ export function Mission({
       if (!r.ok) {
         if (r.missing && r.missing.length) setMissing({ id, items: r.missing, reason: r.reason ?? '' });
         else {
-          setFlash(`consiglio|${r.reason}`);
+          setFlash(`info|${r.reason}`);
         }
         sfx('click');
       } else sfx('click');
@@ -272,7 +268,10 @@ export function Mission({
           {scenario.tutorial && (
             <div className="guide" role="status">
               <span className="guide-n num">{step ? `${stepIdx + 1}/${TUTORIAL_STEPS.length}` : '✓'}</span>
-              <p>{step ? step.text : 'Missione completata: tra poco il debriefing.'}</p>
+              <div className="guide-body">
+                <p>{step ? step.text : 'Missione completata: tra poco il debriefing.'}</p>
+                <GuideNote sim={sim} />
+              </div>
             </div>
           )}
           <div className="scene-wrap">
@@ -396,7 +395,7 @@ export function Mission({
               <strong>Decidi.</strong> In alto scegli il protocollo; dal gruppo «SORES» riferisci valutazione e parametri, chiedi rinforzi, trasporti o passi le consegne. L’ossigeno lo applichi con presidio e concentrazione indicati dalla SORES.
             </li>
             <li>
-              Il tempo scorre: <kbd>P</kbd> mette in pausa, <kbd>/</kbd> cerca un’azione.{settings.mode === 'addestramento' ? ' In addestramento il riquadro «Prossimo passo» ti indica cosa fare e illumina il comando.' : ''}
+              Il tempo scorre: <kbd>P</kbd> mette in pausa, <kbd>/</kbd> cerca un’azione.{settings.mode === 'addestramento' ? ' In addestramento il riquadro «Prossimo passo» ti indica cosa fare e illumina il comando: errori e suggerimenti compaiono solo lì.' : ''}
             </li>
           </ol>
         </Modal>

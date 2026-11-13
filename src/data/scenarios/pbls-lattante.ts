@@ -179,7 +179,7 @@ export const pblsLattante: Scenario = {
     },
     onAction: (s, id) => {
       if (id === 'rcp' && s.isInfant()) {
-        s.say('consiglio', 'Lattante: tecnica a due pollici avvolgenti, metà inferiore dello sterno, almeno un terzo del torace.');
+        s.hint('Lattante: tecnica a due pollici avvolgenti, metà inferiore dello sterno, almeno un terzo del torace.');
       }
       if (id === 'aspira' && s.p.airway === 'gorgogliante') {
         s.p.airway = 'pervie';

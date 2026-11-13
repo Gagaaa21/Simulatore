@@ -51,7 +51,7 @@ export const TUTORIAL_STEPS: GuideStep[] = [
   { text: 'La scena è sicura: avvicinati al paziente.', target: '[data-action="avvicinati"]', done: (s) => s.did('avvicinati') },
   { text: 'Apri la scheda Valutazione e valuta la coscienza: chiamalo e toccagli le spalle.', target: '.tab-valutazione, [data-action="coscienza"]', done: (s) => s.did('coscienza') },
   { text: 'Nella scheda Parametri applica il saturimetro (puoi anche cliccare sul braccio destro del paziente nella scena). Il valore compare sul monitor.', target: '.tab-parametri, [data-action="saturimetro"]', done: (s) => s.pulseOx },
-  { text: 'In FVG l’ossigeno lo decide la SORES: in Trattamenti, sezione «Ossigeno e ventilazione», premi «Riferisci la SpO₂ alla SORES» e ascolta la risposta.', target: '.tab-trattamenti, .sec-ossigeno-e-ventilazione, [data-action="chiedi_ossigeno"]', done: (s) => s.o2Order !== null },
+  { text: 'Fuori dall’emergenza l’ossigeno lo decide la SORES: in Trattamenti, sezione «Ossigeno e ventilazione», premi «Riferisci la SpO₂ alla SORES» e ascolta la risposta.', target: '.tab-trattamenti, .sec-ossigeno-e-ventilazione, [data-action="chiedi_ossigeno"]', done: (s) => s.o2Order !== null },
   { text: 'Nella scheda Parametri misura la pressione arteriosa.', target: '.tab-parametri, [data-action="pressione"]', done: (s) => s.did('pressione') },
   { text: 'Chiedi alla moglie che farmaci prende: scheda Anamnesi, «Farmaci assunti?».', target: '.tab-anamnesi, [data-action="q_farmaci"]', done: (s) => s.didAny('q_farmaci', 'q_pasto', 'q_testimoni') },
   { text: 'Diabetico con insulina, confuso e sudato: in alto premi «Scegli protocollo» e seleziona «Ipoglicemia».', target: '.hud-tools .btn-pulse', done: (s) => s.protocol !== null },

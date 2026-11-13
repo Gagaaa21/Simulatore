@@ -185,7 +185,7 @@ export class Sim {
   penalize(id: string, severity: Severity, text: string, why: string, sources: string[] = []) {
     if (this.penalties.some((p) => p.id === id)) return;
     this.penalties.push({ id, t: this.t, severity, text, why, sources });
-    if (this.mode === 'addestramento') this.say('errore', `${text} — ${why}`, sources);
+    this.note('errore', `${text} — ${why}`, sources);
   }
   did(id: string): boolean {
     return (this.doneAt.get(id)?.length ?? 0) > 0;
@@ -219,8 +219,22 @@ export class Sim {
   clock(t: number = this.t): string {
     return clockAt(this.scenario.dispatch.time, (this.scenario.dispatch.travel ?? 480) + t);
   }
+  /** Suggerimento della guida: solo in addestramento, mostrato nel riquadro della guida e non nel diario. */
   hint(text: string) {
-    if (this.mode === 'addestramento') this.say('consiglio', text);
+    this.note('consiglio', text);
+  }
+  /** Nota della guida (suggerimento, conferma o errore): esiste solo in addestramento. */
+  note(kind: 'consiglio' | 'ok' | 'errore', text: string, sources?: string[]) {
+    if (this.mode === 'addestramento') this.say(kind, text, sources);
+  }
+  /** L'ultima nota della guida, se recente. */
+  lastNote(window = 12): LogEntry | null {
+    for (let i = this.log.length - 1; i >= 0; i--) {
+      const l = this.log[i];
+      if (this.t - l.t > window) return null;
+      if (l.kind === 'consiglio' || l.kind === 'ok' || l.kind === 'errore') return l;
+    }
+    return null;
   }
 
   // ───────────────────────── stato derivato
@@ -312,7 +326,8 @@ export class Sim {
       this.aedFetchAt = null;
       this.brought.add('dae');
       this.set('daeArrivatoAt', this.t);
-      this.say('evento', 'Il DAE è arrivato: accendilo subito e applica le piastre.');
+      this.say('evento', 'Il DAE è arrivato.');
+      if (this.busy && ['attendi', 'attendi_lungo', 'rivaluta'].includes(this.busy.actionId)) this.busy = null;
       this.soundQueue.push('bip');
     }
     // azione in corso
@@ -427,7 +442,7 @@ export class Sim {
 
     // Arresto da ipossia o da shock
     if ((this.hypoxiaSeconds > 45 && v.hr <= 30) || f > 0.5) {
-      this.enterArrest(f > 0.5 ? 'aesp' : 'aesp', f > 0.5 ? 'Il paziente non respira più: arresto cardiaco da shock emorragico.' : 'Il paziente non respira più: arresto cardiaco ipossico.');
+      this.enterArrest(f > 0.5 ? 'aesp' : 'aesp', 'Il paziente perde conoscenza e smette di respirare normalmente.');
     }
   }
 
@@ -550,6 +565,8 @@ export class Sim {
     this.startAnalysis();
   }
   startAnalysis() {
+    // la voce del DAE interrompe un'attesa: serve la squadra
+    if (this.busy && ['attendi', 'attendi_lungo', 'rivaluta'].includes(this.busy.actionId)) this.busy = null;
     this.setAedPhase('analisi');
     if (this.aed.firstAnalysisAt === null) this.aed.firstAnalysisAt = this.t;
     if (this.cpr.active) {
@@ -788,8 +805,9 @@ export class Sim {
     const out: PatientChange[] = [];
     const add = (key: PatientChange['key'], dir: PatientChange['dir'], from: string, to: string, text: string) => out.push({ t: this.t, key, dir, from, to, text });
     if (now.arrest !== prev.arrest) {
-      if (now.arrest) add('arresto', 'peggiora', 'circolo presente', 'arresto', 'Arresto cardiaco');
-      else add('arresto', 'migliora', 'arresto', 'circolo presente', 'Ritorno del circolo spontaneo');
+      // ciò che si vede, non la diagnosi: l'arresto lo riconosce il soccorritore
+      if (now.arrest) add('arresto', 'peggiora', 'circolo presente', 'arresto', prev.avpu === 'A' || prev.avpu === 'V' ? 'Il paziente si accascia e non risponde' : 'Peggioramento improvviso');
+      else add('arresto', 'migliora', 'arresto', 'circolo presente', 'Segni di vita');
     } else if (!now.arrest) {
       if (now.avpu !== prev.avpu) add('coscienza', dirOf(RANK_AVPU, prev.avpu, now.avpu), AVPU_TXT[prev.avpu], AVPU_TXT[now.avpu], `Coscienza: ${AVPU_TXT[now.avpu]}`);
       if (now.airway !== prev.airway) add('vie_aeree', dirOf(RANK_AIRWAY, prev.airway, now.airway), AIRWAY_TXT[prev.airway], AIRWAY_TXT[now.airway], `Vie aeree: ${AIRWAY_TXT[now.airway]}`);
@@ -818,10 +836,10 @@ export class Sim {
     this.o2 = { device, flow, since: this.t, ...(device === 'venturi' ? { fio2: fio2 ?? 28 } : {}) };
     this.say('azione', `Ossigeno: ${describeO2(device, flow, fio2)}.`);
     if (device === 'reservoir' && flow < 10) {
-      this.say('consiglio', 'Il reservoir resta sgonfio: con la maschera con reservoir servono 10–15 L/min.');
+      this.hint('Il reservoir resta sgonfio: con la maschera con reservoir servono 10–15 L/min.');
     }
     if (device === 'occhialini' && flow > 4) {
-      this.say('consiglio', 'Con gli occhialini nasali oltre 4 L/min non aumenti l’ossigenazione e irriti le mucose.');
+      this.hint('Con gli occhialini nasali oltre 4 L/min non aumenti l’ossigenazione e irriti le mucose.');
     }
     if (!this.flags.o2At) this.set('o2At', this.t);
     if ((this.bvm || this.cpr.ventilation === 'pallone') && flow >= 10) this.set('o2PalloneAlto', this.t);
@@ -834,8 +852,8 @@ export class Sim {
     this.say('azione', `Protocollo scelto: ${PROTOCOLS[id].name}.`);
     if (this.mode === 'addestramento' && first) {
       const pr = this.scenario.protocol;
-      if (pr.correct.includes(id)) this.say('ok', 'Scelta coerente con il quadro clinico.');
-      else if (pr.acceptable?.includes(id)) this.say('consiglio', 'Scelta accettabile, ma c’è un protocollo più specifico per questo quadro.');
+      if (pr.correct.includes(id)) this.note('ok', 'Scelta coerente con il quadro clinico.');
+      else if (pr.acceptable?.includes(id)) this.hint('Scelta accettabile, ma c’è un protocollo più specifico per questo quadro.');
       else this.say('errore', 'Questo protocollo non corrisponde al quadro: rivedi i reperti raccolti.');
     }
     this.emit();

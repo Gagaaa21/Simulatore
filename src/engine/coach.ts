@@ -1,6 +1,7 @@
 import type { Sim } from './engine';
 import type { ActionGroup, Position } from './types';
 import { ACTIONS } from './actions';
+import { emergenzaO2 } from './oxygen';
 
 /** Un passo suggerito dalla guida in addestramento. */
 export interface CoachStep {
@@ -34,6 +35,13 @@ function usable(sim: Sim, id: string): boolean {
 
 function make(sim: Sim, id: string, text: string, pos?: Position): CoachStep | null {
   return usable(sim, id) ? { text, action: id, group: ACTIONS[id].group, ...(pos ? { pos } : {}) } : null;
+}
+
+/** L'ossigeno in corso è quello indicato dalla SORES. */
+function o2ComeIndicato(sim: Sim): boolean {
+  const o = sim.o2Order;
+  if (!o?.device || !sim.o2) return false;
+  return sim.o2.device === o.device && (o.device !== 'venturi' || sim.o2.fio2 === o.fio2) && (o.device === 'venturi' || Math.abs(sim.o2.flow - o.flow) <= 1);
 }
 
 /** Come caricare il paziente, in base al caso: modalità e posizione da scegliere nel pannello del trasporto. */
@@ -134,6 +142,7 @@ export function nextStep(sim: Sim): CoachStep | null {
       sc.role !== 'laico' && !sim.report && step('comunica', 'Aggiorna la SORES: arresto cardiaco, RCP e DAE in corso.'),
       sim.cpr.active && sc.crew > 1 && sim.t - sim.cpr.compressorSince >= 110 && step('cambio_compressore', 'Sono quasi 2 minuti: cambio del compressore.'),
       sim.msaOnScene && step('consegna', 'L’équipe avanzata è arrivata: passa le consegne continuando la RCP.'),
+      sim.cpr.active && sim.t - sim.cpr.compressorSince < 80 && sim.aedFetchAt === null && (!sim.has('dae') || (!!aed.pads && aed.pads !== 'errata')) && step('attendi', 'Continua la RCP: 100–120 compressioni al minuto, profonde 5–6 cm, pause al minimo. Prosegui fino alla prossima analisi o all’arrivo dei soccorsi.'),
       { text: 'Continua la RCP: 100–120 compressioni al minuto, profonde 5–6 cm, pause al minimo.' },
     );
   }
@@ -189,8 +198,9 @@ export function nextStep(sim: Sim): CoachStep | null {
     !did('gas') && p.avpu !== 'A' && step('gas', 'Valuta il respiro: guarda, ascolta e senti.'),
     did('gas') && (p.avpu === 'P' || p.avpu === 'U') && !sc.trauma && !respiroInefficace && p.position !== 'laterale' && step('posizione', 'Non è cosciente ma respira: posizione laterale di sicurezza.', 'laterale'),
     !sim.pulseOx && sim.has('zaino') && step('saturimetro', 'Applica il saturimetro.'),
-    sim.pulseOx && !sim.o2Order && sc.role !== 'laico' && step('chiedi_ossigeno', 'Riferisci la saturazione alla SORES: ti dirà se dare l’ossigeno e con quale presidio.'),
-    !!sim.o2Order?.device && !sim.o2 && sim.has('ossigeno') && step('ossigeno', 'Applica l’ossigeno con il presidio e la concentrazione indicati dalla SORES.'),
+    emergenzaO2(sim) && !sim.o2 && !sim.bvm && sc.role !== 'laico' && sim.has('ossigeno') && step('ossigeno', 'Situazione critica: puoi dare subito ossigeno al 100% senza attendere la SORES, maschera con reservoir a 15 L/min. Poi riferiscilo.'),
+    sim.pulseOx && !sim.o2Order && sc.role !== 'laico' && step('chiedi_ossigeno', sim.o2 ? 'Riferisci alla SORES la saturazione e l’ossigeno che hai avviato.' : 'Riferisci la saturazione alla SORES: ti dirà se dare l’ossigeno e con quale presidio.'),
+    !!sim.o2Order?.device && !o2ComeIndicato(sim) && sim.has('ossigeno') && step('ossigeno', sim.o2 ? 'Adegua l’ossigeno all’indicazione della SORES.' : 'Applica l’ossigeno con il presidio e la concentrazione indicati dalla SORES.'),
     ['tachipnoico', 'dispnoico', 'sibili', 'bradipnoico', 'superficiale'].includes(p.breathing) && !did('conta_fr') && step('conta_fr', 'Respira male: conta la frequenza respiratoria.'),
 
     sc.dispatch.criticita === 'R' && sc.role !== 'laico' && !sim.report && sim.pulseOx && step('comunica', 'Codice rosso: aggiorna presto la SORES con quello che hai trovato.'),

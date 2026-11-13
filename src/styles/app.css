@@ -4483,6 +4483,54 @@ kbd {
   font-size: var(--t-14);
   color: var(--arancio-2);
 }
+.guide-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.guide-note {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--r-s);
+  border-left: 3px solid var(--gn);
+  background: color-mix(in srgb, var(--gn) 12%, transparent);
+  font-size: var(--t-14);
+  line-height: 1.4;
+  animation: gn-in 0.3s ease;
+}
+.gn-errore {
+  --gn: var(--bad);
+}
+.gn-ok {
+  --gn: var(--ok);
+}
+.gn-consiglio {
+  --gn: var(--warn);
+}
+.gn-h {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-12);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gn);
+}
+.gn-why {
+  color: var(--testo-2);
+}
+@keyframes gn-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.flash-info {
+  background: #14202e;
+  border: 1px solid var(--filo-2);
+}
 .next-step p {
   font-size: var(--t-14);
   line-height: 1.45;

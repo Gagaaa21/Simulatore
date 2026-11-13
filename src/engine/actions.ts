@@ -1,7 +1,7 @@
 import type { Sim } from './engine';
 import type { ActionDef, BodyRegion, O2Device, Patient, Position } from './types';
 import { VALUTAZIONE } from '../data/codes';
-import { describeO2, soresO2Order } from './oxygen';
+import { altiFlussi, describeO2, emergenzaO2, soresO2Order } from './oxygen';
 import { reportLabel } from './scoring';
 
 // ───────────────────────── testi dei reperti
@@ -87,7 +87,7 @@ function caldo(s: Sim): boolean {
 }
 
 function needPatient(sim: Sim): true | string {
-  if (sim.phase !== 'paziente') return 'Prima avvicinati al paziente.';
+  if (sim.phase !== 'paziente') return 'Non sei ancora accanto al paziente.';
   return true;
 }
 function trauma(sim: Sim) {
@@ -452,7 +452,7 @@ const list: ActionDef[] = [
       }
       sim.p.look.helmet = false;
       sim.set('cascoRimosso', true);
-      sim.find('Casco rimosso mantenendo l’allineamento. Ora puoi valutare e gestire le vie aeree.');
+      sim.find('Casco rimosso mantenendo l’allineamento del capo.');
     },
   },
   {
@@ -479,7 +479,7 @@ const list: ActionDef[] = [
     visible: (s) => soffoca(s),
     duration: 8,
     contact: true,
-    available: (s) => (s.p.avpu === 'U' ? 'Il paziente è incosciente: i colpi dorsali non sono più indicati.' : needPatient(s)),
+    available: (s) => (s.p.avpu === 'U' ? 'Il paziente è incosciente.' : needPatient(s)),
     run: ({ sim }) => {
       if (sim.isInfant()) {
         sim.find('Lattante prono sull’avambraccio, capo più in basso del torace: dai fino a 5 colpi tra le scapole.');
@@ -517,7 +517,7 @@ const list: ActionDef[] = [
     duration: 8,
     contact: true,
     visible: (s) => soffoca(s) && s.p.age < 1,
-    available: (s) => (s.p.avpu === 'U' ? 'Il lattante è incosciente: inizia la RCP.' : needPatient(s)),
+    available: (s) => (s.p.avpu === 'U' ? 'Il lattante è incosciente.' : needPatient(s)),
     run: ({ sim }) => {
       sim.find('Lattante supino sulle tue ginocchia, capo in basso: 5 compressioni toraciche secche con la tecnica a due pollici.');
     },
@@ -618,7 +618,7 @@ const list: ActionDef[] = [
   },
   {
     id: 'ossigeno',
-    label: 'Ossigeno come indicato dalla SORES (presidio e concentrazione)',
+    label: 'Ossigeno: scegli presidio e flusso',
     short: 'Ossigeno',
     group: 'trattamenti',
     section: 'Ossigeno e ventilazione',
@@ -626,14 +626,7 @@ const list: ActionDef[] = [
     needs: ['ossigeno'],
     contact: true,
     picker: 'ossigeno',
-    available: (s) => {
-      const n = needPatient(s);
-      if (n !== true) return n;
-      if (s.o2 || s.bvm || s.inArrest() || s.scenario.role === 'laico') return true;
-      if (!s.o2Order) return 'Prima riferisci la saturazione alla SORES: sarà lei a indicarti presidio e concentrazione.';
-      if (!s.o2Order.device) return 'La SORES non ha indicato l’ossigeno.';
-      return true;
-    },
+    available: needPatient,
     regions: ['testa'],
     run: ({ sim, params }) => {
       const device = (params?.device as O2Device | null) ?? null;
@@ -641,15 +634,20 @@ const list: ActionDef[] = [
       const fio2 = params?.fio2 === undefined ? undefined : Number(params.fio2);
       const o = sim.o2Order;
       if (device && !sim.bvm && !sim.inArrest() && sim.scenario.role !== 'laico') {
-        const match = !!o && o.device === device && (device === 'venturi' ? o.fio2 === fio2 : Math.abs(o.flow - flow) <= 1);
-        if (!match) {
-          sim.penalize(
-            'o2_non_indicato',
-            'grave',
-            'Ossigeno diverso dall’indicazione della SORES',
-            o?.device ? `La SORES aveva indicato ${describeO2(o.device, o.flow, o.fio2)}: presidio e concentrazione li decide la Centrale in base alla saturazione che riferisci.` : 'Presidio e concentrazione li decide la SORES in base alla saturazione che riferisci.',
-            ['SORES_FVG', 'BTS_O2_2017'],
-          );
+        const match = !!o?.device && o.device === device && (device === 'venturi' ? o.fio2 === fio2 : Math.abs(o.flow - flow) <= 1);
+        // in emergenza l'equipaggio può dare da sé ossigeno al 100%, poi lo riferisce alla SORES
+        const autonomo = emergenzaO2(sim) && altiFlussi(device, flow);
+        if (autonomo && !match) {
+          if (sim.flags.o2AutonomoAt === undefined) sim.set('o2AutonomoAt', sim.t);
+        } else if (!match) {
+          const why = o?.device
+            ? `La SORES aveva indicato ${describeO2(o.device, o.flow, o.fio2)}: fuori dall’emergenza presidio e concentrazione li decide la Centrale in base alla saturazione che riferisci.`
+            : o
+              ? 'La SORES aveva indicato che l’ossigeno non serviva.'
+              : emergenzaO2(sim)
+                ? 'In emergenza l’equipaggio può dare in autonomia solo ossigeno al 100% (maschera con reservoir a 15 L/min o pallone); altri presidi e concentrazioni li indica la SORES.'
+                : 'Fuori dall’emergenza presidio e concentrazione li decide la SORES dopo che le hai riferito la saturazione.';
+          sim.penalize(o ? 'o2_non_indicato' : 'o2_senza_indicazione', 'grave', o ? 'Ossigeno diverso dall’indicazione della SORES' : 'Ossigeno senza indicazione della SORES', why, ['SORES_FVG', 'BTS_O2_2017']);
         }
       }
       sim.setO2(device, flow, fio2);
@@ -666,8 +664,8 @@ const list: ActionDef[] = [
     available: (s) => {
       const n = needPatient(s);
       if (n !== true) return n;
-      if (!s.pulseOx) return 'Prima applica il saturimetro.';
-      if (s.inArrest()) return 'In arresto: ventila con pallone e ossigeno ad alti flussi.';
+      if (!s.pulseOx) return 'Saturimetro non applicato.';
+      if (s.inArrest()) return 'Paziente in arresto cardiaco.';
       return true;
     },
     run: ({ sim }) => {
@@ -936,7 +934,7 @@ const list: ActionDef[] = [
       } else if (joint) {
         sim.penalize('tq_articolazione', 'grave', 'Tourniquet su un’articolazione', 'Sopra un’articolazione il laccio non comprime l’arteria: posizionalo 5–7 cm sopra la ferita, evitando le articolazioni.', ['ERC_FA_2025']);
       } else if (cm > 15) {
-        sim.say('consiglio', `Il laccio è circa ${cm} cm sopra la ferita: funziona, ma la raccomandazione è 5–7 cm a monte per risparmiare tessuto.`);
+        sim.hint(`Il laccio è circa ${cm} cm sopra la ferita: funziona, ma la raccomandazione è 5–7 cm a monte per risparmiare tessuto.`);
       }
       if (sim.tourniquet.ok) {
         sim.say('azione', `Stringi il tourniquet finché il sanguinamento si arresta (fa male: è normale). Annoti l’ora: ${ora}.`);
@@ -962,7 +960,7 @@ const list: ActionDef[] = [
     run: ({ sim }) => {
       sim.immob.add('pelvica');
       if (!sim.flags.traumaBacino) {
-        sim.say('consiglio', 'Non ci sono elementi di sospetta frattura di bacino: la cintura non era necessaria.');
+        sim.hint('Non ci sono elementi di sospetta frattura di bacino: la cintura non era necessaria.');
       } else sim.say('azione', 'Cintura pelvica posizionata sui grandi trocanteri e serrata: riduce il volume pelvico e il sanguinamento.');
     },
   },
@@ -1035,14 +1033,14 @@ const list: ActionDef[] = [
     needs: ['dae'],
     contact: true,
     picker: 'dae_piastre',
-    available: (s) => (s.aed.phase === 'spento' ? 'Accendi prima il DAE.' : s.aed.pads && s.aed.pads !== 'errata' ? 'Le piastre sono già applicate.' : needPatient(s)),
+    available: (s) => (s.aed.phase === 'spento' ? 'Il DAE è spento.' : s.aed.pads && s.aed.pads !== 'errata' ? 'Le piastre sono già applicate.' : needPatient(s)),
     regions: ['torace'],
     run: ({ sim, params }) => {
       const pos = (params?.pos as 'anterolaterale' | 'anteroposteriore' | 'errata') ?? 'anterolaterale';
       const ped = params?.pediatric === true;
       sim.say('azione', `Scopri e asciughi il torace, applichi le piastre in posizione ${pos === 'errata' ? 'non corretta' : pos}${ped ? ' attivando la modalità pediatrica' : ''}.`);
       if (sim.p.weightKg < 25 && pos === 'anterolaterale' && !ped) {
-        sim.say('consiglio', 'Sotto i 25 kg (circa 8 anni) la ERC raccomanda la posizione antero-posteriore e la modalità pediatrica se disponibile.');
+        sim.hint('Sotto i 25 kg (circa 8 anni) la ERC raccomanda la posizione antero-posteriore e la modalità pediatrica se disponibile.');
       }
       sim.aedPads(pos, ped);
     },
@@ -1539,7 +1537,7 @@ const list: ActionDef[] = [
         } else if (trauma(sim)) {
           sim.penalize('pls_trauma', 'grave', 'Posizione laterale in un traumatizzato', 'La ERC 2025 sconsiglia la posizione laterale di sicurezza nel trauma: mantieni l’allineamento e gestisci le vie aeree con la sublussazione.', ['ERC_FA_2025']);
         } else if (p.avpu === 'A') {
-          sim.say('consiglio', 'La posizione laterale di sicurezza serve al paziente con coscienza ridotta che respira: un paziente sveglio può scegliere la posizione più comoda.');
+          sim.hint('La posizione laterale di sicurezza serve al paziente con coscienza ridotta che respira: un paziente sveglio può scegliere la posizione più comoda.');
         }
         if (p.vomitInMouth) {
           p.vomitInMouth = false;
@@ -1642,7 +1640,7 @@ const list: ActionDef[] = [
       }
       sim.immob.add('collare');
       sim.say('azione', 'Misuri e applichi il collare cervicale; il collega continua a stabilizzare il capo.');
-      if (!sim.scenario.trauma) sim.say('consiglio', 'Non c’è un trauma: il collare non era indicato.');
+      if (!sim.scenario.trauma) sim.hint('Non c’è un trauma: il collare non era indicato.');
     },
   },
   {
@@ -1674,7 +1672,7 @@ const list: ActionDef[] = [
     available: (s) => (s.immob.has('materasso') ? 'Già nel materassino.' : needPatient(s)),
     run: ({ sim }) => {
       if (!sim.immob.has('cucchiaio') && sim.scenario.trauma) {
-        sim.say('consiglio', 'Per trasferire il paziente nel materassino limitando i movimenti si usa la barella a cucchiaio.');
+        sim.hint('Per trasferire il paziente nel materassino limitando i movimenti si usa la barella a cucchiaio.');
       }
       sim.immob.add('materasso');
       sim.say('azione', 'Trasferite il paziente sul materassino e aspirate l’aria: è immobilizzato in modo confortevole per il trasporto.');
@@ -1694,7 +1692,7 @@ const list: ActionDef[] = [
     run: ({ sim }) => {
       sim.immob.add('tavola');
       sim.say('azione', 'Rotolate il paziente sulla tavola spinale e fissate fermacapo e cinghie.');
-      sim.say('consiglio', 'La tavola spinale è soprattutto un presidio di estricazione: per il trasporto è preferibile il materassino a depressione.');
+      sim.hint('La tavola spinale è soprattutto un presidio di estricazione: per il trasporto è preferibile il materassino a depressione.');
     },
   },
   {
@@ -1863,7 +1861,7 @@ const list: ActionDef[] = [
     available: (s) => {
       const n = needPatient(s);
       if (n !== true) return n;
-      if (s.scenario.role === 'laico') return 'Non hai un mezzo: attendi l’ambulanza.';
+      if (s.scenario.role === 'laico') return 'Non hai un mezzo di trasporto.';
       return true;
     },
     run: ({ sim, params }) => {

@@ -47,11 +47,6 @@ export function OxygenPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm
           <span className="sores-tag">SORES</span>
           Indicazione: <strong>{describeO2(order.device, order.flow, order.fio2)}</strong>, obiettivo <span className="num">{order.target[0]}–{order.target[1]}%</span>.
         </p>
-      ) : (sim.inArrest() || sim.bvm) ? (
-        <p className="sores-order">
-          <span className="sores-tag">BLSD</span>
-          Ventilazione con pallone: collega l’ossigeno ad alti flussi (reservoir, 15 L/min).
-        </p>
       ) : null}
       <div className="o2-devices" role="radiogroup" aria-label="Presidio">
         {(Object.keys(O2_INFO) as O2Device[]).map((d) => (
@@ -350,7 +345,6 @@ export function TransportPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConf
           </button>
         ))}
       </div>
-      {!sim.report && <p className="flow-note warn">Non hai ancora riferito la valutazione alla SORES.</p>}
     </Modal>
   );
 }

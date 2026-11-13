@@ -170,7 +170,8 @@ export const fbaoAdulto: Scenario = {
         s.set('cprSec', n);
         if (n === 20 && !s.flags.corpoVisibile) {
           s.set('corpoVisibile', true);
-          s.say('evento', 'Durante le compressioni il paziente ha un sussulto: controlla la bocca prima di ventilare.');
+          s.say('evento', 'Durante le compressioni il paziente ha un sussulto.');
+          s.hint('Controlla la bocca prima di ventilare: il corpo estraneo potrebbe essersi spostato.');
         }
       }
       if (s.flags.corpoRimosso && !s.flags.corpoRimossoAt) {

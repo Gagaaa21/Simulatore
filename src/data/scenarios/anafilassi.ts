@@ -1,3 +1,4 @@
+import { o2Adeguato } from '../../engine/oxygen';
 import type { Scenario } from '../../engine/types';
 import { contact, flagT, soresInformedAt } from './helpers';
 
@@ -98,11 +99,11 @@ export const anafilassi: Scenario = {
     },
     {
       id: 'ossigeno',
-      label: 'Saturazione riferita e ossigeno ad alti flussi come indicato',
+      label: 'Ossigeno al 100% (reservoir a 15 L/min) e saturazione riferita alla SORES',
       category: 'trattamento',
       points: 8,
-      check: (s) => !!s.o2Order?.device && !!s.o2 && s.o2.device === s.o2Order.device,
-      why: 'Broncospasmo ed edema causano ipossiemia: nel paziente critico la SORES indica il reservoir a 15 L/min.',
+      check: (s) => o2Adeguato(s) && s.o2?.device === 'reservoir',
+      why: 'Broncospasmo ed edema causano ipossiemia: nel paziente critico l’equipaggio può dare subito ossigeno al 100% con il reservoir a 15 L/min e poi riferirlo alla SORES.',
       sources: ['BTS_O2_2017', 'SORES_FVG'],
     },
     {
@@ -156,7 +157,7 @@ export const anafilassi: Scenario = {
           p.speech = 'confuso';
           s.say('paziente', 'Luca è sempre più pallido e soporoso.');
         }
-        if (s.base.sbp <= 58.2 && !s.inArrest()) s.enterArrest('aesp', 'Luca perde conoscenza e smette di respirare: arresto cardiaco.');
+        if (s.base.sbp <= 58.2 && !s.inArrest()) s.enterArrest('aesp', 'Luca perde conoscenza e smette di respirare.');
       } else if (a2 === null) {
         if (s.t - a1 < 240) {
           s.base.sbp = Math.min(98, s.base.sbp + 0.08);

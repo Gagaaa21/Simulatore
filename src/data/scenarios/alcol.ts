@@ -1,3 +1,4 @@
+import { o2Adeguato } from '../../engine/oxygen';
 import type { Scenario } from '../../engine/types';
 import { afterContact, contact, soresInformedAt } from './helpers';
 
@@ -104,10 +105,10 @@ export const alcol: Scenario = {
     },
     {
       id: 'ossigeno',
-      label: 'Saturazione riferita alla SORES e ossigeno come indicato',
+      label: 'Ossigeno adeguato: come indicato dalla SORES, o al 100% in emergenza e poi riferito',
       category: 'trattamento',
       points: 8,
-      check: (s) => !!s.o2Order && (s.o2Order.device === null || (!!s.o2 && s.o2.device === s.o2Order.device)),
+      check: (s) => o2Adeguato(s),
       why: 'Con SpO₂ sotto il 94% la SORES indica presidio e concentrazione: target 94–98%.',
       sources: ['BTS_O2_2017', 'SORES_FVG'],
     },

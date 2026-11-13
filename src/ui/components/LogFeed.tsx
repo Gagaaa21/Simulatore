@@ -29,12 +29,14 @@ const KIND_LABEL: Record<LogKind, string> = {
 
 export function LogFeed({ sim, compact }: { sim: Sim; compact?: boolean }) {
   const ref = useRef<HTMLOListElement>(null);
-  const n = sim.log.length;
+  // errori, suggerimenti e conferme stanno nel riquadro della guida, non nel diario
+  const log = sim.log.filter((e) => e.kind !== 'errore' && e.kind !== 'consiglio' && e.kind !== 'ok');
+  const n = log.length;
   useEffect(() => {
     const el = ref.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [n]);
-  const entries = compact ? sim.log.slice(-40) : sim.log;
+  const entries = compact ? log.slice(-40) : log;
   return (
     <section className="log" aria-label="Diario di missione">
       <header className="log-head">

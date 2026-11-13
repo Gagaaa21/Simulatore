@@ -140,7 +140,8 @@ export function CprPanel({ sim, onAction }: { sim: Sim; onAction: (id: string) =
     return () => window.removeEventListener('keydown', onKey);
   }, [mine, compress]);
 
-  if (!sim.inArrest() && !c.active) return null;
+  // compare quando l'arresto è stato riconosciuto (o la RCP è già iniziata), non prima
+  if (!c.active && !(sim.inArrest() && sim.arrest.recognizedAt !== null)) return null;
   const since = c.active ? sim.t - c.compressorSince : 0;
   const tired = since >= 120;
   const who = c.by === 'giocatore' || sim.scenario.role === 'laico' ? 'tu' : c.by === 'astante' ? 'un astante' : 'un collega';
@@ -149,7 +150,7 @@ export function CprPanel({ sim, onAction }: { sim: Sim; onAction: (id: string) =
       <div className="cpr-head">
         <div>
           <h3>{c.active ? 'RCP in corso' : 'RCP ferma'}</h3>
-          <p className="cpr-sub">{c.active ? `Comprime ${who} · ${c.ratio === 'solo_compressioni' ? 'solo compressioni' : c.ratio}` : 'Il paziente è in arresto: ogni secondo senza compressioni conta.'}</p>
+          <p className="cpr-sub">{c.active ? `Comprime ${who} · ${c.ratio === 'solo_compressioni' ? 'solo compressioni' : c.ratio}` : 'Compressioni ferme.'}</p>
         </div>
         {c.active && (
           <div className={`cpr-ring${tired ? ' tired' : ''}`} style={{ ['--p' as string]: `${Math.min(1, since / 120) * 360}deg` }}>
@@ -167,7 +168,7 @@ export function CprPanel({ sim, onAction }: { sim: Sim; onAction: (id: string) =
       )}
       {!c.active && (
         <button className="btn btn-big btn-arancio" onClick={() => onAction('rcp')}>
-          {sim.aed.lastShockAt !== null && sim.t - sim.aed.lastShockAt < 30 ? 'Riprendi subito le compressioni' : 'Inizia le compressioni'}
+          Inizia le compressioni
         </button>
       )}
       {c.active && (

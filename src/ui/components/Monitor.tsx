@@ -114,12 +114,12 @@ export function Monitor({ sim }: { sim: Sim }) {
         <div className="mtile small mt-pa">
           <span className="mt-label">PA mmHg</span>
           <span className="mt-value num">{pa ? pa.value.replace(' mmHg', '') : '––'}</span>
-          <span className="mt-note">{pa ? ago(sim, pa.t) : 'da misurare'}</span>
+          <span className="mt-note">{pa ? ago(sim, pa.t) : 'non misurata'}</span>
         </div>
         <div className="mtile small mt-fr">
           <span className="mt-label">FR /min</span>
           <span className="mt-value num">{fr ? fr.value.replace('/min', '') : '––'}</span>
-          <span className="mt-note">{fr ? ago(sim, fr.t) : 'da contare'}</span>
+          <span className="mt-note">{fr ? ago(sim, fr.t) : 'non contata'}</span>
         </div>
         <div className="mtile small mt-glu">
           <span className="mt-label">Glicemia</span>

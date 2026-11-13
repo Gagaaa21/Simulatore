@@ -192,7 +192,7 @@ export const colpoCalore: Scenario = {
         s.penalize('trasporto_caldo', 'grave', 'Trasporto prima del raffreddamento', 'Nel colpo di calore si raffredda sul posto fino a meno di 39 °C prima di trasferire.', ['ERC_FA_2025']);
       }
       if (id === 'raffredda' && !s.did('scopri')) {
-        s.say('consiglio', 'Ricorda anche il raffreddamento passivo: ombra e indumenti in eccesso tolti.');
+        s.hint('Ricorda anche il raffreddamento passivo: ombra e indumenti in eccesso tolti.');
       }
       return false;
     },

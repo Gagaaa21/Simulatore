@@ -112,7 +112,7 @@ export function Scene({ sim, onAction }: { sim: Sim; onAction: (id: string) => v
               ))}
             </ul>
           ) : (
-            <p className="muted">Prima di toccare il paziente: è sicuro avvicinarsi?</p>
+            <p className="muted">Scena non ancora valutata.</p>
           )}
         </div>
       )}

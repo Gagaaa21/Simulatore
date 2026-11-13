@@ -148,7 +148,8 @@ export const oppioidi: Scenario = {
         s.base.rr = 14;
         s.base.hr = 92;
         s.bvm = false;
-        s.say('paziente', 'L’uomo si sveglia di colpo, agitato: «Che volete? Lasciatemi andare!». Va convinto: l’effetto del naloxone può finire prima di quello dell’oppioide.');
+        s.say('paziente', 'L’uomo si sveglia di colpo, agitato: «Che volete? Lasciatemi andare!».');
+        s.hint('Va convinto al trasporto: l’effetto del naloxone può finire prima di quello dell’oppioide.');
       }
     },
   },

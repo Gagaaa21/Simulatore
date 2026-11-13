@@ -66,12 +66,13 @@ function trend(sim: Sim, keys: PatientChange['key'][]): PatientChange['dir'] | n
 export function PatientStatus({ sim }: { sim: Sim }) {
   if (sim.phase === 'scena') return null;
   const p = sim.p;
-  const arrest = sim.inArrest();
-  const rows: { k: string; label: string; value: string | null; keys: PatientChange['key'][]; how: string }[] = [
-    { k: 'coscienza', label: 'Coscienza', value: sim.did('coscienza') ? `${p.avpu} · ${AVPU_TXT[p.avpu]}` : null, keys: ['coscienza'], how: 'Valutazione → Coscienza' },
-    { k: 'vie', label: 'Vie aeree', value: sim.didAny('ispeziona_bocca', 'apri_vie_aeree', 'gas', 'aspira', 'sublussazione') || p.airway === 'russante' || p.airway === 'gorgogliante' ? AIRWAY_TXT[p.airway] : null, keys: ['vie_aeree'], how: 'Valutazione → Guarda, ascolta e senti' },
-    { k: 'respiro', label: 'Respiro', value: sim.didAny('gas', 'conta_fr', 'osserva_torace') ? BREATH_TXT[p.breathing] : null, keys: ['respiro'], how: 'Valutazione → Guarda, ascolta e senti' },
-    { k: 'cute', label: 'Cute', value: `${p.skin.color}${p.skin.sweaty ? ', sudata' : ''}`, keys: ['cute'], how: '' },
+  // l'arresto compare solo dopo che il soccorritore l'ha riconosciuto
+  const arrest = sim.inArrest() && sim.arrest.recognizedAt !== null;
+  const rows: { k: string; label: string; value: string | null; keys: PatientChange['key'][] }[] = [
+    { k: 'coscienza', label: 'Coscienza', value: sim.did('coscienza') ? `${p.avpu} · ${AVPU_TXT[p.avpu]}` : null, keys: ['coscienza'] },
+    { k: 'vie', label: 'Vie aeree', value: sim.didAny('ispeziona_bocca', 'apri_vie_aeree', 'gas', 'aspira', 'sublussazione') || p.airway === 'russante' || p.airway === 'gorgogliante' ? AIRWAY_TXT[p.airway] : null, keys: ['vie_aeree'] },
+    { k: 'respiro', label: 'Respiro', value: sim.didAny('gas', 'conta_fr', 'osserva_torace') ? BREATH_TXT[p.breathing] : null, keys: ['respiro'] },
+    { k: 'cute', label: 'Cute', value: `${p.skin.color}${p.skin.sweaty ? ', sudata' : ''}`, keys: ['cute'] },
   ];
   return (
     <section className={`p-status${arrest ? ' p-status-arrest' : ''}`} aria-label="Stato del paziente">
@@ -80,7 +81,7 @@ export function PatientStatus({ sim }: { sim: Sim }) {
         {p.seizing && <span className="p-badge p-badge-warn">Crisi in corso</span>}
       </header>
       {arrest ? (
-        <p className="p-arrest">Arresto cardiaco: RCP e DAE</p>
+        <p className="p-arrest">Arresto cardiaco</p>
       ) : (
         <dl>
           {rows.map((r) => {
@@ -89,7 +90,7 @@ export function PatientStatus({ sim }: { sim: Sim }) {
               <div key={r.k} className={tr ? `tr-${tr}` : ''}>
                 <dt>{r.label}</dt>
                 <dd>
-                  {r.value ?? <span className="p-todo" title={r.how}>da valutare</span>}
+                  {r.value ?? <span className="p-todo">non valutato</span>}
                   {tr && tr !== 'neutro' && (
                     <span className="p-trend" aria-label={tr === 'peggiora' ? 'in peggioramento' : 'in miglioramento'}>
                       {tr === 'peggiora' ? '▼' : '▲'}

@@ -185,9 +185,24 @@ describe('percorsi ideali', () => {
   it('ossigeno: un presidio diverso da quello indicato dalla SORES è un errore', () => {
     const { sim } = make('bpco');
     play(sim, ['valuta_scena', 'guanti', 'avvicinati', 'saturimetro']);
-    expect(sim.actionAvailability('ossigeno')).not.toBe(true);
     play(sim, ['chiedi_ossigeno', ['ossigeno', { device: 'reservoir', flow: 15 }]]);
     expect(sim.penalties.map((p) => p.id)).toContain('o2_non_indicato');
+  });
+
+  it('ossigeno: fuori dall’emergenza senza indicazione della SORES è un errore', () => {
+    const { sim } = make('bpco');
+    play(sim, ['valuta_scena', 'guanti', 'avvicinati', 'saturimetro', ['ossigeno', { device: 'reservoir', flow: 15 }]]);
+    expect(sim.penalties.map((p) => p.id)).toContain('o2_senza_indicazione');
+  });
+
+  it('ossigeno: in emergenza l’equipaggio dà da sé il 100% con il reservoir, non altri presidi', () => {
+    const a = make('anafilassi').sim;
+    play(a, ['valuta_scena', 'guanti', 'avvicinati', 'saturimetro', ['ossigeno', { device: 'reservoir', flow: 15 }]]);
+    expect(a.penalties.map((p) => p.id)).not.toContain('o2_senza_indicazione');
+    expect(a.flags.o2AutonomoAt).toBeDefined();
+    const b = make('anafilassi').sim;
+    play(b, ['valuta_scena', 'guanti', 'avvicinati', 'saturimetro', ['ossigeno', { device: 'venturi', flow: 8, fio2: 35 }]]);
+    expect(b.penalties.map((p) => p.id)).toContain('o2_senza_indicazione');
   });
 
   it('annegamento', () => {

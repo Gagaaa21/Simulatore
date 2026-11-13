@@ -39,7 +39,7 @@ function timeline(sim: Sim): { label: string; t: number }[] {
   push('Emostasi iniziata', f('emostasiAt'));
   push('Tourniquet', sim.tourniquet?.at ?? null);
   push('Saturimetro', f('saturimetroAt'));
-  push('Ossigeno', f('o2At'));
+  push(sim.flags.o2AutonomoAt !== undefined ? 'Ossigeno al 100% in emergenza' : 'Ossigeno', f('o2At'));
   push('Scala di Cincinnati', f('cincinnatiAt'));
   push('SpO₂ riferita alla SORES', f('o2RiferitoAt'));
   push('Arrivo del mezzo avanzato', sim.msaOnScene && sim.msaAt !== null ? sim.msaAt : null);
