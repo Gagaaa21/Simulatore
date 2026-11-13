@@ -635,8 +635,7 @@ a.chip:hover {
 
 /* ───────────────────────── missione */
 .mission {
-  height: 100%;
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -3089,4 +3088,19 @@ a.chip:hover {
   .rcp-stage .scene {
     aspect-ratio: auto;
   }
+}
+
+.coach {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+kbd {
+  font-family: var(--f-display);
+  font-weight: 700;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid var(--filo-2);
+  background: var(--notte-3);
 }

@@ -171,7 +171,7 @@ export function CprTrainer({ onBack }: { onBack: () => void }) {
   const info = VICTIM_INFO[victim];
   const pct = result && result.compressions ? Math.round((result.inRange / result.compressions) * 100) : 0;
   const avgRate = result && result.intervals.length ? Math.round(60000 / (result.intervals.reduce((a, b) => a + b, 0) / result.intervals.length)) : 0;
-  const scale = victim === 'adulto' ? 1 : victim === 'bambino' ? 0.68 : 0.46;
+  const scale = victim === 'adulto' ? 1 : victim === 'bambino' ? 0.72 : 0.56;
   const hx = 450 - (450 - 352) * scale;
 
   return (

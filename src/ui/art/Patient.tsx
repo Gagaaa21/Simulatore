@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { BodyRegion, Patient } from '../../engine/types';
 import { mix, shade } from './color';
 
@@ -9,6 +10,9 @@ export interface PatientArtState {
   hoverRegion: BodyRegion | null;
   onRegion?: (r: BodyRegion, x: number, y: number) => void;
   onHover?: (r: BodyRegion | null) => void;
+  /** elementi disegnati sotto e sopra il paziente, nella stessa scala */
+  under?: ReactNode;
+  over?: ReactNode;
 }
 
 function skinFor(p: Patient): string {
@@ -314,7 +318,7 @@ export function PatientFigure(s: PatientArtState) {
   else if (pos === 'in_piedi') fig = <Standing s={s} />;
   else fig = <Supine s={s} prone={pos === 'prono'} />;
   // bambini e lattanti: ridotti attorno al centro del tronco
-  const sc = b === 'neonato' ? 0.46 : b === 'bambino' ? 0.68 : b === 'adolescente' ? 0.93 : b === 'robusto' ? 1.04 : 1;
+  const sc = b === 'neonato' ? 0.56 : b === 'bambino' ? 0.72 : b === 'adolescente' ? 0.93 : b === 'robusto' ? 1.04 : 1;
   const seated = pos === 'semiseduto' || pos === 'seduto';
   return (
     <g transform={`translate(${450 - 450 * sc} ${300 - 300 * sc}) scale(${sc})`}>
@@ -324,7 +328,9 @@ export function PatientFigure(s: PatientArtState) {
           <rect x="176" y="236" width="238" height="128" rx="12" fill="#5d6773" />
         </g>
       )}
+      {s.under}
       {fig}
+      {s.over}
     </g>
   );
 }

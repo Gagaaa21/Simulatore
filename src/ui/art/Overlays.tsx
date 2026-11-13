@@ -68,6 +68,26 @@ export function UnderPatient({ sim }: { sim: Sim }) {
   return <g pointerEvents="none">{els}</g>;
 }
 
+/** Soccorritore inginocchiato visto dall'alto: spalle, testa e bande rifrangenti della divisa. */
+function Rescuer({ x, y, facing, uniform }: { x: number; y: number; facing: 'giu' | 'destra'; uniform: 'divisa' | 'civile' }) {
+  const body = uniform === 'divisa' ? '#d9461b' : '#6b4f8f';
+  const band = uniform === 'divisa' ? '#e9f04a' : 'none';
+  const vertical = facing === 'giu';
+  return (
+    <g opacity="0.96">
+      <ellipse cx={x + 6} cy={y + 8} rx={vertical ? 54 : 34} ry={vertical ? 34 : 54} fill="#000" opacity="0.25" />
+      <ellipse cx={x} cy={y} rx={vertical ? 50 : 28} ry={vertical ? 28 : 50} fill={body} />
+      {uniform === 'divisa' &&
+        (vertical ? (
+          <rect x={x - 48} y={y - 4} width="96" height="8" fill={band} opacity="0.9" />
+        ) : (
+          <rect x={x - 4} y={y - 48} width="8" height="96" fill={band} opacity="0.9" />
+        ))}
+      <circle cx={vertical ? x : x - 6} cy={vertical ? y - 6 : y} r="19" fill={uniform === 'divisa' ? '#2a211b' : '#8a5a33'} />
+    </g>
+  );
+}
+
 function Hands({ x, y, anim }: { x: number; y: number; anim?: string }) {
   return (
     <g className={anim}>
@@ -264,8 +284,14 @@ export function OverPatient({ sim, now }: { sim: Sim; now: number }) {
   if (sim.flags.guedel && supine) {
     els.push(<rect key="guedel" x="272" y="294" width="12" height="12" rx="3" fill="#ffd84d" />);
   }
-  // mani per la RCP
+  // soccorritore alla testa (ventilazione o stabilizzazione)
+  if (supine && (bvmVisible || sim.immob.has('mils'))) {
+    els.unshift(<Rescuer key="testa" x={118} y={300} facing="destra" uniform={sim.scenario.role === 'laico' ? 'civile' : 'divisa'} />);
+  }
+  // chi comprime e le sue mani
   if (sim.cpr.active && supine) {
+    const civ = sim.cpr.by === 'astante' || sim.scenario.role === 'laico';
+    els.push(<Rescuer key="compressore" x={352} y={132} facing="giu" uniform={civ ? 'civile' : 'divisa'} />);
     els.push(<Hands key="rcp" x={352} y={300} anim="cpr-hands" />);
   }
   void now;

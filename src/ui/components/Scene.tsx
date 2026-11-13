@@ -76,9 +76,17 @@ export function Scene({ sim, onAction }: { sim: Sim; onAction: (id: string) => v
               <KitIcon id={k} onClick={() => undefined} />
             </g>
           ))}
-        <UnderPatient sim={sim} />
-        <PatientFigure p={p} arrest={sim.inArrest()} cprActive={sim.cpr.active} breathingRate={rr} hoverRegion={hover} onRegion={openRegion} onHover={setHover} />
-        <OverPatient sim={sim} now={sim.t} />
+        <PatientFigure
+          p={p}
+          arrest={sim.inArrest()}
+          cprActive={sim.cpr.active}
+          breathingRate={rr}
+          hoverRegion={hover}
+          onRegion={openRegion}
+          onHover={setHover}
+          under={<UnderPatient sim={sim} />}
+          over={<OverPatient sim={sim} now={sim.t} />}
+        />
       </svg>
 
       {hover && !inScene && !menu && <div className="region-tip">{REGION_LABEL[hover]}</div>}

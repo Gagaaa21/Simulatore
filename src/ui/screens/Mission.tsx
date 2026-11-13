@@ -4,7 +4,7 @@ import type { Scenario } from '../../engine/types';
 import type { EquipmentId } from '../../data/equipment';
 import { EQUIPMENT } from '../../data/equipment';
 import { ACTIONS } from '../../engine/actions';
-import { evaluate, type Report } from '../../engine/scoring';
+import { commonObjectives, evaluate, type Report } from '../../engine/scoring';
 import { CRITICITA } from '../../data/codes';
 import { PROTOCOLS } from '../../data/protocols';
 import type { Settings } from '../store';
@@ -61,9 +61,44 @@ export function Mission({
   const [confirmExit, setConfirmExit] = useState(false);
   const [mobileTab, setMobileTab] = useState<'azioni' | 'strumenti' | 'diario'>('azioni');
   const [flash, setFlash] = useState<string | null>(null);
+  const [coach, setCoach] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem('sirena118.coach.v1') !== 'visto';
+    } catch {
+      return false;
+    }
+  });
   const endedRef = useRef(false);
 
-  const modalOpen = !!picker || protoOpen || !!missing || confirmExit;
+  const closeCoach = () => {
+    setCoach(false);
+    try {
+      window.localStorage.setItem('sirena118.coach.v1', 'visto');
+    } catch {
+      /* archiviazione non disponibile */
+    }
+  };
+
+  const showHint = () => {
+    const common = commonObjectives(sim, brought);
+    const order = [
+      ...common.filter((o) => o.category === 'sicurezza'),
+      ...sim.scenario.objectives,
+      ...common.filter((o) => o.id === 'c_protocollo'),
+      ...common.filter((o) => o.category === 'comunicazione'),
+    ];
+    const next = order.find((o) => {
+      try {
+        return !o.check(sim);
+      } catch {
+        return true;
+      }
+    });
+    sim.set('suggerimenti', Number(sim.flags.suggerimenti ?? 0) + 1);
+    setFlash(next ? `consiglio|Prossimo obiettivo: ${next.label}. ${next.why}` : 'ok|Hai già raggiunto gli obiettivi principali: completa la missione con la Centrale.');
+  };
+
+  const modalOpen = !!picker || protoOpen || !!missing || confirmExit || coach;
   const running = !paused && !modalOpen && !sim.ended;
 
   // ciclo di gioco
@@ -199,6 +234,11 @@ export function Mission({
             <button className={`btn btn-small${sim.protocol ? ' btn-on' : ' btn-pulse'}`} onClick={() => setProtoOpen(true)} disabled={sim.phase === 'scena'} title="Dichiara il protocollo">
               {sim.protocol ? PROTOCOLS[sim.protocol.id].name : 'Scegli protocollo'}
             </button>
+            {settings.mode === 'addestramento' && (
+              <button className="btn btn-small" onClick={showHint} title="Mostra il prossimo obiettivo da raggiungere">
+                Suggerimento
+              </button>
+            )}
             {sim.msaAt !== null && !sim.msaOnScene && (
               <span className="hud-eta" title="Mezzo avanzato in arrivo">
                 MSA <span className="num">{fmtClock(Math.max(0, sim.msaAt - sim.t))}</span>
@@ -314,6 +354,36 @@ export function Mission({
         >
           <p>{missing.reason}</p>
           <p className="muted">Il presidio è rimasto {scenario.role === 'squadra' ? 'al PMA' : 'sul mezzo'}: un collega può andare a prenderlo, ma il tempo scorre.</p>
+        </Modal>
+      )}
+      {coach && (
+        <Modal
+          title="Come si gioca"
+          kicker="Prima missione"
+          onClose={closeCoach}
+          footer={
+            <button className="btn btn-arancio" onClick={closeCoach}>
+              Ho capito, inizia
+            </button>
+          }
+        >
+          <ol className="coach">
+            <li>
+              <strong>Prima la scena.</strong> Valuta la sicurezza, indossa i guanti e solo dopo avvicinati al paziente.
+            </li>
+            <li>
+              <strong>Agisci.</strong> A sinistra trovi le azioni divise per ABCDE; puoi anche cliccare direttamente sul corpo del paziente o sui presidi a terra. Ogni azione richiede tempo: il paziente intanto cambia.
+            </li>
+            <li>
+              <strong>Leggi gli strumenti.</strong> A destra il monitor (saturimetro, pressione, glicemia), il DAE e la RCP; sotto la scena il diario con reperti e messaggi radio.
+            </li>
+            <li>
+              <strong>Decidi.</strong> In alto scegli il protocollo; dal gruppo «Centrale» comunichi la valutazione, chiedi rinforzi, trasporti o passi le consegne.
+            </li>
+            <li>
+              Il tempo scorre: <kbd>P</kbd> mette in pausa, <kbd>/</kbd> cerca un’azione.{settings.mode === 'addestramento' ? ' In addestramento il pulsante «Suggerimento» indica il prossimo obiettivo.' : ''}
+            </li>
+          </ol>
         </Modal>
       )}
       {confirmExit && (

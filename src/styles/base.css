@@ -107,6 +107,16 @@ body {
   min-height: 100%;
 }
 
+/* fascia sotto la barra di sistema del telefono */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 40;
+  background: var(--notte-2);
+}
+
 h1,
 h2,
 h3,
