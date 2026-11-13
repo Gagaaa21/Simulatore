@@ -85,6 +85,9 @@ function trasportoTesto(sim: Sim): string {
       ? 'Trasporto: sedia portantina, paziente seduto. Con questa dispnea non deve fare le scale a piedi.'
       : 'Trasporto: in barella, paziente seduto. Con questa dispnea non deve camminare.';
   if (proto === 'dolore_toracico') return 'Trasporto: in barella, semiseduto. Con il dolore toracico non deve camminare.';
+  if (sim.scenario.lesioni?.distorsione) return 'Trasporto: la caviglia non deve caricare il peso. Sedia portantina o barella, arto sollevato.';
+  if (proto === 'trauma_cranico') return 'Trasporto: in barella, testa e tronco leggermente sollevati se non vomita; rivaluta durante il tragitto.';
+  if (proto === 'ansia') return 'Il respiro è tornato regolare: accompagnala all’ambulanza e trasportala in pronto soccorso.';
   if (proto === 'fratture') return 'Trasporto: in barella con l’arto immobilizzato, senza farlo camminare.';
   if (proto === 'ipotermia') return 'Trasporto: in barella, sdraiata e coperta, in ambulanza riscaldata. Niente sedia: movimenti minimi.';
   if (proto === 'parto') return 'Trasporto: madre in barella con il neonato al caldo sul ventre materno.';
@@ -107,6 +110,7 @@ export function nextStep(sim: Sim): CoachStep | null {
   const p = sim.p;
   const proto = sc.protocol.correct[0];
   const fr = sc.lesioni?.frattura;
+  const ds = sc.lesioni?.distorsione;
   const did = (...ids: string[]) => sim.didAny(...ids);
   const step = (id: string, text: string, pos?: Position) => make(sim, id, text, pos);
 
@@ -206,6 +210,7 @@ export function nextStep(sim: Sim): CoachStep | null {
         : lastFbao.id === 'colpi_dorsali' && lastFbao.t >= 0
           ? step('compressioni_addominali', 'Ostruzione completa: ora 5 compressioni addominali.')
           : step('colpi_dorsali', 'Ostruzione completa: 5 colpi interscapolari, poi 5 compressioni addominali.')),
+    proto === 'ansia' && !did('rassicura') && step('rassicura', 'Presentati con calma e rassicurala: abbassa il tono, allontana chi non serve.'),
     proto === 'monossido' && sim.requests.vvf === undefined && step('richiedi_vvf', 'Sospetto monossido: chiedi alla SORES i Vigili del fuoco per la misurazione e la messa in sicurezza.'),
     ...partoSteps(sim),
     sc.trauma && !sim.immob.has('mils') && step('mils', 'Dinamica ad alta energia: stabilizza subito il capo in posizione neutra.'),
@@ -238,6 +243,10 @@ export function nextStep(sim: Sim): CoachStep | null {
 
     (p.avpu === 'P' || p.avpu === 'U') && sc.role !== 'laico' && sc.msa.available && !sc.msa.autoDispatched && sim.requests.msa === undefined && step('richiedi_msa', 'Risponde solo al dolore o non risponde: chiedi alla SORES il mezzo avanzato.'),
 
+    // ── peggioramento: la SORES deve saperlo subito
+    sim.flags.peggioratoAt !== undefined && sc.role !== 'laico' && (!sim.report || sim.report.t < Number(sim.flags.peggioratoAt)) && p.avpu === 'V' && !did('pupille') && step('pupille', 'È peggiorato: controlla subito le pupille.'),
+    sim.flags.peggioratoAt !== undefined && sc.role !== 'laico' && (!sim.report || sim.report.t < Number(sim.flags.peggioratoAt)) && step('comunica', 'È peggiorato: aggiorna subito la SORES con coscienza, pupille e parametri.'),
+
     // ── B: respiro e ossigeno
     !did('gas') && p.avpu !== 'A' && step('gas', 'Valuta il respiro: guarda, ascolta e senti.'),
     did('gas') && (p.avpu === 'P' || p.avpu === 'U') && !sc.trauma && !respiroInefficace && p.position !== 'laterale' && step('posizione', 'Non è cosciente ma respira: posizione laterale di sicurezza.', 'laterale'),
@@ -255,18 +264,32 @@ export function nextStep(sim: Sim): CoachStep | null {
     sc.trauma && !did('cerca_emorragie') && step('cerca_emorragie', 'Cerca emorragie importanti con un rapido testa-piedi.'),
     sc.trauma && !!sim.flags.traumaBacino && !sim.immob.has('pelvica') && step('cintura_pelvica', 'Dolore al bacino dopo un trauma ad alta energia: cintura pelvica.'),
 
+    !!sc.exam.extra?.ferita && sim.flags.feritaMedicataAt === undefined && step('medica_ferita', 'Medica la ferita con una garza e una compressione delicata.'),
+
     // ── D: neurologico
     p.avpu !== 'A' && !did('pupille') && step('pupille', 'Coscienza ridotta: valuta le pupille.'),
+    proto === 'trauma_cranico' && !did('pupille') && step('pupille', 'Trauma cranico: valuta le pupille anche se è sveglio.'),
     proto === 'ictus' && !did('cincinnati') && step('cincinnati', 'Parla male e muove poco un braccio: scala di Cincinnati.'),
 
     // ── anamnesi mirata
     proto === 'ictus' && !did('q_esordio') && step('q_esordio', 'Chiedi quando è stata vista bene l’ultima volta: è l’ora di esordio.'),
     proto === 'ipoglicemia' && !did('q_farmaci', 'q_pasto', 'q_testimoni') && step('q_farmaci', 'Chiedi che farmaci prende: è diabetico?'),
+    proto === 'trauma_cranico' && !did('q_farmaci') && step('q_farmaci', 'Chiedi che farmaci prende: anticoagulanti o antiaggreganti cambiano tutto.'),
+    proto === 'ansia' && !did('q_dolore') && step('q_dolore', 'Prima di pensare all’ansia: ha dolore al petto?'),
+    proto === 'ansia' && !did('q_allergie', 'q_patologie') && step('q_patologie', 'Asma o altre malattie? Escludi una causa respiratoria.'),
+    proto === 'ansia' && !did('q_farmaci', 'q_testimoni') && step('q_farmaci', 'Farmaci, caffè, sostanze?'),
     proto === 'dolore_toracico' && !did('q_dolore') && step('q_dolore', 'Fatti descrivere il dolore (OPQRST).'),
     proto === 'dolore_toracico' && !did('q_esordio') && step('q_esordio', 'Chiedi quando è iniziato il dolore.'),
 
     // ── E: esposizione
     proto === 'ustioni' && !did('rimuovi_indumenti') && step('rimuovi_indumenti', 'Togli la maglietta bagnata d’acqua bollente.'),
+    !!ds && !did('pms') && step('pms', 'Prima di immobilizzare controlla polso, motilità e sensibilità a valle.'),
+    !!ds && sim.flags.scarpaTolta === undefined && step('togli_scarpa', 'Togli scarpa e calza prima che la caviglia si gonfi.'),
+    !!ds && !sim.immob.has('stecca') && step('steccobende', 'Immobilizza la caviglia con la steccobenda, così com’è.'),
+    !!ds && sim.flags.ghiaccioAt === undefined && step('ghiaccio', 'Ghiaccio istantaneo avvolto in un telo, mai a contatto con la pelle.'),
+    !!ds && sim.flags.artoScaricoAt === undefined && step('arto_scarico', 'Arto in scarico: piede sollevato su un appoggio morbido.'),
+    !!ds && sim.immob.has('stecca') && sim.flags.pmsDopoAt === undefined && step('pms', 'Ricontrolla polso, motilità e sensibilità dopo l’immobilizzazione.'),
+    proto === 'ansia' && did('q_dolore') && did('pressione') && !did('respirazione_guidata') && step('respirazione_guidata', 'Escluse le cause organiche: guida il respiro, lento e dal naso, contando insieme.'),
     !!fr && !did('pms') && step('pms', 'Prima di immobilizzare controlla polso, motilità e sensibilità a valle della frattura.'),
     !!fr?.esposta && sim.flags.fratturaCopertaAt === undefined && step('copri_frattura', 'Frattura esposta: coprila con garze e telo sterile, senza toccarla né disinfettarla.'),
     !!fr && !sim.immob.has('stecca') && step('steccobende', 'Immobilizza l’arto con la steccobenda così com’è, comprendendo ginocchio e caviglia. Mai riallinearlo.'),

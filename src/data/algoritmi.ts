@@ -412,6 +412,11 @@ export const ALGORITMI: Record<ProtocolId, Algoritmo> = {
       { t: 'Sicurezza e dinamica', d: 'Alta energia? Gestiscilo come trauma maggiore.' },
       { ask: 'Emorragia importante?', si: [{ t: 'Comprimi e tampona', d: 'L’emorragia massiva viene prima della frattura.' }], no: [] },
       { t: 'Non muovere', d: 'Posizione antalgica; spostalo solo se la scena non è sicura.' },
+      {
+        ask: 'Distorsione senza segni di frattura?',
+        si: [{ t: 'Togli la scarpa, immobilizza', d: 'Ghiaccio avvolto, arto in scarico.' }],
+        no: [],
+      },
       { t: 'Polso, motilità, sensibilità a valle' },
       {
         ask: 'Frattura esposta?',
@@ -450,6 +455,45 @@ export const ALGORITMI: Record<ProtocolId, Algoritmo> = {
     ],
     tu: ['Riparo e riscaldamento passivo', 'Via il bagnato, coperte e telo', 'Movimenti delicati, paziente sdraiato'],
     equipe: ['Riscaldamento attivo', 'Monitoraggio del ritmo', 'Liquidi caldi in vena'],
+  },
+  trauma_cranico: {
+    nodes: [
+      { t: 'Dinamica', d: 'Alta energia? Trauma maggiore.' },
+      { t: 'ABCDE, pupille e arti', d: 'Medica la ferita con una compressione delicata.' },
+      { t: 'Chiedi i farmaci', d: 'Anticoagulanti o antiaggreganti?' },
+      {
+        ask: 'Segni d’allarme o anticoagulanti?',
+        d: 'Vomito, sonnolenza, cefalea in aumento, pupille diverse, convulsioni, deficit di lato.',
+        si: [sores('Riferisci subito', 'Serve la valutazione in ospedale anche se sta bene.')],
+        no: [],
+      },
+      {
+        ask: 'Alla rivalutazione è peggiorato?',
+        d: 'Coscienza e pupille ogni pochi minuti.',
+        si: [sores('Aggiorna la SORES', 'Codice e mezzi cambiano.'), { t: 'Vie aeree protette', d: 'Aspira se vomita; posizione che protegga le vie aeree.' }],
+        no: [{ t: 'Continua a rivalutare' }],
+      },
+      equipe('Gestione avanzata delle vie aeree e della pressione'),
+    ],
+    tu: ['Chiedere i farmaci', 'Riconoscere i segni d’allarme', 'Rivalutare e aggiornare la SORES'],
+    equipe: ['Valutazione neurologica', 'Gestione avanzata'],
+  },
+  ansia: {
+    nodes: [
+      { t: 'Ambiente tranquillo', d: 'Poche persone, tono calmo.' },
+      { t: 'Parametri e anamnesi', d: 'SpO₂, FC, PA, FR; asma, allergie, dolore toracico, farmaci, sostanze.' },
+      {
+        ask: 'Segni di una causa organica?',
+        d: 'Saturazione bassa, sibili, orticaria, dolore toracico, malattie note.',
+        si: [{ t: 'Segui il protocollo della causa' }],
+        no: [{ t: 'Rassicura e guida il respiro', d: 'Lento, dal naso, contando insieme.' }],
+        fine: 'si',
+      },
+      { t: 'Niente sacchetto' },
+      sores('Riferisci alla SORES', 'Parametri e sintomi: decide il trasporto.'),
+    ],
+    tu: ['Escludere le cause organiche', 'Rassicurare e guidare il respiro'],
+    equipe: ['Valutazione medica'],
   },
   monossido: {
     nodes: [

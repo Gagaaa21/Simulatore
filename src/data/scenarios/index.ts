@@ -23,15 +23,23 @@ import { fratturaCampo } from './frattura-campo';
 import { ipotermia } from './ipotermia';
 import { monossido } from './monossido';
 import { parto } from './parto';
+import { distorsione } from './distorsione';
+import { ansia } from './ansia';
+import { traumaCranico } from './trauma-cranico';
+import { scaAtipica } from './sca-atipica';
 
 /** Ordine consigliato: dal più semplice al più complesso all'interno di ogni categoria. */
 export const SCENARIOS: Scenario[] = [
   tutorial,
+  distorsione,
+  ansia,
   acrCasa,
   fbaoAdulto,
   ipoglicemia,
   ictus,
   doloreToracico,
+  scaAtipica,
+  traumaCranico,
   fbaoLattante,
   pblsLattante,
   ustioneBambino,

@@ -129,6 +129,7 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
       { title: 'Riposo', detail: 'Posizione comoda (spesso semiseduto). Il paziente non deve camminare: sedia portantina.' },
       { title: 'Parametri', detail: 'SpO₂, FC, PA, FR, cute. Riferisci la saturazione alla SORES: l’ossigeno solo se lo indica (di norma sotto il 90%).' },
       { title: 'OPQRST', detail: 'Ora di esordio, caratteristiche, irradiazione, durata, sintomi associati (sudorazione, nausea, dispnea).' },
+      { title: 'Presentazioni atipiche', detail: 'Donne, anziani e diabetici possono avere solo mal di stomaco, nausea, stanchezza, fiato corto o malessere: con pallore e sudorazione pensa al cuore anche se il codice era verde.' },
       { title: 'Farmaci', detail: 'Il soccorritore non somministra farmaci, nemmeno quelli del paziente: aspirina e nitrati li valuta l’infermiere o il medico. Riferisci alla SORES le terapie in corso.' },
       { title: 'SORES', detail: 'Riferisci presto ora di esordio e parametri: la SORES invia l’ALS, l’infermiere esegue e trasmette l’ECG e si attiva la rete dell’infarto.' },
       { title: 'DAE pronto', detail: 'Rischio di aritmie maligne: tieni il DAE vicino e rivaluta spesso.' },
@@ -325,7 +326,7 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
   },
   fratture: {
     id: 'fratture',
-    name: 'Fratture, lussazioni e amputazioni',
+    name: 'Fratture, distorsioni e amputazioni',
     family: 'Trauma',
     summary: 'Lascia l’arto nella posizione antalgica, controlla polso, motilità e sensibilità, copri la frattura esposta, immobilizza senza mai ridurre.',
     steps: [
@@ -337,6 +338,7 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
       { title: 'Frattura esposta', detail: 'Copri con garze o telo sterile. Non disinfettare, non toccare e non far rientrare i monconi.' },
       { title: 'Immobilizza', detail: 'Steccobenda o materassino comprendendo l’articolazione a monte e quella a valle; la lussazione si immobilizza nella posizione in cui si trova. Mai ridurre.' },
       { title: 'Copri e rassicura', detail: 'Telo isotermico, parametri, sostegno psicologico. Il dolore lo tratta l’équipe sanitaria.' },
+      { title: 'Contusione e distorsione', detail: 'Contusione: ghiaccio. Distorsione: togli scarpa e indumenti prima del gonfiore, immobilizza l’articolazione, ghiaccio avvolto in un telo (mai a contatto diretto), arto in scarico.' },
       { title: 'Amputazione', detail: 'Tampona l’emorragia. Parte amputata avvolta in garza sterile, in un sacchetto asciutto chiuso, dentro un secondo sacchetto con acqua e ghiaccio: mai a contatto diretto con il ghiaccio.' },
     ],
     numbers: [
@@ -368,6 +370,39 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
     ],
     pitfalls: ['Mettere seduto o far camminare un paziente con ipotermia grave.', 'Frizionare o massaggiare gli arti.', 'Lasciare addosso gli indumenti bagnati.', 'Dare da bere (non è competenza del soccorritore) o bevande alcoliche.'],
     sources: ['ERC_FA_2025', 'CORSO_TEMP'],
+  },
+  trauma_cranico: {
+    id: 'trauma_cranico',
+    name: 'Trauma cranico',
+    family: 'Trauma',
+    summary: 'Anche se «sta bene»: chiedi i farmaci, cerca i segni d’allarme e rivaluta coscienza e pupille. Chi prende anticoagulanti va in ospedale.',
+    steps: [
+      { title: 'Dinamica', detail: 'Altezza della caduta, urto, perdita di coscienza, amnesia. Un trauma ad alta energia si gestisce come trauma maggiore.' },
+      { title: 'ABCDE', detail: 'Coscienza (AVPU), pupille, movimento dei quattro arti; medica la ferita con una compressione delicata.' },
+      { title: 'Farmaci', detail: 'Anticoagulanti e antiaggreganti aumentano il rischio di emorragia cerebrale, anche ore dopo: chi li assume va valutato in ospedale anche se asintomatico.' },
+      { title: 'Segni d’allarme', detail: 'Vomito ripetuto, sonnolenza o confusione che aumentano, cefalea ingravescente, pupille diverse, convulsioni, debolezza di un lato, perdita di liquido da naso o orecchie.' },
+      { title: 'Rivaluta', detail: 'Coscienza e pupille ogni pochi minuti: il peggioramento può arrivare dopo un intervallo di benessere.', ask: true },
+      { title: 'Aggiorna la SORES', detail: 'Ogni peggioramento va riferito subito: la SORES cambia codice e mezzi.' },
+    ],
+    numbers: [{ label: 'Rivalutazione', value: 'ogni 5 minuti' }],
+    pitfalls: ['Non chiedere i farmaci.', 'Fidarsi del «sto bene» di un anziano anticoagulato.', 'Non rivalutare dopo il primo esame.'],
+    sources: ['NICE_HEAD_2023', 'ERC_FA_2025'],
+  },
+  ansia: {
+    id: 'ansia',
+    name: 'Crisi d’ansia e iperventilazione',
+    family: 'Medico',
+    summary: 'Prima escludi le cause organiche, poi rassicura e guida il respiro. Niente sacchetto.',
+    steps: [
+      { title: 'Escludi altro', detail: 'Asma, reazione allergica, dolore toracico, diabete, farmaci o sostanze: parametri completi e anamnesi. La diagnosi di ansia è sempre l’ultima.' },
+      { title: 'Riconosci', detail: 'Respiro rapido e profondo, formicolio a mani e bocca, crampi alle dita, cuore che batte forte, paura di morire; saturazione normale.' },
+      { title: 'Ambiente', detail: 'Luogo tranquillo, poche persone, tono calmo.' },
+      { title: 'Guida il respiro', detail: 'Lento, dal naso, contando insieme.' },
+      { title: 'Niente sacchetto', detail: 'Respirare nel sacchetto non è raccomandato: può ridurre l’ossigeno e peggiorare una causa organica.' },
+      { title: 'Ossigeno', detail: 'Con saturazione normale non serve: riferiscila alla SORES.' },
+    ],
+    pitfalls: ['Etichettare come ansia senza aver escluso altro.', 'Far respirare nel sacchetto.'],
+    sources: ['BTS_O2_2017', 'ERC_FA_2025'],
   },
   monossido: {
     id: 'monossido',
@@ -432,5 +467,5 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
 export const PROTOCOL_ORDER: ProtocolId[] = [
   'bls_adulto', 'pbls', 'fbao_adulto', 'fbao_pediatrico', 'abcde', 'dolore_toracico', 'ictus', 'ipoglicemia',
   'dispnea', 'anafilassi', 'convulsioni', 'trauma', 'emorragia', 'colpo_calore', 'intossicazione', 'annegamento',
-  'oppioidi', 'ustioni', 'fratture', 'ipotermia', 'monossido', 'parto',
+  'oppioidi', 'ustioni', 'fratture', 'trauma_cranico', 'ipotermia', 'monossido', 'parto', 'ansia',
 ];

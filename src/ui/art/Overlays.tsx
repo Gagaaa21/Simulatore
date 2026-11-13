@@ -251,6 +251,30 @@ export function OverPatient({ sim, now }: { sim: Sim; now: number }) {
       </g>,
     );
   }
+  // distorsione: caviglia gonfia, poi ghiaccio
+  const ds = sim.scenario.lesioni?.distorsione;
+  if (ds && supine) {
+    const q = pointOnLimb(g, ds.region, 0.94);
+    const w = limbWidthAt(g, ds.region, 0.94);
+    if (!sim.immob.has('stecca')) els.push(<ellipse key="gonfiore" cx={q.x} cy={q.y} rx={w * 1.5} ry={w * 1.35} fill="#7d5aa6" opacity="0.38" />);
+    if (sim.flags.ghiaccioAt !== undefined) els.push(<rect key="ghiaccio-caviglia" x={q.x - w * 1.2} y={q.y - w * 1.6} width={w * 2.4} height={w * 1.1} rx="5" fill="#dff1ff" stroke="#8ec5ea" strokeWidth="2" />);
+  }
+  // ferita alla fronte e medicazione
+  if (sim.scenario.exam.extra?.ferita && supine) {
+    const c = g.head.c;
+    const fx = c.x - g.head.rx * 0.55;
+    const fy = c.y - g.head.ry * 0.25;
+    els.push(
+      sim.flags.feritaMedicataAt !== undefined ? (
+        <rect key="medicazione-fronte" x={fx - 8 * k} y={fy - 10 * k} width={14 * k} height={20 * k} rx={3 * k} fill="#f6f6f2" stroke="#c9c9c4" strokeWidth="1.5" />
+      ) : (
+        <g key="ferita-fronte">
+          <ellipse cx={fx} cy={fy} rx={7 * k} ry={9 * k} fill="#b98a8a" opacity="0.6" />
+          <path d={`M${fx} ${fy - 6 * k} l ${2 * k} ${12 * k}`} stroke="#8d0f1b" strokeWidth={2.5 * k} strokeLinecap="round" />
+        </g>
+      ),
+    );
+  }
   // gravidanza e neonato
   if (p.look.pregnant && supine) els.push(<Pancia key="pancia" sim={sim} g={g} />);
   if (sim.flags.natoAt !== undefined && supine) els.push(<Neonato key="neonato" sim={sim} g={g} />);

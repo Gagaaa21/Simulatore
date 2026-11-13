@@ -23,6 +23,8 @@ export const KEY_LABEL: Record<string, string> = {
   contrazioni: 'contrazioni e perdite',
   gravidanza: 'settimane e presentazione',
   dinamica: 'dinamica',
+  farmaci: 'terapia in corso',
+  dolore: 'caratteristiche del dolore',
 };
 
 export const reportLabel = (k: string) => KEY_LABEL[k] ?? k;

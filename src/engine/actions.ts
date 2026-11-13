@@ -90,6 +90,9 @@ function caldo(s: Sim): boolean {
 const gravida = (s: Sim) => !!s.p.look.pregnant || s.flags.natoAt !== undefined;
 const nato = (s: Sim) => s.flags.natoAt !== undefined;
 const frattura = (s: Sim) => s.scenario.lesioni?.frattura;
+const distorsione = (s: Sim) => s.scenario.lesioni?.distorsione;
+/** Lesione di un arto: frattura o distorsione. */
+const lesioneArto = (s: Sim) => !!frattura(s) || !!distorsione(s);
 /** Paziente freddo: ipotermia o esposizione al freddo. */
 const freddo = (s: Sim) => s.p.skin.temp === 'fredda' || s.p.v.temp < 35.5;
 
@@ -1716,7 +1719,7 @@ const list: ActionDef[] = [
     short: 'Steccobenda',
     group: 'trattamenti',
     section: 'Immobilizzazione',
-    visible: (s) => s.scenario.trauma || !!frattura(s) || s.did('steccobende'),
+    visible: (s) => s.scenario.trauma || lesioneArto(s) || s.did('steccobende'),
     duration: 45,
     needs: ['steccobende'],
     contact: true,
@@ -1741,7 +1744,7 @@ const list: ActionDef[] = [
     section: 'E – Esposizione',
     duration: 20,
     contact: true,
-    visible: (s) => !!frattura(s) || s.did('pms'),
+    visible: (s) => lesioneArto(s) || s.did('pms'),
     available: needPatient,
     run: ({ sim }) => {
       const dopo = sim.immob.has('stecca');
@@ -1798,6 +1801,103 @@ const list: ActionDef[] = [
       sim.base.hr += 14;
       sim.base.sbp -= 14;
       sim.penalize('riduzione', 'grave', 'Hai provato a ridurre la frattura', 'Fratture e lussazioni non si riducono mai: si immobilizzano nella posizione in cui si trovano. Muovere i monconi danneggia vasi e nervi e aumenta dolore e sanguinamento.', ['ERC_FA_2025', 'CORSO_MSK']);
+    },
+  },
+
+  {
+    id: 'medica_ferita',
+    label: 'Medica la ferita: garza sterile e benda, compressione delicata',
+    short: 'Medica la ferita',
+    group: 'trattamenti',
+    section: 'Emorragie',
+    duration: 30,
+    needs: ['zaino'],
+    contact: true,
+    visible: (s) => !!s.scenario.exam.extra?.ferita || s.did('medica_ferita'),
+    available: (s) => (s.flags.feritaMedicataAt !== undefined ? 'La ferita è già medicata.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('feritaMedicataAt', sim.t);
+      sim.say('azione', 'Appoggi una garza sterile sulla ferita con una compressione delicata e la fissi con una benda.');
+    },
+  },
+
+  // ════════════ DISTORSIONI (corso: apparato muscolo-scheletrico)
+  {
+    id: 'togli_scarpa',
+    label: 'Togli scarpa e calza prima che il gonfiore aumenti',
+    short: 'Togli la scarpa',
+    group: 'trattamenti',
+    section: 'Immobilizzazione',
+    duration: 20,
+    contact: true,
+    visible: (s) => !!distorsione(s) || s.did('togli_scarpa'),
+    available: (s) => (s.flags.scarpaTolta !== undefined ? 'La scarpa è già tolta.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('scarpaTolta', sim.t);
+      sim.say('azione', 'Sleghi la scarpa e la sfili con delicatezza, sostenendo il tallone, poi la calza.');
+    },
+  },
+  {
+    id: 'ghiaccio',
+    label: 'Ghiaccio istantaneo avvolto in un telo, mai a contatto diretto',
+    short: 'Ghiaccio',
+    group: 'trattamenti',
+    section: 'Immobilizzazione',
+    duration: 15,
+    needs: ['zaino'],
+    contact: true,
+    visible: (s) => !!distorsione(s) || s.did('ghiaccio'),
+    available: (s) => (s.flags.ghiaccioAt !== undefined ? 'Il ghiaccio è già applicato.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('ghiaccioAt', sim.t);
+      sim.say('azione', 'Attivi il ghiaccio istantaneo, lo avvolgi in un telino e lo appoggi sulla caviglia.');
+    },
+  },
+  {
+    id: 'arto_scarico',
+    label: 'Arto in scarico: sollevato su un appoggio morbido',
+    short: 'Arto in scarico',
+    group: 'trattamenti',
+    section: 'Immobilizzazione',
+    duration: 10,
+    contact: true,
+    visible: (s) => !!distorsione(s) || s.did('arto_scarico'),
+    available: (s) => (s.flags.artoScaricoAt !== undefined ? 'L’arto è già sollevato.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('artoScaricoAt', sim.t);
+      sim.say('azione', 'Appoggi il piede su una coperta piegata, un po’ più in alto del cuore.');
+    },
+  },
+
+  // ════════════ IPERVENTILAZIONE
+  {
+    id: 'respirazione_guidata',
+    label: 'Guida il respiro: lento, dal naso, contando insieme',
+    short: 'Respiro guidato',
+    group: 'trattamenti',
+    section: 'Posizione e altre cure',
+    duration: 60,
+    contact: false,
+    visible: (s) => s.scenario.protocol.correct.includes('ansia') || s.did('respirazione_guidata'),
+    available: needPatient,
+    run: ({ sim }) => {
+      if (sim.flags.respiroGuidatoAt === undefined) sim.set('respiroGuidatoAt', sim.t);
+      sim.say('azione', '«Guardami. Inspira dal naso, uno, due, tre, quattro… e fuori piano dalla bocca». Respiri insieme a lei per un minuto.');
+    },
+  },
+  {
+    id: 'sacchetto',
+    label: 'Fai respirare in un sacchetto di carta',
+    short: 'Sacchetto',
+    group: 'trattamenti',
+    section: 'Posizione e altre cure',
+    duration: 20,
+    contact: true,
+    visible: (s) => s.scenario.protocol.correct.includes('ansia') || s.did('sacchetto'),
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.say('azione', 'Le metti davanti alla bocca un sacchetto di carta trovato in cucina.');
+      sim.penalize('sacchetto', 'grave', 'Respirazione nel sacchetto', 'Respirare nel sacchetto non è raccomandato e può essere pericoloso: riduce l’ossigeno, e se la causa non è l’ansia (asma, embolia, infarto) peggiora il paziente. Si rassicura e si guida il respiro.', ['BTS_O2_2017']);
     },
   },
 
@@ -2214,7 +2314,7 @@ const list: ActionDef[] = [
     run: ({ sim, params }) => {
       const items = (params?.items as string[]) ?? [];
       // il codice di rientro lo assegna la SORES, non l'equipaggio; con un arresto o la RCP in corso è rosso
-      const base = sim.scenario.valutazione.correct[0];
+      const base = sim.scenario.sores?.codice?.(sim) ?? sim.scenario.valutazione.correct[0];
       const code = (sim.inArrest() || sim.cpr.active) && base !== 'I4' ? 'I3' : base;
       sim.report = { code, items, t: sim.t };
       if (sim.flags.primoReportAt === undefined) sim.set('primoReportAt', sim.t);
@@ -2225,7 +2325,7 @@ const list: ActionDef[] = [
       if (missing.length) sim.say('radio', `SORES: «Ricevuto. Appena potete riferiteci anche: ${missing.map(reportLabel).join(', ')}».`);
       const dest = sim.scenario.destination;
       const msa = sim.scenario.msa;
-      if (msa.onReport && msa.available && sim.msaAt === null && !sim.msaOnScene) {
+      if ((msa.onReport || sim.scenario.sores?.mandaMezzo?.(sim)) && msa.available && sim.msaAt === null && !sim.msaOnScene) {
         sim.requests.msa = sim.t;
         sim.msaAt = sim.t + msa.eta;
         sim.say('radio', `SORES: «Ricevuto. Vi mandiamo ${lowerFirst(msa.label ?? 'l’ALS')}, arrivo stimato ${Math.round(msa.eta / 60)} minuti. Restate con il paziente e riferite se cambia qualcosa».`);

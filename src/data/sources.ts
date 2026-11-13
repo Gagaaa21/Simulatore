@@ -69,6 +69,15 @@ export const SOURCES: Record<string, Source> = {
     org: 'Materiale didattico di un corso per volontari soccorritori, Friuli Venezia Giulia',
     note: 'Diapositive del corso (non pubblicate), a cura di un’ostetrica: domande, fasi del travaglio, assistenza alla fase espulsiva, cure al neonato, secondamento.',
   },
+  NICE_HEAD_2023: {
+    id: 'NICE_HEAD_2023',
+    short: 'NICE 2023 · Trauma cranico',
+    title: 'Head injury: assessment and early management (NG232)',
+    org: 'National Institute for Health and Care Excellence (NICE)',
+    year: 2023,
+    url: 'https://www.nice.org.uk/guidance/ng232',
+    note: 'Segni d’allarme dopo un trauma cranico (vomito ripetuto, calo della coscienza, deficit neurologici, convulsioni) e valutazione ospedaliera per chi assume anticoagulanti, anche se asintomatico.',
+  },
   ERC_BLS_2025: {
     id: 'ERC_BLS_2025',
     short: 'ERC 2025 · BLS adulto',

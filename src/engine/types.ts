@@ -235,7 +235,9 @@ export type ProtocolId =
   | 'fratture'
   | 'ipotermia'
   | 'monossido'
-  | 'parto';
+  | 'parto'
+  | 'trauma_cranico'
+  | 'ansia';
 
 export type SettingId =
   | 'casa'
@@ -349,7 +351,18 @@ export interface Scenario {
   /** criteri con cui la SORES indica l'ossigeno (BTS 2017): paziente critico, a rischio di ipercapnia, intossicato da CO */
   oxygen?: { critical?: boolean; copd?: boolean; co?: boolean };
   /** lesioni dell'apparato muscolo-scheletrico */
-  lesioni?: { frattura?: { region: BodyRegion; esposta: boolean; label: string; pos: number } };
+  lesioni?: {
+    frattura?: { region: BodyRegion; esposta: boolean; label: string; pos: number };
+    /** distorsione di un'articolazione (es. caviglia): gonfiore, dolore, nessun segno di certezza di frattura */
+    distorsione?: { region: BodyRegion; label: string };
+  };
+  /** la SORES aggiorna codice e mezzi in base a ciò che riferisci (casi che evolvono) */
+  sores?: {
+    /** codice di rientro assegnato al momento del report */
+    codice?: (s: Sim) => ValutazioneCode;
+    /** al report la SORES invia il mezzo avanzato */
+    mandaMezzo?: (s: Sim) => boolean;
+  };
   /** righe in più nella scheda «Stato del paziente» (es. il neonato) */
   statusExtra?: (s: Sim) => { label: string; value: string; tone?: 'ok' | 'warn' | 'bad' }[];
   /** destinazione indicata dalla SORES al momento del codice di rientro */
