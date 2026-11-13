@@ -27,7 +27,7 @@ export function OxygenPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm
   return (
     <Modal
       title="Ossigenoterapia"
-      kicker="B · Respiro"
+      kicker="Trattamenti · Ossigeno e ventilazione"
       onClose={onCancel}
       footer={
         <>
@@ -127,7 +127,7 @@ export function TourniquetPicker({ sim, onConfirm, onCancel }: { sim: Sim; onCon
   return (
     <Modal
       title="Tourniquet"
-      kicker="C · Emorragia"
+      kicker="Trattamenti · Emorragie"
       onClose={onCancel}
       wide
       footer={
@@ -204,7 +204,7 @@ export function CoolingPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfir
     { id: 'ventilazione', name: 'Nebulizzazione e ventilazione', desc: 'Acqua nebulizzata sulla cute e ventilazione: utile ma più lento.', ok: true, why: '' },
   ];
   return (
-    <Modal title="Raffreddamento attivo" kicker="E · Esposizione" onClose={onCancel}>
+    <Modal title="Raffreddamento attivo" kicker="Trattamenti · Altre cure" onClose={onCancel}>
       <div className="opt-list">
         {opts.map((o) => (
           <button key={o.id} className="opt" disabled={!o.ok} onClick={() => onConfirm({ method: o.id })}>
@@ -226,7 +226,7 @@ const POSITIONS: { id: Position; name: string; desc: string }[] = [
 ];
 export function PositionPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm: Confirm; onCancel: () => void }) {
   return (
-    <Modal title="Posizione del paziente" kicker="Trattamenti" onClose={onCancel}>
+    <Modal title="Posizione del paziente" kicker="Trattamenti · Posizione" onClose={onCancel}>
       <div className="opt-grid">
         {POSITIONS.map((p) => (
           <button key={p.id} className={`opt${sim.p.position === p.id ? ' on' : ''}`} onClick={() => onConfirm({ pos: p.id })}>
@@ -251,7 +251,7 @@ export function PadsPicker({ sim, onConfirm, onCancel }: { sim: Sim; onConfirm: 
   return (
     <Modal
       title="Piastre del DAE"
-      kicker="C · Defibrillazione"
+      kicker="Trattamenti · RCP e DAE"
       onClose={onCancel}
       footer={
         small ? (
