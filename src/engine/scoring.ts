@@ -3,6 +3,20 @@ import type { Objective, Outcome, Penalty } from './types';
 import { EQUIPMENT } from '../data/equipment';
 import { PROTOCOLS } from '../data/protocols';
 
+const KEY_LABEL: Record<string, string> = {
+  tq: 'ora del tourniquet',
+  pa: 'pressione arteriosa',
+  fc: 'frequenza cardiaca',
+  fr: 'frequenza respiratoria',
+  spo2: 'SpO₂',
+  glicemia: 'glicemia',
+  esordio: 'ora di esordio',
+  cincinnati: 'scala di Cincinnati',
+  avpu: 'coscienza (AVPU)',
+  temperatura: 'temperatura',
+  pupille: 'pupille',
+};
+
 export const PENALTY_POINTS: Record<Penalty['severity'], number> = { critico: 15, grave: 8, lieve: 3 };
 
 /** Obiettivi comuni a tutti gli scenari, generati dalla configurazione. */
@@ -84,7 +98,7 @@ export function commonObjectives(sim: Sim, initialLoadout: string[]): Objective[
         category: 'comunicazione',
         points: 6,
         check: (x) => !!x.report && s.reportKeys.every((k) => x.report!.items.includes(k)),
-        why: `Per questo quadro la Centrale ha bisogno di: ${s.reportKeys.join(', ')}.`,
+        why: `Per questo quadro la Centrale ha bisogno di: ${s.reportKeys.map((k) => KEY_LABEL[k] ?? k).join(', ')}.`,
         sources: [],
       });
     }

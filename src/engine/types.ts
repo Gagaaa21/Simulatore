@@ -114,6 +114,7 @@ export interface AedState {
   pediatric: boolean;
   shocks: number;
   lastShockAt: number | null;
+  firstShockAt: number | null;
   prompt: string;
   promptAt: number;
   firstAnalysisAt: number | null;

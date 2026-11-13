@@ -96,6 +96,14 @@ export function CprPanel({ sim, onAction }: { sim: Sim; onAction: (id: string) =
     };
   }, [mine]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // dopo una pausa (analisi del DAE) le compressioni riprendono con te
+  useEffect(() => {
+    if (mine && c.active && c.by !== 'giocatore') {
+      c.by = 'giocatore';
+      c.compressorSince = sim.t;
+    }
+  }, [mine, c.active]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!mine) return;
     const q = pad.rate === 0 ? 0.2 : 0.35 + pad.inRange * 0.6;

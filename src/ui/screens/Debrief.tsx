@@ -30,7 +30,9 @@ function timeline(sim: Sim): { label: string; t: number }[] {
   push('Compressioni dell’equipaggio', f('crewCprAt'));
   push('DAE acceso', f('aedOnAt'));
   push('Piastre applicate', f('padsAt'));
-  push('Primo shock', sim.aed.shocks ? sim.aed.lastShockAt !== null && sim.aed.shocks === 1 ? sim.aed.lastShockAt : null : null);
+  push('Primo shock', sim.aed.firstShockAt);
+  push('Chiamata al 112', sim.firstAt('chiama_112'));
+  push('DAE arrivato', f('daeArrivatoAt'));
   push('Ritorno del circolo (ROSC)', sim.arrest.roscAt);
   push('Emostasi iniziata', f('emostasiAt'));
   push('Tourniquet', sim.tourniquet?.at ?? null);
@@ -141,16 +143,25 @@ export function Debrief({
             </p>
           </div>
           <div className="scheda-fields">
-            <div className="field">
-              <small>Valutazione sanitaria comunicata</small>
-              <span className="mano">{sim.report ? `${sim.report.code} – ${VALUTAZIONE[sim.report.code].def}` : 'non comunicata'}</span>
-            </div>
-            <div className="field">
-              <small>Attesa</small>
-              <span className="mano">
-                {correctCode} – {VALUTAZIONE[correctCode].def}
-              </span>
-            </div>
+            {scenario.role === 'laico' ? (
+              <div className="field">
+                <small>Chiamata al 112</small>
+                <span className="mano">{sim.did('chiama_112') ? `dopo ${fmtClock((sim.firstAt('chiama_112') ?? 0) - Number(sim.flags.contattoAt ?? 0))} dal contatto` : 'non effettuata'}</span>
+              </div>
+            ) : (
+              <>
+                <div className="field">
+                  <small>Valutazione sanitaria comunicata</small>
+                  <span className="mano">{sim.report ? `${sim.report.code} – ${VALUTAZIONE[sim.report.code].def}` : 'non comunicata'}</span>
+                </div>
+                <div className="field">
+                  <small>Attesa</small>
+                  <span className="mano">
+                    {correctCode} – {VALUTAZIONE[correctCode].def}
+                  </span>
+                </div>
+              </>
+            )}
             <div className="field">
               <small>Protocollo</small>
               <span className="mano">{sim.protocol ? PROTOCOLS[sim.protocol.id].name : 'non dichiarato'}</span>

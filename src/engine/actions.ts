@@ -1637,7 +1637,13 @@ const list: ActionDef[] = [
       if (sim.inArrest() && !sim.msaOnScene) {
         sim.penalize('trasporto_in_arresto', 'grave', 'Trasporto durante l’arresto cardiaco', 'La RCP di qualità si fa sul posto: il trasporto in arresto riduce l’efficacia delle compressioni. Si attende il mezzo avanzato.', ['ERC_BLS_2025']);
       }
-      sim.say('azione', `Carichi il paziente (${mode === 'sedia' ? 'sedia portantina' : mode === 'piedi' ? 'a piedi' : 'barella'}) e partite verso l’ospedale indicato dalla Centrale.`);
+      const how = mode === 'sedia' ? 'sedia portantina' : mode === 'piedi' ? 'a piedi' : 'barella';
+      sim.say(
+        'azione',
+        sim.scenario.role === 'squadra'
+          ? `Trasferite il paziente (${how}) al PMA, dove viene affidato all’ambulanza per l’ospedale indicato dalla Centrale.`
+          : `Carichi il paziente (${how}) e partite verso l’ospedale indicato dalla Centrale.`,
+      );
       sim.end('Trasporto in ospedale');
     },
   },

@@ -95,6 +95,7 @@ export class Sim {
     pediatric: false,
     shocks: 0,
     lastShockAt: null,
+    firstShockAt: null,
     prompt: '',
     promptAt: 0,
     firstAnalysisAt: null,
@@ -180,7 +181,6 @@ export class Sim {
     if (this.penalties.some((p) => p.id === id)) return;
     this.penalties.push({ id, t: this.t, severity, text, why, sources });
     if (this.mode === 'addestramento') this.say('errore', `${text} — ${why}`, sources);
-    else this.soundQueue.push('errore');
   }
   did(id: string): boolean {
     return (this.doneAt.get(id)?.length ?? 0) > 0;
@@ -603,6 +603,7 @@ export class Sim {
     }
     this.aed.shocks++;
     this.aed.lastShockAt = this.t;
+    if (this.aed.firstShockAt === null) this.aed.firstShockAt = this.t;
     this.setAedPhase('erogato');
     this.aedSay('Shock erogato. Iniziare la RCP.');
     this.soundQueue.push('shock');
