@@ -16,6 +16,7 @@ import { alcol } from './alcol';
 import { anafilassi } from './anafilassi';
 import { acrConcerto } from './acr-concerto';
 import { acrSupermercato } from './acr-supermercato';
+import { pblsLattante } from './pbls-lattante';
 
 /** Ordine consigliato: dal più semplice al più complesso all'interno di ogni categoria. */
 export const SCENARIOS: Scenario[] = [
@@ -25,6 +26,7 @@ export const SCENARIOS: Scenario[] = [
   ictus,
   doloreToracico,
   fbaoLattante,
+  pblsLattante,
   emorragiaCantiere,
   oppioidi,
   annegamento,

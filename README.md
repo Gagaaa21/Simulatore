@@ -10,7 +10,7 @@ Ricevi la missione dalla Centrale Operativa, scegli i presidi da portare, valuta
 
 | Modulo | Descrizione |
 |---|---|
-| **Missioni** | 17 scenari: territorio 118, concerti ed eventi, interventi fuori servizio. Vista dall’alto del paziente in stile «sala operatoria», monitor dei parametri, DAE con voce, RCP, ossigeno, tourniquet, immobilizzazione, comunicazione con la Centrale. |
+| **Missioni** | 18 scenari: territorio 118, concerti ed eventi, interventi fuori servizio. Vista dall’alto del paziente in stile «sala operatoria», monitor dei parametri, DAE con voce, RCP, ossigeno, tourniquet, immobilizzazione, comunicazione con la Centrale. |
 | **Allenamento RCP** | Ritmo 100–120/min con metronomo, rapporti 30:2 e 15:2, statistiche sulle pause. |
 | **Maxi-emergenza** | Triage START e JumpSTART di 14 feriti dopo una calca all’uscita di un concerto. |
 | **Pianifica un evento** | Livello di rischio (Allegato A1) e risorse con l’algoritmo di Maurer (Allegato A2) dell’Accordo Stato-Regioni 2014. |
@@ -29,6 +29,7 @@ Due modalità: **Addestramento** (errori e suggerimenti in tempo reale, con la f
 | Le parole sbagliate | Ictus con afasia, paziente anticoagulata | Sospetto ictus |
 | Un peso sul petto | Infarto che evolve in fibrillazione ventricolare | Dolore toracico |
 | Silenzio nel seggiolone | Soffocamento in un lattante | Disostruzione pediatrica |
+| Il respiro di Sara | Arresto ipossico in un lattante con bronchiolite | PBLSD pediatrico |
 | Il disco della smerigliatrice | Emorragia arteriosa in cantiere | Emorragia massiva |
 | Parcheggio del palazzetto | Sovradosaggio da oppioidi | Oppioidi |
 | Dal pontile | Annegamento, arresto ipossico | Annegamento |
@@ -59,7 +60,7 @@ Serve Node.js 20 o successivo.
 ```bash
 npm install
 npm run dev        # sviluppo su http://localhost:5173
-npm test           # 57 test: integrità dei dati e percorsi ideali di ogni scenario
+npm test           # 60 test: integrità dei dati e percorsi ideali di ogni scenario
 npm run build      # build statica in dist/
 npm run build:artifact   # pagina HTML unica in dist-artifact/sirena-118.html
 ```

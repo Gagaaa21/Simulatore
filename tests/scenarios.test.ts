@@ -225,6 +225,44 @@ describe('percorsi ideali', () => {
     expect(rep.outcome.status).toBe('ottimo');
   });
 
+  it('arresto pediatrico (PBLSD)', () => {
+    const { sim, kit } = make('pbls-lattante');
+    play(sim, [
+      'valuta_scena',
+      'guanti',
+      'avvicinati',
+      'coscienza',
+      'gas',
+      proto('pbls'),
+      'aspira',
+      'ventilazioni_iniziali',
+      'rcp',
+      (s) => {
+        s.cpr.ratio = '15:2';
+        s.set('ratioScelto', '15:2');
+      },
+      'pallone',
+      ['ossigeno', { device: 'reservoir', flow: 15 }],
+      'dae_accendi',
+      ['dae_piastre', { pos: 'anteroposteriore', pediatric: true }],
+      (s) => {
+        let n = 0;
+        while (s.arrest.roscAt === null && n++ < 600) {
+          if (!s.cpr.active && s.inArrest() && s.aed.phase !== 'analisi') act(s, 'rcp');
+          s.advance(1);
+        }
+      },
+      until((s) => s.arrest.roscAt !== null),
+      'stop_rcp',
+      'saturimetro',
+      ['comunica', { code: 'I3', items: [] }],
+      until((s) => s.msaOnScene),
+      'consegna',
+    ]);
+    const rep = expectAll(sim, kit, 80);
+    expect(rep.outcome.status).toBe('ottimo');
+  });
+
   it('fuori servizio al supermercato', () => {
     const { sim, kit } = make('acr-supermercato');
     play(sim, ['valuta_scena', 'avvicinati', 'coscienza', 'chiama_112', 'manda_dae', 'gas', 'rcp', proto('bls_adulto'), until((s) => s.has('dae'), 200), 'dae_accendi', ['dae_piastre', { pos: 'anterolaterale' }], shockWhenReady, 'rcp', (s) => {

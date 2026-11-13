@@ -148,9 +148,6 @@ export class Sim {
       notes: [],
     } as Patient;
     this.base = { ...sp.v };
-    if (scenario.patient.look.build === 'neonato' || scenario.patient.look.build === 'bambino') {
-      this.cpr.ratio = '15:2';
-    }
     if (scenario.msa.autoDispatched) {
       this.msaAt = scenario.msa.eta;
       this.requests.msa = 0;
@@ -619,7 +616,7 @@ export class Sim {
       c.by = by;
       c.quality = by === 'giocatore' ? c.quality : 0.88;
       c.compressorSince = this.t;
-      if (c.ratio === 'solo_compressioni') c.ratio = this.isChild() ? '15:2' : '30:2';
+      if (c.ratio === 'solo_compressioni') c.ratio = '30:2';
       if (!this.flags.crewCprAt) this.set('crewCprAt', this.t);
       this.say('azione', 'Prendi il posto dell’astante alle compressioni senza interromperle: ora la RCP è dell’equipaggio.');
       this.emit();
