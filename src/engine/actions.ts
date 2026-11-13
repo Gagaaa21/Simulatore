@@ -86,6 +86,13 @@ function caldo(s: Sim): boolean {
   return s.p.v.temp >= 38.5 || s.scenario.protocol.correct.includes('colpo_calore');
 }
 
+/** Gravidanza in corso o parto appena avvenuto. */
+const gravida = (s: Sim) => !!s.p.look.pregnant || s.flags.natoAt !== undefined;
+const nato = (s: Sim) => s.flags.natoAt !== undefined;
+const frattura = (s: Sim) => s.scenario.lesioni?.frattura;
+/** Paziente freddo: ipotermia o esposizione al freddo. */
+const freddo = (s: Sim) => s.p.skin.temp === 'fredda' || s.p.v.temp < 35.5;
+
 function needPatient(sim: Sim): true | string {
   if (sim.phase !== 'paziente') return 'Non sei ancora accanto al paziente.';
   return true;
@@ -593,8 +600,12 @@ const list: ActionDef[] = [
     run: ({ sim }) => {
       sim.pulseOx = true;
       if (!sim.flags.saturimetroAt) sim.set('saturimetroAt', sim.t);
-      if (sim.inArrest()) sim.find('Il saturimetro non rileva alcun segnale.');
-      else {
+      const lettura = sim.spo2Lettura();
+      if (lettura === 'assente') sim.find('Il saturimetro non rileva alcun segnale.');
+      else if (lettura === 'instabile') {
+        sim.find('Il saturimetro non riesce a leggere: onda piatta e valori che saltano. Il dito è freddo e pallido.');
+        sim.measure('spo2', 'SpO₂', 'non rilevabile (segnale instabile)');
+      } else {
         const s = Math.round(sim.p.v.spo2);
         sim.find(`SpO₂ ${s}% ${sim.o2 ? 'in ossigeno' : 'in aria ambiente'}, FC ${Math.round(sim.p.v.hr)}/min.`);
         sim.measure('spo2', 'SpO₂', `${s}% ${sim.o2 ? 'in O₂' : 'in aria'}`);
@@ -672,9 +683,12 @@ const list: ActionDef[] = [
       const o = soresO2Order(sim);
       sim.o2Order = o;
       if (!sim.flags.o2RiferitoAt) sim.set('o2RiferitoAt', sim.t);
-      sim.say('radio', `Tu: «SORES da ${crewName(sim)}: saturazione ${o.spo2}% ${sim.o2 ? 'in ossigeno' : 'in aria ambiente'}».`);
+      const leggibile = sim.spo2Lettura() === 'ok';
+      sim.say('radio', `Tu: «SORES da ${crewName(sim)}: ${leggibile ? `saturazione ${o.spo2}% ${sim.o2 ? 'in ossigeno' : 'in aria ambiente'}` : 'il saturimetro non legge, segnale instabile'}».`);
       const [lo, hi] = o.target;
-      if (!o.device) sim.say('radio', `SORES: «Ricevuto, ${o.spo2}%. L’ossigeno per ora non serve: continuate a monitorare e riferite se scende sotto il ${lo}%».`);
+      if (sim.scenario.oxygen?.co && o.device) sim.say('radio', `SORES: «Ricevuto. Con il sospetto di monossido la saturazione non è affidabile: ${sim.o2 && sim.o2.device === o.device ? 'mantenete' : 'applicate'} ${describeO2(o.device, o.flow, o.fio2)}, qualunque sia il valore».`);
+      else if (!leggibile && o.device) sim.say('radio', `SORES: «Ricevuto. Senza una lettura affidabile ${sim.o2 && sim.o2.device === o.device ? 'mantenete' : 'applicate'} ${describeO2(o.device, o.flow, o.fio2)}».`);
+      else if (!o.device) sim.say('radio', `SORES: «Ricevuto, ${o.spo2}%. L’ossigeno per ora non serve: continuate a monitorare e riferite se scende sotto il ${lo}%».`);
       else if (sim.o2 && sim.o2.device === o.device && (o.device !== 'venturi' || sim.o2.fio2 === o.fio2)) sim.say('radio', `SORES: «Ricevuto. Mantenete ${describeO2(o.device, o.flow, o.fio2)}, obiettivo ${lo}–${hi}%».`);
       else sim.say('radio', `SORES: «Ricevuto. Applicate ${describeO2(o.device, o.flow, o.fio2)}, obiettivo ${lo}–${hi}%. Ricontrollate e riferite».`);
     },
@@ -1339,12 +1353,13 @@ const list: ActionDef[] = [
     section: 'Posizione e altre cure',
     duration: 20,
     contact: true,
-    visible: (s) => !!s.scenario.exam.extra?.ustione,
+    visible: (s) => !!s.scenario.exam.extra?.ustione || !!s.scenario.exam.extra?.bagnato || s.did('rimuovi_indumenti'),
     available: (s) => (s.flags.indumentiTolti ? 'Li hai già tolti.' : needPatient(s)),
     run: ({ sim }) => {
       sim.set('indumentiTolti', sim.t);
-      sim.p.look = { ...sim.p.look, top: 'nudo' };
-      sim.say('azione', 'Tagli e sfili la maglietta intrisa d’acqua calda; nulla è attaccato alla pelle.');
+      const ex = sim.scenario.exam.extra ?? {};
+      if (ex.ustione) sim.p.look = { ...sim.p.look, top: 'nudo' };
+      sim.say('azione', ex.indumenti ?? (ex.ustione ? 'Tagli e sfili la maglietta intrisa d’acqua calda; nulla è attaccato alla pelle.' : 'Togli con delicatezza gli indumenti bagnati, senza scuotere il paziente.'));
     },
   },
   {
@@ -1701,14 +1716,421 @@ const list: ActionDef[] = [
     short: 'Steccobenda',
     group: 'trattamenti',
     section: 'Immobilizzazione',
-    visible: (s) => s.scenario.trauma || s.did('steccobende'),
+    visible: (s) => s.scenario.trauma || !!frattura(s) || s.did('steccobende'),
     duration: 45,
     needs: ['steccobende'],
     contact: true,
-    available: needPatient,
+    available: (s) => (s.immob.has('stecca') ? 'L’arto è già immobilizzato.' : needPatient(s)),
     run: ({ sim }) => {
       sim.immob.add('stecca');
-      sim.say('azione', 'Immobilizzi l’arto comprendendo le articolazioni a monte e a valle; controlli polso e sensibilità a valle.');
+      if (sim.flags.steccaAt === undefined) sim.set('steccaAt', sim.t);
+      const f = frattura(sim);
+      if (f?.esposta && sim.flags.fratturaCopertaAt === undefined) {
+        sim.penalize('stecca_su_ferita', 'lieve', 'Immobilizzazione sopra la frattura esposta scoperta', 'Prima di immobilizzare si copre la frattura esposta con garze e telo sterile.', ['CORSO_MSK']);
+      }
+      sim.say('azione', 'Posizioni la steccobenda a depressione senza muovere l’arto, comprendendo l’articolazione a monte e quella a valle, e fai il vuoto: l’arto resta fermo nella posizione in cui si trova.');
+    },
+  },
+
+  // ════════════ FRATTURE (corso: apparato muscolo-scheletrico)
+  {
+    id: 'pms',
+    label: 'Controlla polso, motilità e sensibilità a valle della lesione',
+    short: 'Polso, motilità, sensibilità',
+    group: 'valutazione',
+    section: 'E – Esposizione',
+    duration: 20,
+    contact: true,
+    visible: (s) => !!frattura(s) || s.did('pms'),
+    available: needPatient,
+    run: ({ sim }) => {
+      const dopo = sim.immob.has('stecca');
+      const ex = sim.scenario.exam.extra ?? {};
+      sim.find((dopo ? ex.pmsDopo : ex.pms) ?? 'Polso periferico presente, muove le dita, sensibilità conservata.');
+      sim.measure('pms', 'Polso, motilità, sensibilità a valle', dopo ? 'conservati anche dopo l’immobilizzazione' : 'conservati');
+      sim.set(dopo ? 'pmsDopoAt' : 'pmsPrimaAt', sim.t);
+    },
+  },
+  {
+    id: 'copri_frattura',
+    label: 'Copri la frattura esposta con garze e telo sterile',
+    short: 'Copri la frattura esposta',
+    group: 'trattamenti',
+    section: 'Emorragie',
+    duration: 25,
+    needs: ['zaino'],
+    contact: true,
+    visible: (s) => !!frattura(s)?.esposta || s.did('copri_frattura'),
+    available: (s) => (s.flags.fratturaCopertaAt !== undefined ? 'La ferita è già coperta.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('fratturaCopertaAt', sim.t);
+      sim.say('azione', 'Tagli il calzettone, appoggi garze sterili sulla ferita senza toccare il moncone e copri con un telino sterile fissato largo.');
+    },
+  },
+  {
+    id: 'disinfetta',
+    label: 'Disinfetta la ferita',
+    short: 'Disinfetta',
+    group: 'trattamenti',
+    section: 'Emorragie',
+    duration: 20,
+    needs: ['zaino'],
+    contact: true,
+    visible: (s) => !!frattura(s)?.esposta || s.did('disinfetta'),
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.say('azione', 'Versi il disinfettante sulla ferita: il ragazzo urla dal dolore.');
+      sim.penalize('disinfetta_frattura', 'grave', 'Frattura esposta disinfettata', 'Sulla frattura esposta non si disinfetta e non si toccano i monconi: si copre con garze e telo sterile.', ['ERC_FA_2025', 'CORSO_MSK']);
+    },
+  },
+  {
+    id: 'riallinea',
+    label: 'Riallinea l’arto e rimetti in sede l’osso',
+    short: 'Riallinea l’arto',
+    group: 'trattamenti',
+    section: 'Immobilizzazione',
+    duration: 15,
+    contact: true,
+    visible: (s) => !!frattura(s) || s.did('riallinea'),
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.say('azione', 'Tiri il piede per raddrizzare la gamba: il paziente urla, impallidisce e quasi perde i sensi.');
+      sim.base.hr += 14;
+      sim.base.sbp -= 14;
+      sim.penalize('riduzione', 'grave', 'Hai provato a ridurre la frattura', 'Fratture e lussazioni non si riducono mai: si immobilizzano nella posizione in cui si trovano. Muovere i monconi danneggia vasi e nervi e aumenta dolore e sanguinamento.', ['ERC_FA_2025', 'CORSO_MSK']);
+    },
+  },
+
+  // ════════════ FREDDO (corso: emergenze legate alla temperatura)
+  {
+    id: 'ambiente_caldo',
+    label: 'Riscalda l’ambiente: chiudi le finestre, alza il riscaldamento, coperte',
+    short: 'Ambiente caldo',
+    group: 'trattamenti',
+    section: 'Posizione e altre cure',
+    duration: 30,
+    visible: (s) => freddo(s) || s.did('ambiente_caldo'),
+    available: (s) => (s.flags.ambienteCaldoAt !== undefined ? 'L’ambiente è già riscaldato.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('ambienteCaldoAt', sim.t);
+      sim.say('azione', 'Chiudi porte e finestre, alzi il riscaldamento e recuperi delle coperte; il collega accende il riscaldamento dell’ambulanza.');
+    },
+  },
+  {
+    id: 'frizionare',
+    label: 'Friziona e massaggia braccia e gambe per scaldarle',
+    short: 'Friziona gli arti',
+    group: 'trattamenti',
+    section: 'Posizione e altre cure',
+    duration: 30,
+    contact: true,
+    visible: (s) => freddo(s) || s.did('frizionare'),
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.say('azione', 'Strofini con energia braccia e gambe.');
+      sim.penalize('frizione', 'grave', 'Arti frizionati e massaggiati', 'Nell’ipotermia frizionare e massaggiare può scatenare aritmie; nel congelamento lede i tessuti. Il riscaldamento è passivo e graduale.', ['ERC_FA_2025', 'CORSO_TEMP']);
+    },
+  },
+
+  // ════════════ MONOSSIDO
+  {
+    id: 'arieggia',
+    label: 'Apri porte e finestre e fai uscire tutti all’aria aperta (niente interruttori né fiamme)',
+    short: 'Arieggia ed evacua',
+    group: 'scena',
+    duration: 25,
+    visible: (s) => s.scenario.scene.hazards.some((h) => h.fixAction === 'arieggia') || s.did('arieggia'),
+    available: (s) => (s.flags.fix_arieggia ? 'Già fatto.' : true),
+    run: ({ sim }) => {
+      sim.set('fix_arieggia', true);
+      sim.say('azione', 'Trattenendo il fiato spalanchi porte e finestre senza toccare interruttori e fai uscire tutti all’aria aperta.');
+    },
+  },
+
+  // ════════════ PARTO (corso: il parto in urgenza)
+  {
+    id: 'q_gravidanza',
+    label: 'Gravidanza: settimane, presentazione, gravidanze precedenti, controlli',
+    short: 'Gravidanza',
+    group: 'anamnesi',
+    duration: 15,
+    visible: gravida,
+    available: needPatient,
+    run: ({ sim }) => {
+      answer(sim, 'gravidanza', 'Gravidanza');
+      const b = sim.scenario.exam.extra?.gravidanzaBreve;
+      if (b) sim.measure('gravidanza', 'Gravidanza', b);
+    },
+  },
+  {
+    id: 'q_contrazioni',
+    label: 'Contrazioni, rottura delle acque e colore del liquido, voglia di spingere',
+    short: 'Contrazioni e perdite',
+    group: 'anamnesi',
+    duration: 15,
+    visible: gravida,
+    available: needPatient,
+    run: ({ sim }) => {
+      answer(sim, 'contrazioni', 'Contrazioni');
+      const b = sim.scenario.exam.extra?.contrazioniBreve;
+      if (b) sim.measure('contrazioni', 'Contrazioni e perdite', b);
+    },
+  },
+  {
+    id: 'controlla_perineo',
+    label: 'Controlla il perineo durante la spinta (con privacy)',
+    short: 'Controlla il perineo',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 15,
+    contact: true,
+    visible: (s) => !!s.p.look.pregnant && !nato(s),
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.set('perineoAt', sim.t);
+      const ex = sim.scenario.exam.extra ?? {};
+      sim.find(sim.flags.coronamentoAt !== undefined ? (ex.coronamento ?? 'Durante la spinta compaiono i capelli del bambino: il parto è imminente.') : (ex.perineo ?? 'Perineo disteso durante la spinta, nessuna parte del bambino ancora visibile.'));
+    },
+  },
+  {
+    id: 'prepara_parto',
+    label: 'Prepara il parto: ambiente caldo, kit parto, telini, privacy',
+    short: 'Prepara il parto',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 40,
+    needs: ['kit_parto'],
+    visible: (s) => !!s.p.look.pregnant || s.did('prepara_parto'),
+    available: (s) => (s.flags.partoPreparatoAt !== undefined ? 'È già tutto pronto.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('partoPreparatoAt', sim.t);
+      sim.say('azione', 'Alzi il riscaldamento, fai uscire chi non serve, apri il kit parto e scaldi i telini sul termosifone; indossi camice e occhiali.');
+    },
+  },
+  {
+    id: 'posizione_parto',
+    label: 'Posizione per il parto: bacino sollevato di 4–5 cm, cosce divaricate, ginocchia flesse',
+    short: 'Posizione per il parto',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 20,
+    contact: true,
+    visible: (s) => !!s.p.look.pregnant && !nato(s),
+    available: (s) => (s.flags.posizionePartoAt !== undefined ? 'È già in posizione.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('posizionePartoAt', sim.t);
+      sim.p.position = 'supino';
+      sim.say('azione', 'La aiuti a sdraiarsi sulla schiena con un telo piegato sotto il bacino, cosce divaricate e ginocchia flesse; sotto di lei un telino pulito.');
+    },
+  },
+  {
+    id: 'accompagna_testa',
+    label: 'Accompagna l’uscita del bambino sostenendo la testa, senza tirare',
+    short: 'Accompagna la testa',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 30,
+    contact: true,
+    visible: (s) => !!s.p.look.pregnant && !nato(s),
+    available: (s) => {
+      const n = needPatient(s);
+      if (n !== true) return n;
+      return s.flags.coronamentoAt === undefined ? 'Nessuna parte del bambino è ancora visibile.' : true;
+    },
+    run: ({ sim }) => {
+      sim.set('accompagnaAt', sim.t);
+    },
+  },
+  {
+    id: 'trazione_testa',
+    label: 'Tira delicatamente la testa per aiutare l’uscita',
+    short: 'Tira la testa',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 10,
+    contact: true,
+    visible: (s) => !!s.p.look.pregnant && !nato(s),
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.say('azione', 'Afferri la testa e tiri.');
+      sim.penalize('trazione_testa', 'critico', 'Trazione sulla testa del bambino', 'Non si tira mai la testa, le spalle o il cordone: si sostiene e si accompagna. La trazione può lesionare il collo e i nervi del braccio del neonato.', ['CORSO_PARTO']);
+    },
+  },
+  {
+    id: 'ora_nascita',
+    label: 'Annota l’ora di nascita',
+    short: 'Ora di nascita',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 3,
+    visible: nato,
+    available: (s) => (s.flags.oraAnnotata !== undefined ? 'L’ora è già annotata.' : true),
+    run: ({ sim }) => {
+      sim.set('oraAnnotata', sim.t);
+      const ora = sim.clock(Number(sim.flags.natoAt));
+      sim.measure('ora_nascita', 'Ora di nascita', ora);
+      sim.say('azione', `Annoti l’ora di nascita: ${ora}.`);
+    },
+  },
+  {
+    id: 'asciuga_neonato',
+    label: 'Asciuga e stimola il neonato, pulisci naso e bocca con una garza',
+    short: 'Asciuga e stimola',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 25,
+    contact: true,
+    visible: nato,
+    available: needPatient,
+    run: ({ sim }) => {
+      if (sim.flags.asciugatoAt === undefined) sim.set('asciugatoAt', sim.t);
+      sim.say('azione', 'Pulisci naso e bocca con una garza e asciughi il neonato tra le cosce della madre con un telino caldo, strofinandogli la schiena.');
+    },
+  },
+  {
+    id: 'avvolgi_neonato',
+    label: 'Cambia il telo bagnato, avvolgi il neonato e coprigli la testa',
+    short: 'Avvolgi il neonato',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 20,
+    needs: ['kit_parto'],
+    contact: true,
+    visible: nato,
+    available: (s) => (s.flags.avvoltoAt !== undefined ? 'È già avvolto.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('avvoltoAt', sim.t);
+      sim.say('azione', 'Togli il telino bagnato, avvolgi il neonato in un telo asciutto e caldo e gli metti la cuffietta.');
+    },
+  },
+  {
+    id: 'clampa_cordone',
+    label: 'Clampa il cordone ombelicale con le due clamp',
+    short: 'Clampa il cordone',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 20,
+    needs: ['kit_parto'],
+    contact: true,
+    visible: nato,
+    available: (s) => (s.flags.clampatoAt !== undefined ? 'Il cordone è già clampato.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('clampatoAt', sim.t);
+      sim.say('azione', 'Applichi le due clamp sul cordone, a qualche centimetro l’una dall’altra.');
+    },
+  },
+  {
+    id: 'taglia_cordone',
+    label: 'Taglia il cordone tra le due clamp',
+    short: 'Taglia il cordone',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 10,
+    needs: ['kit_parto'],
+    contact: true,
+    visible: nato,
+    available: (s) => {
+      const n = needPatient(s);
+      if (n !== true) return n;
+      if (s.flags.clampatoAt === undefined) return 'Il cordone non è clampato.';
+      return s.flags.cordoneTagliato !== undefined ? 'Il cordone è già tagliato.' : true;
+    },
+    run: ({ sim }) => {
+      sim.set('cordoneTagliato', sim.t);
+      sim.say('azione', 'Tagli il cordone tra le due clamp con le forbici sterili.');
+      if (!sim.scenario.exam.extra?.cordoneCorto) {
+        sim.penalize('taglio_cordone', 'lieve', 'Cordone tagliato senza necessità', 'Il cordone si taglia solo se è corto (meno di 30 cm): altrimenti resta clampato e lo taglia l’ostetrica in ospedale.', ['CORSO_PARTO']);
+      }
+    },
+  },
+  {
+    id: 'neonato_sul_ventre',
+    label: 'Metti il neonato sul ventre della madre, su un fianco, coperto',
+    short: 'Sul ventre della madre',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 10,
+    contact: true,
+    visible: nato,
+    available: (s) => (s.flags.sulVentreAt !== undefined ? 'È già sul ventre della madre.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('sulVentreAt', sim.t);
+      sim.say('azione', 'Appoggi il neonato sul ventre della madre, su un fianco, coperto e con la testa protetta: lei lo tiene stretto a sé.');
+      if (sim.flags.clampatoAt === undefined) {
+        sim.penalize('neonato_alto', 'lieve', 'Neonato sopra la madre prima del clampaggio', 'Fino al clampaggio del cordone il neonato non va posto più in alto della madre.', ['CORSO_PARTO']);
+      }
+    },
+  },
+  {
+    id: 'tira_cordone',
+    label: 'Tira il cordone per far uscire la placenta',
+    short: 'Tira il cordone',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 10,
+    contact: true,
+    visible: (s) => nato(s) && s.flags.placentaAt === undefined,
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.say('azione', 'Tiri il cordone: la madre geme per il dolore.');
+      sim.penalize('trazione_cordone', 'grave', 'Trazione sul cordone', 'La placenta si stacca da sola: tirare il cordone può strapparlo o provocare un’emorragia grave.', ['CORSO_PARTO']);
+    },
+  },
+  {
+    id: 'raccogli_placenta',
+    label: 'Raccogli la placenta in un sacchetto, senza tirare il cordone',
+    short: 'Raccogli la placenta',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 20,
+    needs: ['kit_parto'],
+    contact: true,
+    visible: nato,
+    available: (s) => {
+      const n = needPatient(s);
+      if (n !== true) return n;
+      if (s.flags.placentaAt === undefined) return 'La placenta non è ancora uscita.';
+      return s.flags.placentaRaccoltaAt !== undefined ? 'È già nel sacchetto.' : true;
+    },
+    run: ({ sim }) => {
+      sim.set('placentaRaccoltaAt', sim.t);
+      sim.say('azione', 'Raccogli la placenta nel sacchetto del kit: andrà in ospedale con la madre.');
+    },
+  },
+  {
+    id: 'massaggio_uterino',
+    label: 'Massaggio del fondo uterino',
+    short: 'Massaggio uterino',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 30,
+    contact: true,
+    visible: nato,
+    available: (s) => {
+      const n = needPatient(s);
+      if (n !== true) return n;
+      return s.flags.placentaAt === undefined ? 'La placenta non è ancora uscita.' : true;
+    },
+    run: ({ sim }) => {
+      if (sim.flags.massaggioAt === undefined) sim.set('massaggioAt', sim.t);
+      sim.say('azione', 'Massaggi con movimenti circolari il fondo dell’utero, all’altezza dell’ombelico: lo senti indurirsi come una palla.');
+    },
+  },
+  {
+    id: 'cura_madre',
+    label: 'Assorbente, asciuga e copri la madre',
+    short: 'Cura della madre',
+    group: 'trattamenti',
+    section: 'Parto',
+    duration: 20,
+    needs: ['kit_parto'],
+    contact: true,
+    visible: nato,
+    available: (s) => (s.flags.curaMadreAt !== undefined ? 'Già fatto.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('curaMadreAt', sim.t);
+      sim.covered = true;
+      sim.say('azione', 'Metti un assorbente, asciughi la madre e la copri con una coperta calda.');
     },
   },
 
@@ -1791,8 +2213,9 @@ const list: ActionDef[] = [
     available: needPatient,
     run: ({ sim, params }) => {
       const items = (params?.items as string[]) ?? [];
-      // il codice di rientro lo assegna la SORES, non l'equipaggio
-      const code = sim.scenario.valutazione.correct[0];
+      // il codice di rientro lo assegna la SORES, non l'equipaggio; con un arresto o la RCP in corso è rosso
+      const base = sim.scenario.valutazione.correct[0];
+      const code = (sim.inArrest() || sim.cpr.active) && base !== 'I4' ? 'I3' : base;
       sim.report = { code, items, t: sim.t };
       if (sim.flags.primoReportAt === undefined) sim.set('primoReportAt', sim.t);
       const list = items.map((k) => sim.measurements.get(k)).filter(Boolean).map((m) => `${m!.label} ${m!.value}`);
@@ -1913,4 +2336,4 @@ export const GROUP_LABEL: Record<ActionDef['group'], string> = {
 };
 
 /** Ordine delle sezioni dentro le schede (l'elenco segue quest'ordine). */
-export const SECTION_ORDER: string[] = ['A – Coscienza e vie aeree', 'B – Respiro', 'C – Circolo', 'D – Neurologico', 'E – Esposizione', 'Vie aeree', 'Ossigeno e ventilazione', 'RCP e DAE', 'Emorragie', 'Immobilizzazione', 'Posizione e altre cure', 'SORES', 'Attesa e rivalutazione', 'Trasporto'];
+export const SECTION_ORDER: string[] = ['A – Coscienza e vie aeree', 'B – Respiro', 'C – Circolo', 'D – Neurologico', 'E – Esposizione', 'Vie aeree', 'Ossigeno e ventilazione', 'RCP e DAE', 'Emorragie', 'Immobilizzazione', 'Parto', 'Posizione e altre cure', 'SORES', 'Attesa e rivalutazione', 'Trasporto'];

@@ -284,6 +284,11 @@ export function startAmbience(setting: string) {
     case 'lago':
       loopNoise(false, 'lowpass', 600, 0.4, 0.06, 0.12, 0.05);
       break;
+    case 'campo':
+      // vento sull'erba e voci lontane dalla tribuna
+      loopNoise(false, 'lowpass', 500, 0.4, 0.05, 0.1, 0.03);
+      loopNoise(false, 'bandpass', 900, 0.9, 0.012, 0.25, 0.006);
+      break;
     case 'ristorante':
     case 'supermercato':
       loopNoise(false, 'bandpass', 700, 0.8, 0.03, 0.2, 0.01);

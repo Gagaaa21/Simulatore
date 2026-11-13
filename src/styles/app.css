@@ -4536,6 +4536,11 @@ kbd {
   line-height: 1.45;
   color: var(--testo);
 }
+.seg button.seg-next {
+  outline: 2px solid var(--arancio);
+  outline-offset: 1px;
+  animation: pulse-border 1.6s ease-in-out infinite;
+}
 .act.act-next {
   border-color: var(--arancio);
   box-shadow: 0 0 0 1px var(--arancio), 0 0 18px rgba(255, 122, 26, 0.25);
@@ -5021,6 +5026,21 @@ kbd {
   font-size: var(--t-14);
   color: var(--testo);
 }
+.p-status .p-extra {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--filo-2);
+}
+.p-extra .tone-ok dd {
+  color: var(--ok);
+}
+.p-extra .tone-warn dd {
+  color: var(--warn);
+}
+.p-extra .tone-bad dd {
+  color: var(--bad);
+  font-weight: 600;
+}
 .p-status .tr-peggiora {
   background: rgba(255, 159, 67, 0.14);
 }
@@ -5071,4 +5091,20 @@ kbd {
 [data-motion='ridotta'] .p-halo,
 [data-motion='ridotta'] .p-alert-critico .p-alert-ico {
   animation: none;
+}
+
+/* il pianto del neonato */
+.pianto {
+  animation: pianto 0.9s ease-in-out infinite;
+}
+@keyframes pianto {
+  50% {
+    opacity: 0.2;
+    transform: translateX(-3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pianto {
+    animation: none;
+  }
 }

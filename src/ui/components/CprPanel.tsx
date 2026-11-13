@@ -66,7 +66,7 @@ export function RateGauge({ rate, min = 100, max = 120 }: { rate: number; min?: 
   );
 }
 
-export function CprPanel({ sim, onAction }: { sim: Sim; onAction: (id: string) => void }) {
+export function CprPanel({ sim, onAction, suggestRatio }: { sim: Sim; onAction: (id: string) => void; suggestRatio?: '15:2' }) {
   const c = sim.cpr;
   const [mine, setMine] = useState(false);
   const [metro, setMetro] = useState(true);
@@ -185,7 +185,7 @@ export function CprPanel({ sim, onAction }: { sim: Sim; onAction: (id: string) =
             {(['30:2', '15:2'] as const).map((r) => (
               <button
                 key={r}
-                className={c.ratio === r ? 'on' : ''}
+                className={`${c.ratio === r ? 'on' : ''}${suggestRatio === r && c.ratio !== r ? ' seg-next' : ''}`}
                 onClick={() => {
                   sim.cpr.ratio = r;
                   sim.set('ratioScelto', r);

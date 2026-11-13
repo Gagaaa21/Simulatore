@@ -23,6 +23,7 @@ const KIT_ACTIONS: Partial<Record<EquipmentId, string[]>> = {
   steccobende: ['steccobende'],
   cintura_pelvica: ['cintura_pelvica'],
   kit_raffreddamento: ['raffredda'],
+  kit_parto: ['prepara_parto', 'clampa_cordone'],
 };
 
 type Menu = { title: string; ids: string[]; x: number; y: number } | null;

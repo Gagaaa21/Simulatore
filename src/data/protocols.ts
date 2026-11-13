@@ -10,7 +10,7 @@ export interface ProtocolStep {
 export interface Protocol {
   id: ProtocolId;
   name: string;
-  family: 'Rianimazione' | 'Vie aeree' | 'Medico' | 'Trauma' | 'Ambientale' | 'Tossicologico';
+  family: 'Rianimazione' | 'Vie aeree' | 'Medico' | 'Trauma' | 'Ambientale' | 'Tossicologico' | 'Ostetrico';
   summary: string;
   steps: ProtocolStep[];
   numbers?: { label: string; value: string }[];
@@ -179,14 +179,23 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
       { title: 'Target SpO₂', detail: '94–98% nella maggior parte dei pazienti; 88–92% nei pazienti a rischio di ipercapnia (BPCO), di solito con maschera Venturi al 24–28%.' },
       { title: 'Presidi', detail: 'Occhialini 1–4 L/min; maschera semplice 5–10 L/min; maschera Venturi a concentrazione fissa (24–60%); reservoir 10–15 L/min.' },
       { title: 'Ricontrolla', detail: 'Riferisci di nuovo la saturazione: la SORES aggiusta l’indicazione.' },
+      { title: 'In emergenza', detail: 'Respiro inefficace, coscienza compromessa o saturazione molto bassa: ossigeno al 100% con reservoir a 15 L/min o pallone, poi lo riferisci. Se il respiro è assente o agonico si ventila con il pallone.' },
+      { title: 'Limiti del saturimetro', detail: 'Legge male con smalto scuro, mani fredde e vasocostrizione, temperatura sotto i 35 °C, sistolica sotto i 55–60 mmHg, movimenti. Nell’intossicazione da monossido dà valori falsamente normali.' },
       { title: 'Farmaci', detail: 'Gli spray del paziente non li somministra il soccorritore: riferiscilo alla SORES.' },
     ],
     numbers: [
       { label: 'Target standard', value: '94–98%' },
       { label: 'Target BPCO', value: '88–92%' },
-      { label: 'Reservoir', value: '10–15 L/min' },
+      { label: 'SpO₂ normale', value: '> 96%' },
+      { label: 'Ipossia lieve', value: '93–95%' },
+      { label: 'Ossigenazione insufficiente', value: '90–92%' },
+      { label: 'Ipossia grave', value: '< 90%' },
+      { label: 'Reservoir', value: '10–15 L/min, FiO₂ 60–90%' },
+      { label: 'Pallone senza O₂', value: '21%' },
+      { label: 'Pallone con O₂', value: '40–50%' },
+      { label: 'Pallone con O₂ e reservoir', value: '90–100%' },
     ],
-    sources: ['ERC_FA_2025', 'BTS_O2_2017', 'SORES_FVG'],
+    sources: ['ERC_FA_2025', 'BTS_O2_2017', 'SORES_FVG', 'CORSO_RESP'],
   },
   anafilassi: {
     id: 'anafilassi',
@@ -256,6 +265,7 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
     family: 'Ambientale',
     summary: 'Alterazione neurologica e ipertermia: raffredda subito, trasporta dopo.',
     steps: [
+      { title: 'Collasso o colpo di calore?', detail: 'Nel collasso da calore la termoregolazione regge: debolezza, sete, crampi, cute sudata, temperatura normale o di poco aumentata. Nel colpo di calore salta: temperatura oltre 40 °C, alterazioni neurologiche (cefalea, vertigini, confusione, convulsioni), cute calda, spesso secca.', ask: true },
       { title: 'Sospetta', detail: 'Confusione, agitazione, disorientamento, convulsioni o incoscienza durante sforzo o caldo, anche con temperature moderate.' },
       { title: 'Raffreddamento passivo', detail: 'All’ombra, via gli indumenti in eccesso.' },
       { title: 'Raffreddamento attivo', detail: 'Gold standard: immersione in acqua a 1–26 °C dal collo in giù fino a temperatura centrale < 39 °C. Alternative: telo con acqua e ghiaccio (TACO), ghiaccio, teli bagnati, nebulizzazione e ventilazione.' },
@@ -265,8 +275,10 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
     numbers: [
       { label: 'Acqua', value: '1–26 °C' },
       { label: 'Stop a', value: '< 39 °C' },
+      { label: 'Colpo di calore', value: '> 40 °C' },
     ],
-    sources: ['ERC_FA_2025'],
+    pitfalls: ['Coprire con il telo isotermico un paziente ipertermico.', 'Far bere: in FVG il soccorritore non somministra nulla, nemmeno acqua.', 'Trasportare prima di raffreddare.'],
+    sources: ['ERC_FA_2025', 'CORSO_TEMP'],
   },
   intossicazione: {
     id: 'intossicazione',
@@ -311,6 +323,96 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
     ],
     sources: ['ERC_FA_2025', 'ERC_LAY_2025'],
   },
+  fratture: {
+    id: 'fratture',
+    name: 'Fratture, lussazioni e amputazioni',
+    family: 'Trauma',
+    summary: 'Lascia l’arto nella posizione antalgica, controlla polso, motilità e sensibilità, copri la frattura esposta, immobilizza senza mai ridurre.',
+    steps: [
+      { title: 'Sicurezza e dinamica', detail: 'Capisci com’è successo: un trauma ad alta energia si gestisce come trauma maggiore.' },
+      { title: 'Emorragie prima di tutto', detail: 'Tampona i sanguinamenti; un’emorragia massiva si tratta prima della frattura.' },
+      { title: 'Riconosci la frattura', detail: 'Segni di certezza: moncone esposto, motilità innaturale (accorciamento, angolazione, rotazione), crepitio. Segni di probabilità: dolore alla palpazione, tumefazione, ecchimosi, impotenza funzionale, formicolio.' },
+      { title: 'Non muovere', detail: 'Lascia il paziente nella posizione antalgica: spostalo solo se la scena non è sicura.' },
+      { title: 'Polso, motilità, sensibilità', detail: 'A valle della lesione, prima e dopo l’immobilizzazione.' },
+      { title: 'Frattura esposta', detail: 'Copri con garze o telo sterile. Non disinfettare, non toccare e non far rientrare i monconi.' },
+      { title: 'Immobilizza', detail: 'Steccobenda o materassino comprendendo l’articolazione a monte e quella a valle; la lussazione si immobilizza nella posizione in cui si trova. Mai ridurre.' },
+      { title: 'Copri e rassicura', detail: 'Telo isotermico, parametri, sostegno psicologico. Il dolore lo tratta l’équipe sanitaria.' },
+      { title: 'Amputazione', detail: 'Tampona l’emorragia. Parte amputata avvolta in garza sterile, in un sacchetto asciutto chiuso, dentro un secondo sacchetto con acqua e ghiaccio: mai a contatto diretto con il ghiaccio.' },
+    ],
+    numbers: [
+      { label: 'Immobilizza', value: 'articolazione sopra e sotto' },
+      { label: 'Controlli', value: 'polso, motilità, sensibilità prima e dopo' },
+    ],
+    pitfalls: ['Riallineare l’arto o ridurre una lussazione.', 'Disinfettare o toccare i monconi di una frattura esposta.', 'Immobilizzare senza ricontrollare polso e sensibilità a valle.', 'Mettere la parte amputata direttamente nel ghiaccio.'],
+    sources: ['ERC_FA_2025', 'CORSO_MSK'],
+  },
+  ipotermia: {
+    id: 'ipotermia',
+    name: 'Ipotermia e congelamento',
+    family: 'Ambientale',
+    summary: 'Ferma la dispersione di calore, togli il bagnato, riscalda in modo passivo e graduale, maneggia con delicatezza.',
+    steps: [
+      { title: 'Riconosci', detail: 'Lieve (35–32 °C): brividi intensi. Grave (sotto i 32 °C): confusione, assenza di brivido, letargia fino al coma e all’arresto.', ask: true },
+      { title: 'Al riparo', detail: 'Ambiente protetto e caldo: chiudi le finestre, alza il riscaldamento, in ambulanza riscaldata.' },
+      { title: 'Togli il bagnato', detail: 'Indumenti bagnati o stretti via con delicatezza, poi coperte e telo isotermico.' },
+      { title: 'Riscaldamento passivo', detail: 'Graduale. Nessun massaggio né frizione degli arti.' },
+      { title: 'Delicatezza', detail: 'Nell’ipotermia grave il paziente resta sdraiato: alzarlo, metterlo seduto o farlo camminare può scatenare una fibrillazione ventricolare.' },
+      { title: 'Parametri', detail: 'Sotto i 35 °C il saturimetro legge male; il polso può essere lento e debole: valuta il respiro con cura.' },
+      { title: 'ABCDE e BLSD', detail: 'Se è incosciente ABCDE; se non respira normalmente BLSD.' },
+      { title: 'Congelamento', detail: 'Riparo, via il bagnato e ciò che stringe, riscalda gradualmente la parte (anche a contatto con un’altra zona calda del corpo), copri. Non massaggiare né frizionare, non bucare le vesciche, niente pomate o disinfettanti.' },
+    ],
+    numbers: [
+      { label: 'Ipotermia lieve', value: '35–32 °C' },
+      { label: 'Ipotermia grave', value: '< 32 °C' },
+      { label: 'Saturimetro inaffidabile', value: '< 35 °C' },
+    ],
+    pitfalls: ['Mettere seduto o far camminare un paziente con ipotermia grave.', 'Frizionare o massaggiare gli arti.', 'Lasciare addosso gli indumenti bagnati.', 'Dare da bere (non è competenza del soccorritore) o bevande alcoliche.'],
+    sources: ['ERC_FA_2025', 'CORSO_TEMP'],
+  },
+  monossido: {
+    id: 'monossido',
+    name: 'Intossicazione da monossido di carbonio',
+    family: 'Tossicologico',
+    summary: 'Prima la tua sicurezza: arieggia, fai uscire tutti, Vigili del fuoco; ossigeno al 100% anche con saturazione normale.',
+    steps: [
+      { title: 'Sospetta', detail: 'Inverno, caldaia, stufa, camino o braciere; più persone con mal di testa, nausea, vertigini, confusione. Il CO non ha odore né colore.' },
+      { title: 'Sicurezza', detail: 'Non entrare in un ambiente saturo: apri porte e finestre, niente interruttori né fiamme, porta tutti all’aria aperta. Chiedi i Vigili del fuoco.' },
+      { title: 'Ossigeno al 100%', detail: 'Maschera con reservoir a 15 L/min in autonomia: è un’emergenza.' },
+      { title: 'Saturimetro', detail: 'Non distingue il monossido dall’ossigeno: legge valori normali anche in un’intossicazione grave. Non rassicura.' },
+      { title: 'Altri coinvolti', detail: 'Chiedi chi altro era in casa, anche chi dorme, e riferiscilo alla SORES: servono più mezzi.' },
+      { title: 'ABCDE', detail: 'Coscienza, convulsioni, dolore toracico; posizione laterale se incosciente che respira.' },
+    ],
+    numbers: [{ label: 'Ossigeno', value: 'reservoir 15 L/min' }],
+    pitfalls: ['Entrare senza arieggiare.', 'Fidarsi di una SpO₂ del 98–99%.', 'Dimenticare le altre persone in casa.'],
+    sources: ['BTS_O2_2017', 'CORSO_RESP', 'SORES_FVG'],
+  },
+  parto: {
+    id: 'parto',
+    name: 'Parto in urgenza',
+    family: 'Ostetrico',
+    summary: 'Se il parto è imminente non si parte: si prepara tutto e si accompagna. Asciuga e scalda il neonato, nessuna trazione.',
+    steps: [
+      { title: 'Domande', detail: 'Settimane di gravidanza, presentazione (cefalica o podalica), gravidanze precedenti, patologie, perdite di sangue o di liquido (quantità e colore: giallognolo, tinto di verde, ematico). Il bambino si muove? C’è pausa tra le contrazioni? Prendi i documenti della gravidanza.' },
+      { title: 'Fasi prodromica e dilatante', detail: 'Rassicura, comfort e privacy, aiuta nella respirazione. Trasporto semiseduta o sul fianco sinistro (evita la compressione della vena cava).' },
+      { title: 'Parto imminente?', detail: 'Premiti, voglia di spingere, capelli visibili al perineo durante la spinta: ci si prepara ad assistere il parto (in ambulanza ci si ferma).', ask: true },
+      { title: 'Prepara', detail: 'Ambiente caldo, kit parto e telini, DPI. Bacino sollevato di 4–5 cm, cosce divaricate e ginocchia flesse.' },
+      { title: 'Accompagna', detail: 'Sostieni la testa e accompagna l’uscita. Mai trazioni su testa, spalle o cordone. Nella podalica non si tocca e non si accompagna.' },
+      { title: 'È nato', detail: 'Annota l’ora. Pulisci naso e bocca con una garza, adagialo tra le cosce della madre, asciugalo, cambia il telo bagnato e avvolgilo coprendo la testa.' },
+      { title: 'Non piange?', detail: 'Di solito piange entro 30–60 secondi: se no stimolalo asciugandolo e massaggiandogli la schiena. Se non respira: rianimazione neonatale.', ask: true },
+      { title: 'Cordone', detail: 'Clampa con due clamp; prima del clampaggio non metterlo più in alto della madre. Taglia solo se il cordone è corto (meno di 30 cm). Poi sul ventre materno, su un fianco, coperto.' },
+      { title: 'Secondamento', detail: 'La placenta si stacca da sola, con 500–1000 mL di sangue: raccoglila in un sacchetto senza tirare il cordone. Massaggio del fondo uterino, assorbente, asciuga e copri la madre.' },
+      { title: 'In ospedale', detail: 'Il neonato non ha braccialetto: identificalo. Comunica l’ora di nascita e i problemi riscontrati.' },
+    ],
+    numbers: [
+      { label: 'A termine', value: '37–42 settimane' },
+      { label: 'Pianto', value: 'entro 30–60 s' },
+      { label: 'Taglio del cordone', value: 'solo se < 30 cm' },
+      { label: 'Bacino sollevato', value: '4–5 cm' },
+      { label: 'Perdita al secondamento', value: '500–1000 mL' },
+    ],
+    pitfalls: ['Tirare la testa, le spalle o il cordone.', 'Lasciare il neonato bagnato e scoperto.', 'Mettere il neonato più in alto della madre prima del clampaggio.', 'Partire con il parto in fase espulsiva.'],
+    sources: ['CORSO_PARTO', 'ERC_PLS_2025'],
+  },
   ustioni: {
     id: 'ustioni',
     name: 'Ustioni termiche',
@@ -330,5 +432,5 @@ export const PROTOCOLS: Record<ProtocolId, Protocol> = {
 export const PROTOCOL_ORDER: ProtocolId[] = [
   'bls_adulto', 'pbls', 'fbao_adulto', 'fbao_pediatrico', 'abcde', 'dolore_toracico', 'ictus', 'ipoglicemia',
   'dispnea', 'anafilassi', 'convulsioni', 'trauma', 'emorragia', 'colpo_calore', 'intossicazione', 'annegamento',
-  'oppioidi', 'ustioni',
+  'oppioidi', 'ustioni', 'fratture', 'ipotermia', 'monossido', 'parto',
 ];

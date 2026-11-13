@@ -238,6 +238,16 @@ export class Sim {
   }
 
   // ───────────────────────── stato derivato
+  /**
+   * Affidabilità del saturimetro: nessun segnale in arresto o con pressione bassissima; lettura instabile
+   * con estremità fredde (temperatura sotto i 35 °C) o sistolica sotto i 60 mmHg. Il saturimetro non
+   * distingue il monossido di carbonio: nell'intossicazione da CO legge valori falsamente normali.
+   */
+  spo2Lettura(): 'ok' | 'assente' | 'instabile' {
+    if (this.inArrest() || this.p.v.sbp < 55) return 'assente';
+    if (this.p.v.temp < 35 || this.p.v.sbp < 60) return 'instabile';
+    return 'ok';
+  }
   inArrest(): boolean {
     return (ARREST_RHYTHMS as readonly string[]).includes(this.p.rhythm);
   }
@@ -795,7 +805,7 @@ export class Sim {
   // ───────────────────────── cambiamenti del paziente
   private takeSnap(): PatientSnap {
     const p = this.p;
-    return { arrest: this.inArrest(), avpu: p.avpu, airway: p.airway, breathing: p.breathing, skin: p.skin.color, seizing: p.seizing, spo2: this.pulseOx && !this.inArrest() ? Math.round(p.v.spo2) : null };
+    return { arrest: this.inArrest(), avpu: p.avpu, airway: p.airway, breathing: p.breathing, skin: p.skin.color, seizing: p.seizing, spo2: this.pulseOx && this.spo2Lettura() === 'ok' ? Math.round(p.v.spo2) : null };
   }
   private detectChanges() {
     const now = this.takeSnap();

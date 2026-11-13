@@ -13,6 +13,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { TUTORIAL_STEPS } from '../../data/scenarios/tutorial';
 import { Scene } from '../components/Scene';
 import { ActionPanel } from '../components/ActionPanel';
+import { nextStep } from '../../engine/coach';
 import { PatientAlert, PatientStatus } from '../components/PatientStatus';
 import { LogFeed } from '../components/LogFeed';
 import { GuideNote } from '../components/GuideNote';
@@ -304,7 +305,7 @@ export function Mission({
         <aside className="col-tools">
           <PatientStatus sim={sim} />
           <Monitor sim={sim} />
-          <CprPanel sim={sim} onAction={trigger} />
+          <CprPanel sim={sim} onAction={trigger} suggestRatio={settings.mode === 'addestramento' && !scenario.tutorial ? nextStep(sim)?.cprRatio : undefined} />
           {showAed && <AedPanel sim={sim} onAction={trigger} available={sim.has('dae')} />}
           <section className="kit-list" aria-label="Presidi con te">
             <h3>Con te</h3>

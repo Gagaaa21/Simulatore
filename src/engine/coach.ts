@@ -44,6 +44,37 @@ function o2ComeIndicato(sim: Sim): boolean {
   return sim.o2.device === o.device && (o.device !== 'venturi' || sim.o2.fio2 === o.fio2) && (o.device === 'venturi' || Math.abs(sim.o2.flow - o.flow) <= 1);
 }
 
+/** Assistenza al parto, passo per passo (corso: il parto in urgenza). */
+function partoSteps(sim: Sim): Array<CoachStep | null | false> {
+  if (sim.scenario.protocol.correct[0] !== 'parto') return [];
+  const f = sim.flags;
+  const did = (...ids: string[]) => sim.didAny(...ids);
+  const step = (id: string, text: string) => make(sim, id, text);
+  if (f.natoAt === undefined) {
+    const perineoDopo = f.coronamentoAt !== undefined && Number(f.perineoAt ?? -1) < Number(f.coronamentoAt);
+    return [
+      !did('q_contrazioni') && step('q_contrazioni', 'Chiedi ogni quanto sono le contrazioni, se si sono rotte le acque e di che colore era il liquido.'),
+      !did('controlla_perineo') && step('controlla_perineo', 'Sente di spingere: con discrezione controlla il perineo durante la spinta.'),
+      f.partoPreparatoAt === undefined && step('prepara_parto', 'Il parto è imminente: non si parte. Ambiente caldo, kit parto aperto, telini al caldo.'),
+      f.posizionePartoAt === undefined && step('posizione_parto', 'Posizione per il parto: bacino sollevato di 4–5 cm, cosce divaricate, ginocchia flesse.'),
+      perineoDopo && step('controlla_perineo', 'Spinge con tutte le forze: ricontrolla il perineo.'),
+      f.coronamentoAt !== undefined && step('accompagna_testa', 'Si vede la testa: sostienila e accompagna l’uscita, senza mai tirare.'),
+      !did('q_gravidanza') && step('q_gravidanza', 'Intanto chiedi di quante settimane è, come è messo il bambino e se ha altri figli.'),
+      !did('rassicura') && step('rassicura', 'Rassicurala e aiutala a respirare tra una contrazione e l’altra.'),
+    ];
+  }
+  return [
+    f.asciugatoAt === undefined && step('asciuga_neonato', 'È nato: garza su naso e bocca, poi asciugalo e stimolalo subito. Deve piangere entro un minuto.'),
+    f.oraAnnotata === undefined && step('ora_nascita', 'Annota l’ora di nascita.'),
+    f.avvoltoAt === undefined && step('avvolgi_neonato', 'Cambia il telo bagnato e avvolgilo, con la testa coperta: perde calore in fretta.'),
+    f.clampatoAt === undefined && step('clampa_cordone', 'Clampa il cordone con le due clamp. Non tagliarlo: è lungo.'),
+    f.sulVentreAt === undefined && step('neonato_sul_ventre', 'Ora mettilo sul ventre della madre, su un fianco, coperto.'),
+    f.placentaAt !== undefined && f.placentaRaccoltaAt === undefined && step('raccogli_placenta', 'La placenta è uscita da sola: raccoglila nel sacchetto, senza tirare il cordone.'),
+    f.placentaAt !== undefined && f.massaggioAt === undefined && step('massaggio_uterino', 'Massaggia il fondo dell’utero: si contrae e il sanguinamento si riduce.'),
+    f.placentaAt !== undefined && f.curaMadreAt === undefined && step('cura_madre', 'Assorbente, asciuga e copri la madre.'),
+  ];
+}
+
 /** Come caricare il paziente, in base al caso: modalità e posizione da scegliere nel pannello del trasporto. */
 function trasportoTesto(sim: Sim): string {
   const proto = sim.scenario.protocol.correct[0];
@@ -54,6 +85,9 @@ function trasportoTesto(sim: Sim): string {
       ? 'Trasporto: sedia portantina, paziente seduto. Con questa dispnea non deve fare le scale a piedi.'
       : 'Trasporto: in barella, paziente seduto. Con questa dispnea non deve camminare.';
   if (proto === 'dolore_toracico') return 'Trasporto: in barella, semiseduto. Con il dolore toracico non deve camminare.';
+  if (proto === 'fratture') return 'Trasporto: in barella con l’arto immobilizzato, senza farlo camminare.';
+  if (proto === 'ipotermia') return 'Trasporto: in barella, sdraiata e coperta, in ambulanza riscaldata. Niente sedia: movimenti minimi.';
+  if (proto === 'parto') return 'Trasporto: madre in barella con il neonato al caldo sul ventre materno.';
   if (sim.flags.nonCamminare) return 'Trasporto: in barella, non a piedi. ' + String(sim.flags.nonCamminare);
   return 'Il paziente è pronto: carica e trasporta.';
 }
@@ -72,6 +106,7 @@ export function nextStep(sim: Sim): CoachStep | null {
   const sc = sim.scenario;
   const p = sim.p;
   const proto = sc.protocol.correct[0];
+  const fr = sc.lesioni?.frattura;
   const did = (...ids: string[]) => sim.didAny(...ids);
   const step = (id: string, text: string, pos?: Position) => make(sim, id, text, pos);
 
@@ -102,13 +137,14 @@ export function nextStep(sim: Sim): CoachStep | null {
   }
 
   // ── ritorno del circolo: si sospendono le compressioni
-  if (!sim.inArrest() && sim.cpr.active) {
+  // (la RCP indicata senza ritmo da arresto, come nel soffocamento con perdita di coscienza, non si interrompe)
+  if (!sim.inArrest() && !sim.flags.cprIndicata && sim.cpr.active) {
     const r = step('stop_rcp', 'Segni di vita: interrompi le compressioni e rivaluta subito il respiro.');
     if (r) return r;
   }
 
   // ── arresto cardiaco: BLSD
-  if (sim.inArrest()) {
+  if (sim.inArrest() || !!sim.flags.cprIndicata) {
     const aed = sim.aed;
     const shockPending = aed.phase === 'carica' || aed.phase === 'pronto';
     if (aed.phase === 'analisi') return { text: 'Il DAE sta analizzando il ritmo: nessuno tocchi il paziente.' };
@@ -132,6 +168,9 @@ export function nextStep(sim: Sim): CoachStep | null {
       !crewCpr && !did('gas', 'polso_carotideo') && step('gas', 'Respira normalmente? Guarda, ascolta e senti per non più di 10 secondi.'),
       proto === 'pbls' && !crewCpr && !did('aspira') && sim.has('aspiratore') && step('aspira', 'Nel lattante con bronchiolite il muco ostruisce: aspira prima di ventilare.'),
       (proto === 'pbls' || proto === 'annegamento') && !crewCpr && !did('ventilazioni_iniziali') && step('ventilazioni_iniziali', 'Arresto da mancanza di ossigeno: prima 5 ventilazioni di soccorso.'),
+      // soffocamento con perdita di coscienza: il corpo estraneo può comparire in bocca durante le compressioni
+      p.airway === 'ostruzione_completa' && !!sim.flags.corpoVisibile && !sim.flags.corpoRimosso && !did('ispeziona_bocca') && step('ispeziona_bocca', 'Prima di ventilare guarda in bocca: il corpo estraneo potrebbe essersi spostato.'),
+      p.airway === 'ostruzione_completa' && !!sim.flags.corpoVisibile && !sim.flags.corpoRimosso && step('rimuovi_corpo_estraneo', 'Il corpo estraneo è visibile: rimuovilo con un solo tentativo, poi ventila.'),
       !crewCpr && step('rcp', sim.cpr.active ? 'Date il cambio a chi sta comprimendo: inizia l’equipaggio.' : 'Non respira normalmente: inizia subito le compressioni toraciche.'),
       child && crewCpr && sc.role !== 'laico' && sim.cpr.ratio !== '15:2' && { text: 'Bambino: con un equipaggio addestrato il rapporto è 15:2. Impostalo nel pannello della RCP.', cprRatio: '15:2' as const },
       sim.has('dae') && aed.phase === 'spento' && step('dae_accendi', 'Accendi il DAE mentre si continua a comprimere.'),
@@ -167,6 +206,8 @@ export function nextStep(sim: Sim): CoachStep | null {
         : lastFbao.id === 'colpi_dorsali' && lastFbao.t >= 0
           ? step('compressioni_addominali', 'Ostruzione completa: ora 5 compressioni addominali.')
           : step('colpi_dorsali', 'Ostruzione completa: 5 colpi interscapolari, poi 5 compressioni addominali.')),
+    proto === 'monossido' && sim.requests.vvf === undefined && step('richiedi_vvf', 'Sospetto monossido: chiedi alla SORES i Vigili del fuoco per la misurazione e la messa in sicurezza.'),
+    ...partoSteps(sim),
     sc.trauma && !sim.immob.has('mils') && step('mils', 'Dinamica ad alta energia: stabilizza subito il capo in posizione neutra.'),
     p.look.helmet && step('rimuovi_casco', 'Il casco integrale impedisce di gestire le vie aeree: rimuovilo in due.'),
     p.bleeding && sim.tourniquet?.ok && sc.role !== 'laico' && !sim.report && step('comunica', 'Emorragia fermata: riferisci subito alla SORES, con l’ora del tourniquet.'),
@@ -187,6 +228,9 @@ export function nextStep(sim: Sim): CoachStep | null {
     fineCrisi !== null && !gasDopoCrisi && step('gas', 'La crisi è finita: verifica subito se respira normalmente.'),
     fineCrisi !== null && p.position !== 'laterale' && step('posizione', 'Respira ma non è cosciente: posizione laterale di sicurezza.', 'laterale'),
 
+    proto === 'ipotermia' && !did('temperatura') && step('temperatura', 'Pelle gelida, niente brivido, confusa: misura la temperatura.'),
+    proto === 'ipotermia' && sim.flags.indumentiTolti === undefined && step('rimuovi_indumenti', 'Togli con delicatezza la camicia da notte bagnata, senza sollevarla né scuoterla.'),
+
     // ── A: vie aeree
     (p.vomitInMouth || p.airway === 'gorgogliante') && sim.has('aspiratore') && step('aspira', 'Gorgoglio in gola: aspira le secrezioni.'),
     (p.vomitInMouth || p.airway === 'gorgogliante' || p.airway === 'russante') && p.avpu !== 'A' && !sc.trauma && p.position !== 'laterale' && step('posizione', 'Non è sveglio e respira: posizione laterale di sicurezza per proteggere le vie aeree.', 'laterale'),
@@ -201,6 +245,7 @@ export function nextStep(sim: Sim): CoachStep | null {
     emergenzaO2(sim) && !sim.o2 && !sim.bvm && sc.role !== 'laico' && sim.has('ossigeno') && step('ossigeno', 'Situazione critica: puoi dare subito ossigeno al 100% senza attendere la SORES, maschera con reservoir a 15 L/min. Poi riferiscilo.'),
     sim.pulseOx && !sim.o2Order && sc.role !== 'laico' && step('chiedi_ossigeno', sim.o2 ? 'Riferisci alla SORES la saturazione e l’ossigeno che hai avviato.' : 'Riferisci la saturazione alla SORES: ti dirà se dare l’ossigeno e con quale presidio.'),
     !!sim.o2Order?.device && !o2ComeIndicato(sim) && sim.has('ossigeno') && step('ossigeno', sim.o2 ? 'Adegua l’ossigeno all’indicazione della SORES.' : 'Applica l’ossigeno con il presidio e la concentrazione indicati dalla SORES.'),
+    sim.pulseOx && sim.spo2Lettura() !== 'ok' && !sim.inArrest() && !did('polso_radiale') && step('polso_radiale', 'Il saturimetro non legge: conta il polso radiale, può essere molto lento.'),
     ['tachipnoico', 'dispnoico', 'sibili', 'bradipnoico', 'superficiale'].includes(p.breathing) && !did('conta_fr') && step('conta_fr', 'Respira male: conta la frequenza respiratoria.'),
 
     sc.dispatch.criticita === 'R' && sc.role !== 'laico' && !sim.report && sim.pulseOx && step('comunica', 'Codice rosso: aggiorna presto la SORES con quello che hai trovato.'),
@@ -222,12 +267,19 @@ export function nextStep(sim: Sim): CoachStep | null {
 
     // ── E: esposizione
     proto === 'ustioni' && !did('rimuovi_indumenti') && step('rimuovi_indumenti', 'Togli la maglietta bagnata d’acqua bollente.'),
-    (sc.trauma || proto === 'ustioni' || p.v.temp < 36) && !sim.covered && step('telo', 'Copri con il telo isotermico per evitare l’ipotermia.'),
+    !!fr && !did('pms') && step('pms', 'Prima di immobilizzare controlla polso, motilità e sensibilità a valle della frattura.'),
+    !!fr?.esposta && sim.flags.fratturaCopertaAt === undefined && step('copri_frattura', 'Frattura esposta: coprila con garze e telo sterile, senza toccarla né disinfettarla.'),
+    !!fr && !sim.immob.has('stecca') && step('steccobende', 'Immobilizza l’arto con la steccobenda così com’è, comprendendo ginocchio e caviglia. Mai riallinearlo.'),
+    !!fr && sim.immob.has('stecca') && sim.flags.pmsDopoAt === undefined && step('pms', 'Ricontrolla polso, motilità e sensibilità dopo l’immobilizzazione.'),
+    (sc.trauma || proto === 'ustioni' || proto === 'fratture' || proto === 'ipotermia' || p.v.temp < 36) && !sim.covered && step('telo', proto === 'ipotermia' ? 'Coperte e telo isotermico: ferma la dispersione di calore.' : 'Copri con il telo isotermico per evitare l’ipotermia.'),
+    proto === 'ipotermia' && sim.flags.ambienteCaldoAt === undefined && step('ambiente_caldo', 'Riscaldamento passivo: chiudi la finestra, alza il riscaldamento, coperte.'),
+    proto === 'fratture' && !did('rassicura') && step('rassicura', 'Rassicuralo: il dolore è forte, il sostegno fa parte del soccorso.'),
     proto === 'ustioni' && !did('stima_superficie') && step('stima_superficie', 'Stima l’estensione dell’ustione con la regola del palmo.'),
 
     // ── anamnesi generale
     sim.canTalk() && !did('q_eventi', 'q_testimoni', 'q_sintomi', 'q_dolore', 'q_farmaci') && step('q_eventi', 'Chiedi cosa è successo.'),
     !sim.canTalk() && !!sc.scene.bystanders && !did('q_testimoni') && step('q_testimoni', 'Il paziente non può rispondere: chiedi ai presenti cosa è successo.'),
+    proto === 'monossido' && !did('q_testimoni') && step('q_testimoni', 'Chiedi chi altro c’è in casa, anche chi dorme, e se ha mal di testa o nausea.'),
     proto === 'ictus' && !did('q_farmaci') && step('q_farmaci', 'Chiedi la terapia: un anticoagulante va riferito.'),
     proto === 'ictus' && !did('q_patologie') && step('q_patologie', 'Chiedi le malattie note: diabete, aritmie.'),
     p.age < 14 && sim.canTalk() && !did('rassicura') && step('rassicura', 'Rassicura il bambino e tieni il genitore accanto a lui.'),

@@ -17,7 +17,8 @@ export type EquipmentId =
   | 'sedia'
   | 'kit_ustioni'
   | 'dpi_extra'
-  | 'kit_raffreddamento';
+  | 'kit_raffreddamento'
+  | 'kit_parto';
 
 export interface Equipment {
   id: EquipmentId;
@@ -151,10 +152,18 @@ export const EQUIPMENT: Record<EquipmentId, Equipment> = {
     what: 'Ghiaccio istantaneo, teli da bagnare, nebulizzatore e ventilatore a batteria.',
     when: 'Colpo di calore: raffreddamento attivo sul posto.',
   },
+  kit_parto: {
+    id: 'kit_parto',
+    name: 'Kit parto',
+    slots: 1,
+    what: 'Telini sterili, clamp ombelicali, forbici sterili, sacchetto per la placenta, assorbenti, cuffietta e coperta per il neonato.',
+    contains: ['telini sterili', '2 clamp ombelicali', 'forbici sterili', 'sacchetto per la placenta', 'assorbenti', 'cuffietta e coperta'],
+    when: 'Parto imminente: assistenza alla nascita e cure al neonato.',
+  },
 };
 
 export const EQUIPMENT_ORDER: EquipmentId[] = [
   'zaino', 'dae', 'ossigeno', 'pallone', 'aspiratore', 'kit_emorragie', 'dpi_extra',
   'collari', 'cucchiaio', 'materasso', 'tavola', 'ked', 'steccobende', 'cintura_pelvica',
-  'sedia', 'kit_ustioni', 'kit_raffreddamento',
+  'sedia', 'kit_ustioni', 'kit_raffreddamento', 'kit_parto',
 ];

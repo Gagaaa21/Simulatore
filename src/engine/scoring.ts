@@ -16,6 +16,13 @@ export const KEY_LABEL: Record<string, string> = {
   temperatura: 'temperatura',
   pupille: 'pupille',
   ustione: 'estensione dell’ustione',
+  pms: 'polso, motilità e sensibilità a valle',
+  coinvolti: 'altre persone coinvolte',
+  ora_nascita: 'ora di nascita',
+  neonato: 'condizioni del neonato',
+  contrazioni: 'contrazioni e perdite',
+  gravidanza: 'settimane e presentazione',
+  dinamica: 'dinamica',
 };
 
 export const reportLabel = (k: string) => KEY_LABEL[k] ?? k;

@@ -83,10 +83,12 @@ export function Monitor({ sim }: { sim: Sim }) {
   const v = sim.p.v;
   const m = sim.measurements;
   const ox = sim.pulseOx;
-  const noSignal = ox && (sim.inArrest() || v.sbp < 55);
+  const lettura = sim.spo2Lettura();
+  const noSignal = ox && lettura === 'assente';
+  const unstable = ox && lettura === 'instabile';
   const spo2 = Math.round(v.spo2 + (sim.t % 7 === 0 ? -1 : 0));
   const hr = Math.round(v.hr + ((sim.t * 7) % 3) - 1);
-  const spo2Alarm = ox && !noSignal && spo2 < 90;
+  const spo2Alarm = ox && lettura === 'ok' && spo2 < 90;
   const hrAlarm = ox && !noSignal && (hr > 130 || hr < 45);
   const pa = m.get('pa');
   const fr = m.get('fr');
@@ -101,8 +103,9 @@ export function Monitor({ sim }: { sim: Sim }) {
       <div className="monitor-row">
         <div className={`mtile mt-spo2${spo2Alarm ? ' alarm' : ''}`}>
           <span className="mt-label">SpO₂ %</span>
-          <span className="mt-value num">{!ox ? '––' : noSignal ? '?' : spo2}</span>
+          <span className="mt-value num">{!ox ? '––' : noSignal || unstable ? '?' : spo2}</span>
           {noSignal && <span className="mt-note">nessun segnale</span>}
+          {unstable && <span className="mt-note">segnale instabile</span>}
         </div>
         <div className={`mtile mt-fc${hrAlarm ? ' alarm' : ''}`}>
           <span className="mt-label">FC /min {ox && !noSignal && <span className="heart" style={{ animationDuration: `${60 / Math.max(30, hr)}s` }}>♥</span>}</span>

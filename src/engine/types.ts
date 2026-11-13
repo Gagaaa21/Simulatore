@@ -56,6 +56,8 @@ export interface Look {
   sleeves?: 'corte' | 'lunghe';
   bottom?: 'pantaloni' | 'shorts' | 'gonna';
   shoes?: string;
+  /** gravidanza a termine: addome prominente */
+  pregnant?: boolean;
 }
 
 export interface Bleeding {
@@ -207,7 +209,9 @@ export type QuestionId =
   | 'eventi'
   | 'dolore'
   | 'esordio'
-  | 'testimoni';
+  | 'testimoni'
+  | 'gravidanza'
+  | 'contrazioni';
 
 export type ProtocolId =
   | 'bls_adulto'
@@ -227,7 +231,11 @@ export type ProtocolId =
   | 'intossicazione'
   | 'annegamento'
   | 'oppioidi'
-  | 'ustioni';
+  | 'ustioni'
+  | 'fratture'
+  | 'ipotermia'
+  | 'monossido'
+  | 'parto';
 
 export type SettingId =
   | 'casa'
@@ -239,7 +247,8 @@ export type SettingId =
   | 'lago'
   | 'parcheggio'
   | 'supermercato'
-  | 'stadio';
+  | 'stadio'
+  | 'campo';
 
 export interface ArrestConfig {
   shockable: boolean;
@@ -312,7 +321,7 @@ export interface Scenario {
     /** stanza, per le missioni in casa (default soggiorno) */
     room?: 'soggiorno' | 'cucina' | 'camera';
     /** dettagli d'arredo che raccontano il caso */
-    decor?: Array<'seggiolone' | 'lettino' | 'inalatori' | 'pentola'>;
+    decor?: Array<'seggiolone' | 'lettino' | 'inalatori' | 'pentola' | 'caldaia'>;
     mechanism?: string;
     bystanders?: string;
     /** presidi già sul posto (es. DAE pubblico da far prendere) */
@@ -337,8 +346,12 @@ export interface Scenario {
   /** mezzo avanzato (ALS con infermiere, automedica con medico): label al nominativo, es. «L’ALS» */
   msa: { available: boolean; eta: number; autoDispatched?: boolean; label?: string; /** la SORES lo invia appena riceve la valutazione */ onReport?: boolean };
   heli?: { eta: number };
-  /** criteri con cui la SORES indica l'ossigeno (BTS 2017): paziente critico o a rischio di ipercapnia */
-  oxygen?: { critical?: boolean; copd?: boolean };
+  /** criteri con cui la SORES indica l'ossigeno (BTS 2017): paziente critico, a rischio di ipercapnia, intossicato da CO */
+  oxygen?: { critical?: boolean; copd?: boolean; co?: boolean };
+  /** lesioni dell'apparato muscolo-scheletrico */
+  lesioni?: { frattura?: { region: BodyRegion; esposta: boolean; label: string; pos: number } };
+  /** righe in più nella scheda «Stato del paziente» (es. il neonato) */
+  statusExtra?: (s: Sim) => { label: string; value: string; tone?: 'ok' | 'warn' | 'bad' }[];
   /** destinazione indicata dalla SORES al momento del codice di rientro */
   destination?: string;
   timeLimit: number; // s

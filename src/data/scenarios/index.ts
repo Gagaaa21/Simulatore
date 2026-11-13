@@ -19,6 +19,10 @@ import { acrSupermercato } from './acr-supermercato';
 import { pblsLattante } from './pbls-lattante';
 import { tutorial } from './tutorial';
 import { ustioneBambino } from './ustione-bambino';
+import { fratturaCampo } from './frattura-campo';
+import { ipotermia } from './ipotermia';
+import { monossido } from './monossido';
+import { parto } from './parto';
 
 /** Ordine consigliato: dal più semplice al più complesso all'interno di ogni categoria. */
 export const SCENARIOS: Scenario[] = [
@@ -31,11 +35,15 @@ export const SCENARIOS: Scenario[] = [
   fbaoLattante,
   pblsLattante,
   ustioneBambino,
+  fratturaCampo,
   emorragiaCantiere,
+  monossido,
   oppioidi,
   annegamento,
   bpco,
+  ipotermia,
   traumaMoto,
+  parto,
   convulsioni,
   acrConcerto,
   colpoCalore,

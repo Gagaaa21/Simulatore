@@ -102,6 +102,16 @@ export function PatientStatus({ sim }: { sim: Sim }) {
           })}
         </dl>
       )}
+      {sim.scenario.statusExtra && sim.phase === 'paziente' && (
+        <dl className="p-extra">
+          {sim.scenario.statusExtra(sim).map((r) => (
+            <div key={r.label} className={r.tone ? `tone-${r.tone}` : ''}>
+              <dt>{r.label}</dt>
+              <dd>{r.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
     </section>
   );
 }

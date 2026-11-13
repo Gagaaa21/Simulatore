@@ -233,10 +233,27 @@ export function OverPatient({ sim, now }: { sim: Sim; now: number }) {
       </g>,
     );
   }
+  // frattura esposta: ferita con il moncone, poi garze e telo sterile
+  const fr = sim.scenario.lesioni?.frattura;
+  if (fr && supine) els.push(<Frattura key="frattura" sim={sim} g={g} />);
   if (supine && sim.immob.has('stecca')) {
-    const l = g.legR;
-    els.push(<path key="stecca" d={capsule({ x: l.root.x + 30, y: l.root.y + 2 }, l.end, l.w[0] + 6, l.w[2] + 6)} fill="#f39c3d" opacity="0.8" stroke="#b5631a" strokeWidth="2" />);
+    const region = fr?.region ?? 'gamba_dx';
+    const a = pointOnLimb(g, region, 0.12);
+    const b = pointOnLimb(g, region, 1);
+    els.push(
+      <g key="stecca">
+        <path d={capsule(a, b, limbWidthAt(g, region, 0.12) + 7, limbWidthAt(g, region, 1) + 7)} fill="#f39c3d" opacity="0.85" stroke="#b5631a" strokeWidth="2" />
+        {[0.3, 0.55, 0.8].map((t) => {
+          const q = pointOnLimb(g, region, t);
+          const w = limbWidthAt(g, region, t) + 8;
+          return <rect key={t} x={q.x - 4} y={q.y - w} width="8" height={w * 2} rx="2" fill="#2a2d31" opacity="0.75" />;
+        })}
+      </g>,
+    );
   }
+  // gravidanza e neonato
+  if (p.look.pregnant && supine) els.push(<Pancia key="pancia" sim={sim} g={g} />);
+  if (sim.flags.natoAt !== undefined && supine) els.push(<Neonato key="neonato" sim={sim} g={g} />);
   if (supine && sim.immob.has('collare')) {
     const nx = (g.neck.x0 + g.neck.x1) / 2;
     els.push(
@@ -395,6 +412,7 @@ export const KIT_POS: Partial<Record<EquipmentId, { x: number; y: number }>> = {
   kit_ustioni: { x: 300, y: 520 },
   dpi_extra: { x: 40, y: 520 },
   kit_raffreddamento: { x: 680, y: 520 },
+  kit_parto: { x: 640, y: 520 },
 };
 
 export function KitIcon({ id, onClick, active }: { id: EquipmentId; onClick?: () => void; active?: boolean }) {
@@ -470,6 +488,15 @@ export function KitIcon({ id, onClick, active }: { id: EquipmentId; onClick?: ()
         <g>
           <path d="M-22 0 a 22 14 0 1 0 44 0" stroke="#f0f0ee" strokeWidth="10" fill="none" />
           <rect x="-6" y="4" width="12" height="10" fill="#ff7a1a" />
+        </g>
+      );
+      break;
+    case 'kit_parto':
+      shape = (
+        <g>
+          <rect x="-28" y="-18" width="56" height="36" rx="7" fill="#f4f1ec" stroke="#c9c2b6" strokeWidth="2" />
+          <rect x="-28" y="-5" width="56" height="10" fill="#e88aa8" />
+          <circle cx="0" cy="0" r="7" fill="#fff" stroke="#e88aa8" strokeWidth="2" />
         </g>
       );
       break;
@@ -571,6 +598,106 @@ function Burn({ sim, g }: { sim: Sim; g: BodyGeo }) {
           <path d={`M${cx - 26 * k} ${cy - 20 * k} l ${40 * k} ${10 * k} M${cx - 18 * k} ${cy + 4 * k} l ${36 * k} ${9 * k}`} stroke="#ffffff" strokeWidth={2 * k} opacity="0.6" strokeLinecap="round" />
         </g>
       )}
+    </g>
+  );
+}
+
+/** Addome di gravidanza a termine visto dall'alto. */
+function Pancia({ sim, g }: { sim: Sim; g: BodyGeo }) {
+  const t = g.torso;
+  const cx = t.x0 + (t.x1 - t.x0) * 0.86;
+  const rx = (t.x1 - t.x0) * 0.42;
+  const ry = t.hwTop * 0.98;
+  const shirt = sim.p.look.shirt;
+  return (
+    <g>
+      <defs>
+        <radialGradient id="pancia-luce" cx="0.42" cy="0.4" r="0.7">
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.32" />
+          <stop offset="0.6" stopColor="#ffffff" stopOpacity="0.05" />
+          <stop offset="1" stopColor="#000000" stopOpacity="0.18" />
+        </radialGradient>
+      </defs>
+      <ellipse cx={cx + 4} cy={306} rx={rx} ry={ry} fill="#000" opacity="0.18" />
+      <ellipse cx={cx} cy={300} rx={rx} ry={ry} fill={shirt} />
+      <ellipse cx={cx} cy={300} rx={rx} ry={ry} fill="url(#pancia-luce)" />
+      <path d={`M${cx - rx * 0.6} ${300 - ry * 0.55} Q ${cx} ${300 - ry * 0.85} ${cx + rx * 0.6} ${300 - ry * 0.55}`} stroke={shade(shirt, -0.18)} strokeWidth="2" fill="none" opacity="0.6" />
+    </g>
+  );
+}
+
+/** Il neonato: bagnato e bluastro alla nascita, poi asciugato, avvolto e sul ventre della madre. */
+function Neonato({ sim, g }: { sim: Sim; g: BodyGeo }) {
+  const f = sim.flags;
+  const sulVentre = f.sulVentreAt !== undefined;
+  const avvolto = f.avvoltoAt !== undefined;
+  const piange = f.piangeAt !== undefined;
+  const t = g.torso;
+  // tra le cosce della madre, poi sul ventre
+  const c: Pt = sulVentre ? { x: t.x0 + (t.x1 - t.x0) * 0.62, y: 300 } : { x: g.pelvis.x1 + 58, y: 300 };
+  const pelle = piange ? '#f2b9a6' : '#a9a7c6';
+  const capo = { x: c.x - 30, y: c.y };
+  const cordoneDa = { x: g.pelvis.x1 - 6, y: 300 };
+  return (
+    <g>
+      {f.cordoneTagliato === undefined && (
+        <path d={`M${c.x + 4} ${c.y + 6} C ${c.x + 30} ${c.y + 40}, ${cordoneDa.x + 30} ${cordoneDa.y + 30}, ${cordoneDa.x} ${cordoneDa.y}`} stroke="#c9b6c6" strokeWidth="4" fill="none" />
+      )}
+      {f.clampatoAt !== undefined && (
+        <g>
+          <rect x={c.x + 12} y={c.y + 14} width="9" height="5" rx="1" fill="#2f7fd6" />
+          <rect x={c.x + 26} y={c.y + 26} width="9" height="5" rx="1" fill="#2f7fd6" />
+        </g>
+      )}
+      <g transform={`translate(${c.x} ${c.y}) scale(1.25) translate(${-c.x} ${-c.y})`}>
+      <ellipse cx={c.x + 3} cy={c.y + 4} rx="30" ry="18" fill="#000" opacity="0.2" />
+      {avvolto ? (
+        <g>
+          <ellipse cx={c.x} cy={c.y} rx="30" ry="18" fill="#f4efe4" stroke="#d8cfbd" strokeWidth="2" />
+          <path d={`M${c.x - 18} ${c.y - 14} Q ${c.x} ${c.y + 2} ${c.x + 20} ${c.y - 12}`} stroke="#d8cfbd" strokeWidth="2" fill="none" />
+        </g>
+      ) : (
+        <g>
+          <ellipse cx={c.x} cy={c.y} rx="24" ry="13" fill={pelle} />
+          <ellipse cx={c.x + 10} cy={c.y - 12} rx="9" ry="4" fill={pelle} transform={`rotate(-30 ${c.x + 10} ${c.y - 12})`} />
+          <ellipse cx={c.x + 10} cy={c.y + 12} rx="9" ry="4" fill={pelle} transform={`rotate(30 ${c.x + 10} ${c.y + 12})`} />
+          {f.asciugatoAt === undefined && <ellipse cx={c.x - 4} cy={c.y - 4} rx="14" ry="5" fill="#ffffff" opacity="0.35" />}
+        </g>
+      )}
+      <circle cx={capo.x} cy={capo.y} r="12" fill={pelle} />
+      {avvolto && <path d={`M${capo.x - 12} ${capo.y} A 12 12 0 0 1 ${capo.x + 4} ${capo.y - 11.3} L ${capo.x + 4} ${capo.y + 11.3} A 12 12 0 0 1 ${capo.x - 12} ${capo.y}`} fill="#f2a7c3" />}
+      {piange && (
+        <g stroke="#ffffff" strokeWidth="2" fill="none" opacity="0.8" className="pianto">
+          <path d={`M${capo.x - 20} ${capo.y - 10} q -6 10 0 20`} />
+          <path d={`M${capo.x - 27} ${capo.y - 15} q -9 15 0 30`} />
+        </g>
+      )}
+      </g>
+    </g>
+  );
+}
+
+/** Frattura esposta: angolazione, ferita con il moncone, poi garze e telo sterile. */
+function Frattura({ sim, g }: { sim: Sim; g: BodyGeo }) {
+  const fr = sim.scenario.lesioni!.frattura!;
+  const pt = pointOnLimb(g, fr.region, fr.pos);
+  const w = limbWidthAt(g, fr.region, fr.pos);
+  if (sim.flags.fratturaCopertaAt !== undefined) {
+    return (
+      <g>
+        <rect x={pt.x - w - 10} y={pt.y - w - 8} width={(w + 10) * 2} height={(w + 8) * 2} rx="5" fill="#eef4f8" stroke="#7fb3d9" strokeWidth="2" />
+        <path d={`M${pt.x - w - 4} ${pt.y - w} L${pt.x + w + 4} ${pt.y + w}`} stroke="#c9dceb" strokeWidth="2" />
+        <circle cx={pt.x} cy={pt.y} r={w * 0.35} fill="#c0392b" opacity="0.25" />
+      </g>
+    );
+  }
+  return (
+    <g>
+      <ellipse cx={pt.x + 6} cy={pt.y + pt.side * (w + 16)} rx={w * 1.5} ry={w * 0.8} fill="#6b0a12" opacity="0.55" />
+      <ellipse cx={pt.x} cy={pt.y} rx={w * 1.35} ry={w * 0.95} fill="#7d0b16" opacity="0.9" />
+      <ellipse cx={pt.x - 2} cy={pt.y - 2} rx={w * 0.8} ry={w * 0.5} fill="#a3121f" />
+      <path d={`M${pt.x - w * 0.7} ${pt.y + pt.side * w * 0.6} q ${w * 0.4} ${pt.side * w * 0.9} ${w * 1.4} ${pt.side * w * 1.7}`} stroke="#8c1a22" strokeWidth="4" fill="none" opacity="0.75" />
+      <rect x={pt.x - 6} y={pt.y - w * 0.8} width="13" height={w * 1.3} rx="4" fill="#f4ecd8" stroke="#bfb293" strokeWidth="2" transform={`rotate(${pt.side * 28} ${pt.x} ${pt.y})`} />
     </g>
   );
 }

@@ -24,7 +24,7 @@ export function emergenzaO2(sim: Sim): boolean {
   if ((p.breathing === 'bradipnoico' || p.breathing === 'superficiale') && p.v.rr < 8) return true;
   if (p.avpu === 'P' || p.avpu === 'U' || p.seizing) return true;
   const ox = sim.scenario.oxygen ?? {};
-  if (ox.critical) return true;
+  if (ox.critical || ox.co) return true;
   return !ox.copd && sim.pulseOx && p.v.spo2 < 85;
 }
 
@@ -54,6 +54,8 @@ export function soresO2Order(sim: Sim): O2Order {
   const ox = sim.scenario.oxygen ?? {};
   const base = { spo2, t: sim.t };
   if (sim.inArrest() || sim.p.breathing === 'assente' || sim.p.breathing === 'agonico') return { ...base, device: 'reservoir', flow: 15, target: [94, 98] };
+  // monossido: la saturazione è falsamente normale, ossigeno al 100% comunque; saturimetro che non legge: alti flussi
+  if (ox.co || sim.spo2Lettura() !== 'ok') return { ...base, device: 'reservoir', flow: 15, target: [94, 98] };
   // in emergenza la SORES conferma gli alti flussi già avviati dall'equipaggio
   if (emergenzaO2(sim) && altiFlussi(sim.o2?.device ?? null, sim.o2?.flow ?? 0)) return { ...base, device: 'reservoir', flow: sim.o2!.flow, target: [94, 98] };
   if (ox.copd) {

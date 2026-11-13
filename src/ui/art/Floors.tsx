@@ -51,7 +51,7 @@ function Casa() {
 }
 
 export type Room = 'soggiorno' | 'cucina' | 'camera';
-export type Decor = 'seggiolone' | 'lettino' | 'inalatori' | 'pentola';
+export type Decor = 'seggiolone' | 'lettino' | 'inalatori' | 'pentola' | 'caldaia';
 
 function Cucina({ decor }: { decor: Decor[] }) {
   return (
@@ -162,6 +162,20 @@ function Cucina({ decor }: { decor: Decor[] }) {
           <rect x="626" y="396" width="10" height="50" rx="4" fill="#4a3020" />
         </g>
       </g>
+      {decor.includes('caldaia') && (
+        <g>
+          {/* caldaia a gas a parete, con la canna fumaria e il tubo flessibile */}
+          <rect x="430" y="0" width="58" height="62" rx="5" fill="#000" opacity="0.2" transform="translate(4 6)" />
+          <rect x="430" y="0" width="58" height="62" rx="5" fill="#eceae4" stroke="#b9b6ad" strokeWidth="2" />
+          <rect x="440" y="38" width="38" height="14" rx="3" fill="#2a2d31" />
+          <circle cx="449" cy="45" r="3" fill="#ff7a1a" className="spia" />
+          <circle cx="470" cy="45" r="4" fill="#8e979e" />
+          <path d="M452 62 v 18 M466 62 v 14" stroke="#c9a24a" strokeWidth="4" />
+          <rect x="446" y="0" width="26" height="8" fill="#9ea4aa" />
+          {/* alone: nessun odore, nessun colore. Solo la macchia di fuliggine sopra la caldaia */}
+          <ellipse cx="459" cy="4" rx="36" ry="10" fill="#3c3a36" opacity="0.28" />
+        </g>
+      )}
       {decor.includes('seggiolone') && (
         <g transform="rotate(8 760 220)">
           <rect x="716" y="186" width="96" height="78" rx="18" fill="#000" opacity="0.2" transform="translate(5 7)" />
@@ -567,6 +581,59 @@ function Supermercato() {
   );
 }
 
+/** Campo da calcio di paese: erba a strisce, linee bianche, pallone, borse e borracce. */
+function Campo({ sera }: { sera: boolean }) {
+  return (
+    <g>
+      <defs>
+        <pattern id="erba-strisce" width="180" height={H} patternUnits="userSpaceOnUse">
+          <rect width="90" height={H} fill="#3f8a3a" />
+          <rect x="90" width="90" height={H} fill="#4a9a43" />
+        </pattern>
+        <filter id="erba-grana" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="7" />
+          <feColorMatrix values="0 0 0 0 0.2  0 0 0 0 0.45  0 0 0 0 0.18  0 0 0 0.35 0" />
+          <feComposite in2="SourceGraphic" operator="in" />
+        </filter>
+        <radialGradient id="faro" cx="0.5" cy="0" r="1">
+          <stop offset="0" stopColor="#fffbe6" stopOpacity={sera ? 0.28 : 0.08} />
+          <stop offset="1" stopColor="#fffbe6" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="url(#erba-strisce)" />
+      <rect width={W} height={H} fill="#3f8a3a" filter="url(#erba-grana)" />
+      {/* area di rigore e lunetta */}
+      <path d="M0 70 H260 V490 H0" stroke="#f4f4ee" strokeWidth="6" fill="none" opacity="0.9" />
+      <path d="M0 190 H96 V370 H0" stroke="#f4f4ee" strokeWidth="6" fill="none" opacity="0.9" />
+      <path d="M260 210 A 92 92 0 0 1 260 350" stroke="#f4f4ee" strokeWidth="6" fill="none" opacity="0.9" />
+      <circle cx="176" cy="280" r="5" fill="#f4f4ee" />
+      {/* zolle smosse dal contrasto */}
+      {[
+        [520, 210, 18],
+        [548, 236, 11],
+        [500, 246, 9],
+      ].map(([x, y, r], i) => (
+        <ellipse key={i} cx={x} cy={y} rx={r} ry={r * 0.6} fill="#5a3f26" opacity="0.7" />
+      ))}
+      {/* pallone */}
+      <g transform="translate(780 150)">
+        <ellipse cx="4" cy="10" rx="20" ry="8" fill="#000" opacity="0.25" />
+        <circle r="17" fill="#f7f7f2" stroke="#2a2d31" strokeWidth="2" />
+        <path d="M0 -7 L7 -2 L4 6 L-4 6 L-7 -2 Z" fill="#2a2d31" />
+        <path d="M0 -17 V-7 M7 -2 L16 -6 M4 6 L10 14 M-4 6 L-10 14 M-7 -2 L-16 -6" stroke="#2a2d31" strokeWidth="1.5" />
+      </g>
+      {/* borsa, borraccia, casacca a terra */}
+      <g transform="translate(800 470) rotate(-10)">
+        <rect x="-50" y="-24" width="100" height="48" rx="14" fill="#1f3c7a" />
+        <rect x="-50" y="-6" width="100" height="10" fill="#f2c21b" />
+      </g>
+      <rect x="700" y="500" width="14" height="40" rx="6" fill="#e04b3a" transform="rotate(70 707 520)" />
+      <path d="M640 90 q 30 -18 60 0 l -6 30 q -24 10 -48 0 Z" fill="#f28b2a" opacity="0.9" />
+      <rect width={W} height={H} fill="url(#faro)" />
+    </g>
+  );
+}
+
 export function Floor({
   setting,
   timeOfDay,
@@ -607,6 +674,9 @@ export function Floor({
       break;
     case 'supermercato':
       floor = <Supermercato />;
+      break;
+    case 'campo':
+      floor = <Campo sera={timeOfDay !== 'giorno'} />;
       break;
     default:
       floor = <Casa />;
