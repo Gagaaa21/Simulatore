@@ -71,7 +71,7 @@ export function ActionButton({ a, sim, onAction, next }: { a: ActionDef; sim: Si
   );
 }
 
-export function ActionPanel({ sim, onAction, coach, onProtocol }: { sim: Sim; onAction: (id: string) => void; coach: boolean; onProtocol: () => void }) {
+export function ActionPanel({ sim, onAction, coach, onProtocol, hintAction }: { sim: Sim; onAction: (id: string) => void; coach: boolean; onProtocol: () => void; hintAction?: string }) {
   const [tab, setTab] = useState<ActionGroup>('scena');
   const [section, setSection] = useState<string>('Vie aeree');
   const [q, setQ] = useState('');
@@ -79,6 +79,9 @@ export function ActionPanel({ sim, onAction, coach, onProtocol }: { sim: Sim; on
   const step = coach ? nextStep(sim) : null;
   const stepKey = step ? `${step.action ?? ''}|${step.protocol ? 'p' : ''}|${step.text}` : '';
   const stepSection = step?.action ? ACTIONS[step.action]?.section : undefined;
+  // sezione dell'azione suggerita (dalla guida o dalla missione guidata): aprendo i Trattamenti si va lì
+  const focusAction = step?.action ?? hintAction;
+  const focusSection = focusAction && ACTIONS[focusAction]?.group === 'trattamenti' ? ACTIONS[focusAction].section : undefined;
 
   // quando il passo consigliato cambia, apri la sua scheda (e la sua sezione)
   const lastKey = useRef('');
@@ -153,6 +156,7 @@ export function ActionPanel({ sim, onAction, coach, onProtocol }: { sim: Sim; on
               onClick={() => {
                 setQ('');
                 setTab(g);
+                if (g === 'trattamenti' && focusSection) setSection(focusSection);
               }}
               title={GROUP_LABEL[g]}
             >

@@ -266,7 +266,7 @@ export function Mission({
 
       <div className={`mission-grid mt-${mobileTab}`}>
         <aside className="col-actions">
-          <ActionPanel sim={sim} onAction={trigger} coach={settings.mode === 'addestramento' && !scenario.tutorial} onProtocol={() => setProtoOpen(true)} />
+          <ActionPanel sim={sim} onAction={trigger} coach={settings.mode === 'addestramento' && !scenario.tutorial} onProtocol={() => setProtoOpen(true)} hintAction={step?.target.match(/data-action="([a-z_0-9]+)"/)?.[1]} />
         </aside>
         <main className="col-scene">
           {scenario.tutorial && (
