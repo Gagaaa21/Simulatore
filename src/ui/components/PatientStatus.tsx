@@ -69,9 +69,9 @@ export function PatientStatus({ sim }: { sim: Sim }) {
   // l'arresto compare solo dopo che il soccorritore l'ha riconosciuto
   const arrest = sim.inArrest() && sim.arrest.recognizedAt !== null;
   const rows: { k: string; label: string; value: string | null; keys: PatientChange['key'][] }[] = [
-    { k: 'coscienza', label: 'Coscienza', value: sim.did('coscienza') ? `${p.avpu} · ${AVPU_TXT[p.avpu]}` : null, keys: ['coscienza'] },
-    { k: 'vie', label: 'Vie aeree', value: sim.didAny('ispeziona_bocca', 'apri_vie_aeree', 'gas', 'aspira', 'sublussazione') || p.airway === 'russante' || p.airway === 'gorgogliante' ? AIRWAY_TXT[p.airway] : null, keys: ['vie_aeree'] },
-    { k: 'respiro', label: 'Respiro', value: sim.didAny('gas', 'conta_fr', 'osserva_torace') ? BREATH_TXT[p.breathing] : null, keys: ['respiro'] },
+    { k: 'coscienza', label: 'Coscienza', value: sim.didAny('coscienza', 'rivaluta', 'attendi_lungo') ? `${p.avpu} · ${AVPU_TXT[p.avpu]}` : null, keys: ['coscienza'] },
+    { k: 'vie', label: 'Vie aeree', value: sim.didAny('ispeziona_bocca', 'apri_vie_aeree', 'gas', 'aspira', 'sublussazione', 'rivaluta') || p.airway === 'russante' || p.airway === 'gorgogliante' ? AIRWAY_TXT[p.airway] : null, keys: ['vie_aeree'] },
+    { k: 'respiro', label: 'Respiro', value: sim.didAny('gas', 'conta_fr', 'osserva_torace', 'rivaluta', 'attendi_lungo') ? BREATH_TXT[p.breathing] : null, keys: ['respiro'] },
     { k: 'cute', label: 'Cute', value: `${p.skin.color}${p.skin.sweaty ? ', sudata' : ''}`, keys: ['cute'] },
   ];
   return (
