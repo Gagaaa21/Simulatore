@@ -278,6 +278,8 @@ export interface Outcome {
 
 export interface Scenario {
   id: string;
+  /** missione guidata: esclusa da turni e statistiche */
+  tutorial?: boolean;
   title: string;
   subtitle: string;
   category: '118' | 'eventi' | 'fuori_servizio';

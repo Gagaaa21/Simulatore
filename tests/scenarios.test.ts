@@ -7,6 +7,7 @@ import { SOURCES } from '../src/data/sources';
 import { PROTOCOLS } from '../src/data/protocols';
 import { CAPACITY, EQUIPMENT, type EquipmentId } from '../src/data/equipment';
 import type { ProtocolId } from '../src/engine/types';
+import { TUTORIAL_STEPS } from '../src/data/scenarios/tutorial';
 
 // ───────────────────────── integrità dei dati
 describe('integrità degli scenari', () => {
@@ -114,6 +115,13 @@ describe('percorsi ideali', () => {
     expectAll(sim, kit);
     expect(sim.p.v.glu).toBeGreaterThan(70);
     expect(sim.p.speech).toBe('normale');
+  });
+
+  it('missione guidata: ogni passo della guida si completa', () => {
+    const { sim, kit } = make('tutorial');
+    play(sim, ['valuta_scena', 'guanti', 'avvicinati', 'coscienza', 'saturimetro', 'glicemia', 'q_pasto', proto('ipoglicemia'), 'glucosio_os', 'attendi_lungo', 'attendi_lungo', 'glicemia', ['comunica', { code: 'I2', items: ['glicemia'] }], ['trasporta', { mode: 'barella', pos: 'semiseduto' }]]);
+    for (const st of TUTORIAL_STEPS) expect(st.done(sim), st.text).toBe(true);
+    expectAll(sim, kit);
   });
 
   it('ictus', () => {

@@ -1,16 +1,17 @@
 import type { Screen } from '../App';
 import type { ScenarioRecord, Settings } from '../store';
 import { loadExtra } from '../store';
-import { SCENARIOS } from '../../data/scenarios';
+import { CAREER_SCENARIOS as SCENARIOS } from '../../data/scenarios';
 import { Floor, W, H } from '../art/Floors';
 import { PatientFigure } from '../art/Patient';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Sim } from '../../engine/engine';
 import { SCENARIO_BY_ID } from '../../data/scenarios';
 import { OverPatient, UnderPatient } from '../art/Overlays';
 import { rankFor, type Career } from '../../data/career';
 import { RankInsignia } from '../components/Insignia';
 import { LogoMark } from '../components/Logo';
+import { SettingsModal } from '../components/SettingsModal';
 
 /** Scena dimostrativa costruita con il motore vero: motociclista con stabilizzazione, collare, ossigeno e saturimetro. */
 function heroSim(): Sim {
@@ -42,6 +43,7 @@ export function MainMenu({
 }) {
   const rk = rankFor(career.xp);
   const hero = useMemo(heroSim, []);
+  const [showSettings, setShowSettings] = useState(false);
   const done = SCENARIOS.filter((s) => progress[s.id]).length;
   const avg = done ? Math.round(SCENARIOS.filter((s) => progress[s.id]).reduce((a, s) => a + progress[s.id].best, 0) / done) : null;
   const extra = loadExtra();
@@ -53,6 +55,10 @@ export function MainMenu({
           <LogoMark size={34} />
           <span>Sirena 118</span>
         </div>
+        <div className="topbar-right">
+        <button className="icon-btn gear" onClick={() => setShowSettings(true)} aria-label="Impostazioni" title="Impostazioni">
+          ⚙
+        </button>
         <button className="rank-chip" onClick={() => go({ name: 'profilo' })} title="Apri il profilo">
           <RankInsignia stripes={rk.rank.stripes} size={30} />
           <span className="rank-chip-text">
@@ -62,7 +68,9 @@ export function MainMenu({
             </span>
           </span>
         </button>
+        </div>
       </div>
+      {showSettings && <SettingsModal settings={settings} setSettings={setSettings} onClose={() => setShowSettings(false)} />}
       <section className="hero">
         <div className="hero-copy">
           <p className="hero-kicker">Simulatore di soccorso sanitario extraospedaliero</p>
@@ -88,6 +96,11 @@ export function MainMenu({
               </button>
             </div>
           </div>
+          {career.missions === 0 && (
+            <button className="tut-link" onClick={() => go({ name: 'briefing', scenario: SCENARIO_BY_ID['tutorial'] })}>
+              Prima volta? Inizia dalla missione guidata
+            </button>
+          )}
           <p className="hero-mode muted">
             {settings.mode === 'addestramento'
               ? 'Addestramento: errori e suggerimenti compaiono subito, con la fonte.'
@@ -155,17 +168,9 @@ export function MainMenu({
         <p>
           Strumento didattico: non sostituisce i corsi certificati (BLSD, PTC, formazione regionale 118) né i protocolli della tua Centrale Operativa. In caso di emergenza reale chiama il <strong>112</strong>.
         </p>
-        <div className="menu-prefs">
-          <label className="check">
-            <input type="checkbox" id="pref-sound" checked={settings.sound} onChange={(e) => setSettings({ sound: e.target.checked })} /> Audio
-          </label>
-          <label className="check">
-            <input type="checkbox" id="pref-voice" checked={settings.voice} onChange={(e) => setSettings({ voice: e.target.checked })} /> Voce del DAE
-          </label>
-          <label className="check" title="Se disattivato il tempo avanza solo con le azioni, tranne durante la RCP e le fasi del DAE.">
-            <input type="checkbox" id="pref-rt" checked={settings.realtime} onChange={(e) => setSettings({ realtime: e.target.checked })} /> Tempo reale
-          </label>
-        </div>
+        <button className="btn btn-small" onClick={() => setShowSettings(true)}>
+          Impostazioni
+        </button>
       </footer>
     </div>
   );

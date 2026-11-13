@@ -8,7 +8,9 @@ import { commonObjectives, evaluate, type Report } from '../../engine/scoring';
 import { CRITICITA } from '../../data/codes';
 import { PROTOCOLS } from '../../data/protocols';
 import type { Settings } from '../store';
-import { pulseBeep, sfx, speak, stopVoice } from '../audio';
+import { pulseBeep, sfx, speak, startAmbience, stopAmbience, stopVoice } from '../audio';
+import { SettingsModal } from '../components/SettingsModal';
+import { TUTORIAL_STEPS } from '../../data/scenarios/tutorial';
 import { Scene } from '../components/Scene';
 import { ActionPanel } from '../components/ActionPanel';
 import { LogFeed } from '../components/LogFeed';
@@ -59,11 +61,16 @@ export function Mission({
   const [protoOpen, setProtoOpen] = useState(false);
   const [missing, setMissing] = useState<{ id: string; items: EquipmentId[]; reason: string } | null>(null);
   const [confirmExit, setConfirmExit] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  useEffect(() => {
+    startAmbience(scenario.setting);
+    return () => stopAmbience();
+  }, [scenario.setting]);
   const [mobileTab, setMobileTab] = useState<'azioni' | 'strumenti' | 'diario'>('azioni');
   const [flash, setFlash] = useState<string | null>(null);
   const [coach, setCoach] = useState<boolean>(() => {
     try {
-      return window.localStorage.getItem('sirena118.coach.v1') !== 'visto';
+      return !scenario.tutorial && window.localStorage.getItem('sirena118.coach.v1') !== 'visto';
     } catch {
       return false;
     }
@@ -98,7 +105,17 @@ export function Mission({
     setFlash(next ? `consiglio|Prossimo obiettivo: ${next.label}. ${next.why}` : 'ok|Hai già raggiunto gli obiettivi principali: completa la missione con la Centrale.');
   };
 
-  const modalOpen = !!picker || protoOpen || !!missing || confirmExit || coach;
+  // guida del tutorial: primo passo non ancora completato ed evidenziazione del comando
+  const stepIdx = scenario.tutorial ? TUTORIAL_STEPS.findIndex((st) => !st.done(sim)) : -1;
+  const step = stepIdx >= 0 ? TUTORIAL_STEPS[stepIdx] : null;
+  useEffect(() => {
+    if (!step) return;
+    const els = Array.from(document.querySelectorAll(step.target));
+    els.forEach((e) => e.classList.add('tut-target'));
+    return () => els.forEach((e) => e.classList.remove('tut-target'));
+  });
+
+  const modalOpen = !!picker || protoOpen || !!missing || confirmExit || coach || showSettings;
   const running = !paused && !modalOpen && !sim.ended;
 
   // ciclo di gioco
@@ -251,6 +268,9 @@ export function Mission({
             <button className="icon-btn" onClick={() => setSettings({ sound: !settings.sound })} aria-label={settings.sound ? 'Disattiva audio' : 'Attiva audio'} title="Audio">
               {settings.sound ? '♪' : '–'}
             </button>
+            <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Impostazioni" title="Impostazioni">
+              ⚙
+            </button>
             <button className="icon-btn" onClick={() => setConfirmExit(true)} aria-label="Esci dalla missione" title="Esci">
               ✕
             </button>
@@ -263,6 +283,12 @@ export function Mission({
           <ActionPanel sim={sim} onAction={trigger} />
         </aside>
         <main className="col-scene">
+          {scenario.tutorial && (
+            <div className="guide" role="status">
+              <span className="guide-n num">{step ? `${stepIdx + 1}/${TUTORIAL_STEPS.length}` : '✓'}</span>
+              <p>{step ? step.text : 'Missione completata: tra poco il debriefing.'}</p>
+            </div>
+          )}
           <div className="scene-wrap">
             <Scene sim={sim} onAction={trigger} />
             {flash && (
@@ -356,6 +382,7 @@ export function Mission({
           <p className="muted">Il presidio è rimasto {scenario.role === 'squadra' ? 'al PMA' : 'sul mezzo'}: un collega può andare a prenderlo, ma il tempo scorre.</p>
         </Modal>
       )}
+      {showSettings && <SettingsModal settings={settings} setSettings={setSettings} onClose={() => setShowSettings(false)} />}
       {coach && (
         <Modal
           title="Come si gioca"

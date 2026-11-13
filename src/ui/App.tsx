@@ -3,7 +3,7 @@ import type { Scenario } from '../engine/types';
 import type { EquipmentId } from '../data/equipment';
 import type { Sim } from '../engine/engine';
 import type { Report } from '../engine/scoring';
-import { SCENARIOS, SCENARIO_BY_ID } from '../data/scenarios';
+import { CAREER_SCENARIOS, SCENARIO_BY_ID } from '../data/scenarios';
 import { applyMission, type Career, type MissionOutcome } from '../data/career';
 import type { ProtocolId } from '../engine/types';
 import { loadCareer, loadProgress, loadSettings, recordResult, saveCareer, saveSettings, type ScenarioRecord, type Settings } from './store';
@@ -52,7 +52,7 @@ const PEDIATRIC = ['fbao-lattante', 'pbls-lattante'];
 
 /** Sceglie tre missioni diverse, privilegiando quelle mai giocate e mescolando territorio ed eventi. */
 function pickShift(progress: Record<string, ScenarioRecord>): string[] {
-  const pool = SCENARIOS.filter((s) => s.role !== 'laico').map((s) => s.id);
+  const pool = CAREER_SCENARIOS.filter((s) => s.role !== 'laico').map((s) => s.id);
   const weight = (id: string) => (progress[id] ? 1 : 3) * (0.5 + Math.random());
   const pick = pool.sort((a, b) => weight(b) - weight(a)).slice(0, 3);
   // in ordine cronologico, con il turno che inizia alle 7 del mattino
@@ -87,6 +87,9 @@ export function App() {
   useEffect(() => {
     setAudioPrefs(settings);
     saveSettings(settings);
+    const root = document.documentElement;
+    root.style.fontSize = settings.textSize === 'grande' ? '112.5%' : '';
+    root.dataset.motion = settings.motion;
   }, [settings]);
 
   const setSettings = useCallback((patch: Partial<Settings>) => setSettingsState((s) => ({ ...s, ...patch })), []);
@@ -172,7 +175,7 @@ export function App() {
             const prog = recordResult(screen.scenario.id, report.score, report.grade);
             setProgress(prog);
             const best = Object.fromEntries(Object.entries(prog).map(([k, v]) => [k, v.best]));
-            const outcome = applyMission(career, sim, report, screen.scenario, settings.mode, SCENARIOS.map((x) => x.id), PEDIATRIC, best);
+            const outcome = applyMission(career, sim, report, screen.scenario, settings.mode, CAREER_SCENARIOS.map((x) => x.id), PEDIATRIC, best);
             setCareer(outcome.career);
             if (shift) {
               setShift({

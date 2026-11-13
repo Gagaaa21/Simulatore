@@ -30,6 +30,7 @@ export function ActionButton({ a, sim, onAction }: { a: ActionDef; sim: Sim; onA
   const done = sim.count(a.id);
   return (
     <button
+      data-action={a.id}
       className={`act${missing.length ? ' act-missing' : ''}${done ? ' act-done' : ''}`}
       disabled={disabled}
       onClick={() => onAction(a.id)}

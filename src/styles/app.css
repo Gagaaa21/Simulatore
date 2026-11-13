@@ -3688,3 +3688,102 @@ kbd {
     display: none;
   }
 }
+
+/* ───────────────────────── impostazioni */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gear {
+  font-size: var(--t-21);
+}
+.set-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.set-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--filo);
+}
+.set-row > div:first-child {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.set-name {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-18);
+}
+.set-desc {
+  font-size: var(--t-12);
+  color: var(--testo-2);
+}
+.set-vol {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.set-vol input[type='range'] {
+  accent-color: var(--arancio);
+  width: 160px;
+}
+[data-motion='ridotta'] *,
+[data-motion='ridotta'] *::before,
+[data-motion='ridotta'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* ───────────────────────── tutorial */
+.guide {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--r-m);
+  background: rgba(10, 18, 30, 0.94);
+  border: 2px solid var(--blu);
+  box-shadow: var(--ombra);
+  font-size: var(--t-16);
+}
+.guide-n {
+  flex: none;
+  font-family: var(--f-display);
+  font-weight: 800;
+  color: #fff;
+  background: var(--blu);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.tut-target {
+  position: relative;
+  outline: 3px solid var(--blu) !important;
+  outline-offset: 2px;
+  animation: tut 1.2s ease-in-out infinite;
+  z-index: 1;
+}
+@keyframes tut {
+  50% {
+    box-shadow: 0 0 0 6px rgba(63, 140, 255, 0.35);
+  }
+}
+.scen-tut {
+  border-color: var(--blu);
+  background: linear-gradient(180deg, rgba(63, 140, 255, 0.12), var(--notte-2));
+}
+
+.tut-link {
+  display: inline-block;
+  margin-top: 14px;
+  color: var(--blu-2);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

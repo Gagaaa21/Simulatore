@@ -6,6 +6,10 @@ export interface Settings {
   sound: boolean;
   voice: boolean;
   realtime: boolean;
+  volume: number; // 0..1
+  ambience: boolean;
+  textSize: 'normale' | 'grande';
+  motion: 'piena' | 'ridotta';
 }
 
 export interface ScenarioRecord {
@@ -20,7 +24,7 @@ const KEY_SETTINGS = 'sirena118.settings.v1';
 const KEY_PROGRESS = 'sirena118.progress.v1';
 const KEY_EXTRA = 'sirena118.extra.v1';
 
-export const DEFAULT_SETTINGS: Settings = { mode: 'addestramento', sound: true, voice: true, realtime: true };
+export const DEFAULT_SETTINGS: Settings = { mode: 'addestramento', sound: true, voice: true, realtime: true, volume: 0.7, ambience: true, textSize: 'normale', motion: 'piena' };
 
 function read<T>(key: string, fallback: T): T {
   try {

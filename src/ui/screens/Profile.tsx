@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BADGES, RANKS, rankFor, type Career } from '../../data/career';
-import { SCENARIOS, SCENARIO_BY_ID } from '../../data/scenarios';
+import { CAREER_SCENARIOS as SCENARIOS, SCENARIO_BY_ID } from '../../data/scenarios';
 import { PROTOCOLS } from '../../data/protocols';
 import type { ScenarioRecord } from '../store';
 import { loadExtra, resetAll } from '../store';

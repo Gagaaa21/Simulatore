@@ -17,9 +17,11 @@ import { anafilassi } from './anafilassi';
 import { acrConcerto } from './acr-concerto';
 import { acrSupermercato } from './acr-supermercato';
 import { pblsLattante } from './pbls-lattante';
+import { tutorial } from './tutorial';
 
 /** Ordine consigliato: dal più semplice al più complesso all'interno di ogni categoria. */
 export const SCENARIOS: Scenario[] = [
+  tutorial,
   acrCasa,
   fbaoAdulto,
   ipoglicemia,
@@ -41,3 +43,6 @@ export const SCENARIOS: Scenario[] = [
 ];
 
 export const SCENARIO_BY_ID: Record<string, Scenario> = Object.fromEntries(SCENARIOS.map((s) => [s.id, s]));
+
+/** Scenari che contano per turni, distintivi e statistiche (esclusa la missione guidata). */
+export const CAREER_SCENARIOS: Scenario[] = SCENARIOS.filter((s) => !s.tutorial);

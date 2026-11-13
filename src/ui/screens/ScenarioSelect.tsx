@@ -72,7 +72,7 @@ export function ScenarioSelect({
         {list.map((s) => {
           const rec = progress[s.id];
           return (
-            <button key={s.id} className="scen" onClick={() => go({ name: 'briefing', scenario: s })}>
+            <button key={s.id} className={`scen${s.tutorial ? ' scen-tut' : ''}`} onClick={() => go({ name: 'briefing', scenario: s })}>
               <span className="scen-top">
                 <CodePill s={s} />
                 <span className="scen-diff" aria-label={`Difficoltà ${s.difficulty} su 3`}>
@@ -86,7 +86,7 @@ export function ScenarioSelect({
               <span className="scen-meta">
                 <span>{ROLE[s.role]}</span>
                 <span className="num">~{s.minutes} min</span>
-                {rec ? <span className="scen-best num">migliore {rec.best} · {rec.grade}</span> : <span className="scen-new">nuova</span>}
+                {s.tutorial ? <span className="scen-new">guidata</span> : rec ? <span className="scen-best num">migliore {rec.best} · {rec.grade}</span> : <span className="scen-new">nuova</span>}
               </span>
             </button>
           );
