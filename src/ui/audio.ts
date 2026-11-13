@@ -113,6 +113,13 @@ export function sfx(name: string) {
       noise(0.25, 0.25);
       tone(90, 0.3, { type: 'sawtooth', gain: 0.2 });
       break;
+    case 'chiamata':
+      // doppio tono del cercapersone di bordo
+      for (let i = 0; i < 3; i++) {
+        tone(1175, 0.16, { type: 'square', gain: 0.045, delay: i * 0.42 });
+        tone(880, 0.16, { type: 'square', gain: 0.045, delay: i * 0.42 + 0.18 });
+      }
+      break;
     case 'sirena':
       for (let i = 0; i < 2; i++) {
         tone(660, 0.45, { type: 'triangle', gain: 0.05, delay: i * 0.9 });

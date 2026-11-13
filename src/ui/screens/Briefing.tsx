@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Mode, Scenario } from '../../engine/types';
 import { CAPACITY, EQUIPMENT, EQUIPMENT_ORDER, type EquipmentId } from '../../data/equipment';
 import { CRITICITA, LUOGO, PATOLOGIA } from '../../data/codes';
@@ -10,7 +10,76 @@ const ROLE_TXT: Record<Scenario['role'], string> = {
   laico: 'Sei fuori servizio: niente divisa, niente zaino. Hai il telefono e quello che trovi sul posto.',
 };
 
+/** Chiamata in arrivo sul tablet di bordo: codici e note dell'operatore compaiono in sequenza. */
+function IncomingCall({ scenario, onAccept, onBack }: { scenario: Scenario; onAccept: () => void; onBack: () => void }) {
+  const d = scenario.dispatch;
+  const c = CRITICITA[d.criticita];
+  const [typed, setTyped] = useState(0);
+  const laico = scenario.role === 'laico';
+  useEffect(() => {
+    sfx(laico ? 'allarme' : 'chiamata');
+    const start = window.setTimeout(() => {
+      const id = window.setInterval(() => {
+        setTyped((n) => {
+          if (n >= d.text.length) {
+            window.clearInterval(id);
+            return n;
+          }
+          return n + 2;
+        });
+      }, 18);
+    }, 1300);
+    return () => window.clearTimeout(start);
+  }, [d.text, laico]);
+  const done = typed >= d.text.length;
+  return (
+    <div className="incoming">
+      <div className="incoming-glow" aria-hidden="true" />
+      <section className="tablet tablet-big" aria-label="Nuova missione">
+        <div className="tablet-bar">
+          <span className="ring-dot" aria-hidden="true" />
+          <span>{laico ? 'Emergenza davanti a te' : scenario.role === 'squadra' ? 'Coordinamento sanitario dell’evento' : 'Centrale Operativa 118 · nuova missione'}</span>
+          <span className="num">{d.time}</span>
+        </div>
+        <div className="tablet-body">
+          {!laico && (
+            <div className="dispatch-codes reveal">
+              <div className="dcode" style={{ animationDelay: '0.2s' }} title={LUOGO[d.luogo].def}>
+                <span className="dcode-k num">{d.luogo}</span>
+                <span className="dcode-v">{LUOGO[d.luogo].label}</span>
+              </div>
+              <div className="dcode" style={{ animationDelay: '0.55s' }} title={PATOLOGIA[d.patologia]}>
+                <span className="dcode-k num">{d.patologia}</span>
+                <span className="dcode-v">{PATOLOGIA[d.patologia].replace('Patologia di origine ', '')}</span>
+              </div>
+              <div className="dcode dcode-crit" style={{ animationDelay: '0.9s', ['--cc' as string]: c.hex }} title={c.def}>
+                <span className="dcode-k">{c.label}</span>
+                <span className="dcode-v">{c.def.split(':')[0]}</span>
+              </div>
+            </div>
+          )}
+          <p className="incoming-addr">{d.address}</p>
+          <p className="incoming-text" aria-live="polite">
+            {d.text.slice(0, typed)}
+            {!done && <span className="caret" aria-hidden="true" />}
+          </p>
+          {done && d.extra && <p className="incoming-extra">{d.extra}</p>}
+          <div className="incoming-actions">
+            <button className="btn" onClick={onBack}>
+              Annulla
+            </button>
+            <button className="btn btn-big btn-arancio" onClick={onAccept} autoFocus>
+              {laico ? 'Intervieni' : 'Prendi la missione'}
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function Briefing({ scenario, mode, onBack, onStart }: { scenario: Scenario; mode: Mode; onBack: () => void; onStart: (brought: EquipmentId[]) => void }) {
+  const [stage, setStage] = useState<'chiamata' | 'presidi'>('chiamata');
   const [sel, setSel] = useState<EquipmentId[]>([]);
   const d = scenario.dispatch;
   const c = CRITICITA[d.criticita];
@@ -21,6 +90,9 @@ export function Briefing({ scenario, mode, onBack, onStart }: { scenario: Scenar
     setSel((s) => (s.includes(e) ? s.filter((x) => x !== e) : used + EQUIPMENT[e].slots > CAPACITY ? s : [...s, e]));
   };
   const items = EQUIPMENT_ORDER.filter((e) => !lo?.unavailable?.includes(e));
+  if (stage === 'chiamata') {
+    return <IncomingCall scenario={scenario} onBack={onBack} onAccept={() => (scenario.role === 'laico' ? onStart([]) : setStage('presidi'))} />;
+  }
   return (
     <div className="page briefing">
       <header className="page-head">
@@ -126,10 +198,7 @@ export function Briefing({ scenario, mode, onBack, onStart }: { scenario: Scenar
           <div className="shelf-foot">
             <button
               className="btn btn-big btn-arancio"
-              onClick={() => {
-                sfx('sirena');
-                onStart(sel);
-              }}
+              onClick={() => onStart(sel)}
             >
               {scenario.role === 'laico' ? 'Intervieni' : 'Partenza'}
             </button>

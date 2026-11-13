@@ -3120,3 +3120,187 @@ kbd {
   padding: 6px 10px;
   font-family: var(--f-display);
 }
+
+/* ───────────────────────── chiamata in arrivo */
+.incoming {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding-block: 40px;
+  padding-left: var(--gutter-l);
+  padding-right: var(--gutter-r);
+  position: relative;
+  overflow: hidden;
+}
+.incoming-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 50% 45%, rgba(229, 50, 59, 0.22), transparent 55%), radial-gradient(circle at 50% 45%, rgba(63, 140, 255, 0.18), transparent 70%);
+  animation: glow 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes glow {
+  to {
+    opacity: 0.45;
+    transform: scale(1.05);
+  }
+}
+.tablet-big {
+  position: relative;
+  width: min(720px, 100%);
+}
+.tablet-big .tablet-bar {
+  align-items: center;
+  gap: 10px;
+}
+.ring-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c-rosso);
+  box-shadow: 0 0 0 0 rgba(229, 50, 59, 0.7);
+  animation: ring 1.2s infinite;
+}
+@keyframes ring {
+  70% {
+    box-shadow: 0 0 0 12px rgba(229, 50, 59, 0);
+  }
+}
+.reveal .dcode {
+  opacity: 0;
+  transform: scale(1.25);
+  animation: stamp 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+@keyframes stamp {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.incoming-addr {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-24);
+}
+.incoming-text {
+  font-size: var(--t-18);
+  min-height: 5.5em;
+  max-width: 60ch;
+}
+.caret {
+  display: inline-block;
+  width: 9px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--arancio-2);
+  animation: blink 0.8s steps(2) infinite;
+}
+.incoming-extra {
+  padding: 8px 12px;
+  border-left: 3px solid var(--blu);
+  background: rgba(63, 140, 255, 0.1);
+  color: var(--blu-2);
+}
+.incoming-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ───────────────────────── viaggio */
+.travel {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.travel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-block: 18px 12px;
+  padding-left: var(--gutter-l);
+  padding-right: var(--gutter-r);
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+.travel-head h1 {
+  font-size: var(--t-36);
+}
+.travel-k {
+  font-family: var(--f-display);
+  color: var(--blu-2);
+  font-weight: 600;
+}
+.travel-eta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.travel-eta span {
+  font-family: var(--f-display);
+  font-size: var(--t-72);
+  font-weight: 800;
+  line-height: 0.9;
+  color: var(--arancio-2);
+}
+.travel-eta small {
+  color: var(--testo-3);
+}
+.travel-map {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding-left: var(--gutter-l);
+  padding-right: var(--gutter-r);
+}
+.travel-map svg {
+  width: 100%;
+  height: auto;
+  max-height: 64vh;
+  display: block;
+  border-radius: var(--r-l);
+  border: 1px solid var(--filo);
+}
+.travel-foot {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-block: 12px 24px;
+  padding-left: var(--gutter-l);
+  padding-right: var(--gutter-r);
+}
+.amb-flash {
+  animation: lamp-amb 0.5s steps(2) infinite;
+}
+@keyframes lamp-amb {
+  50% {
+    opacity: 0.05;
+  }
+}
+.dest-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ping 1.4s ease-out infinite;
+}
+@keyframes ping {
+  from {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}

@@ -18,11 +18,13 @@ import { EventPlanner } from './screens/EventPlanner';
 import { CprTrainer } from './screens/CprTrainer';
 import { Sources } from './screens/Sources';
 import { Gallery } from './screens/Gallery';
+import { Travel } from './screens/Travel';
 
 export type Screen =
   | { name: 'menu' }
   | { name: 'scenari' }
   | { name: 'briefing'; scenario: Scenario }
+  | { name: 'viaggio'; scenario: Scenario; brought: EquipmentId[] }
   | { name: 'missione'; scenario: Scenario; brought: EquipmentId[]; key: number }
   | { name: 'debriefing'; scenario: Scenario; sim: Sim; report: Report; brought: EquipmentId[] }
   | { name: 'protocolli'; focus?: ProtocolId | string }
@@ -93,9 +95,15 @@ export function App() {
           scenario={screen.scenario}
           mode={settings.mode}
           onBack={() => go({ name: 'scenari' })}
-          onStart={(brought) => go({ name: 'missione', scenario: screen.scenario, brought, key: Date.now() })}
+          onStart={(brought) =>
+            screen.scenario.role === 'laico'
+              ? go({ name: 'missione', scenario: screen.scenario, brought, key: Date.now() })
+              : go({ name: 'viaggio', scenario: screen.scenario, brought })
+          }
         />
       );
+    case 'viaggio':
+      return <Travel scenario={screen.scenario} onArrive={() => go({ name: 'missione', scenario: screen.scenario, brought: screen.brought, key: Date.now() })} />;
     case 'missione':
       return (
         <Mission
