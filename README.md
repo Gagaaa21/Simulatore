@@ -12,7 +12,7 @@ Ricevi la missione dalla Centrale Operativa, scegli i presidi da portare, valuta
 |---|---|
 | **Missione guidata** | Un caso semplice con una guida passo per passo che evidenzia i comandi da usare: il punto di partenza consigliato. |
 | **Turno** | Tre chiamate in sequenza scelte tra quelle che non hai ancora affrontato, con riepilogo di fine turno. |
-| **Missioni** | 18 scenari: territorio 118, concerti ed eventi, interventi fuori servizio. Chiamata in arrivo dalla Centrale, scelta dei presidi, tragitto sulla mappa, poi la scena vista dall’alto con monitor dei parametri, DAE con voce, RCP, ossigeno, tourniquet, immobilizzazione e comunicazione con la Centrale. |
+| **Missioni** | 19 scenari: territorio 118, concerti ed eventi, interventi fuori servizio. Chiamata in arrivo dalla Centrale, scelta dei presidi, tragitto sulla mappa, poi la scena vista dall’alto con monitor dei parametri, DAE con voce, RCP, ossigeno, tourniquet, immobilizzazione e comunicazione con la Centrale. |
 | **Carriera** | Esperienza e sei gradi (da Aspirante a Istruttore), 15 riconoscimenti, padronanza per famiglia di protocolli, storico delle missioni. Tutto resta nel browser. |
 | **Allenamento RCP** | Ritmo 100–120/min con metronomo, rapporti 30:2 e 15:2, statistiche sulle pause. |
 | **Maxi-emergenza** | Triage START e JumpSTART di 14 feriti dopo una calca all’uscita di un concerto. |
@@ -35,6 +35,7 @@ Dalle **Impostazioni** (icona a ingranaggio, anche durante la missione) si regol
 | Un peso sul petto | Infarto che evolve in fibrillazione ventricolare | Dolore toracico |
 | Silenzio nel seggiolone | Soffocamento in un lattante | Disostruzione pediatrica |
 | Il respiro di Sara | Arresto ipossico in un lattante con bronchiolite | PBLSD pediatrico |
+| Il manico della pentola | Ustione da liquido bollente in una bambina di 3 anni | Ustioni termiche |
 | Il disco della smerigliatrice | Emorragia arteriosa in cantiere | Emorragia massiva |
 | Parcheggio del palazzetto | Sovradosaggio da oppioidi | Oppioidi |
 | Dal pontile | Annegamento, arresto ipossico | Annegamento |
@@ -65,7 +66,7 @@ Serve Node.js 20 o successivo.
 ```bash
 npm install
 npm run dev        # sviluppo su http://localhost:5173
-npm test           # 65 test: motore, tabelle ufficiali, carriera e percorso ideale di ogni scenario
+npm test           # 69 test: motore, tabelle ufficiali, carriera e percorso ideale di ogni scenario
 npm run build      # build statica in dist/
 npm run build:artifact   # pagina HTML unica in dist-artifact/sirena-118.html
 ```

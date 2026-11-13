@@ -163,6 +163,7 @@ export function OverPatient({ sim, now }: { sim: Sim; now: number }) {
       </g>,
     );
   }
+  if (supine && sim.scenario.exam.extra?.ustione) els.push(<Burn key="ustione" sim={sim} g={g} />);
   if (supine && sim.cooling && sim.cooling.method !== 'immersione') {
     if (sim.cooling.method === 'impacchi' || sim.cooling.method === 'taco') {
       const pts: Pt[] = [
@@ -481,6 +482,84 @@ export function KitIcon({ id, onClick, active }: { id: EquipmentId; onClick?: ()
     >
       <ellipse cx="4" cy="8" rx="44" ry="18" fill="#000" opacity="0.25" />
       {shape}
+    </g>
+  );
+}
+
+
+/** Contorno irregolare chiuso (macchie, ustioni) attorno a un'ellisse. */
+function blob(cx: number, cy: number, rx: number, ry: number, wobble: number[]): string {
+  const n = wobble.length;
+  const pts = wobble.map((w, i) => {
+    const a = (i / n) * Math.PI * 2;
+    return { x: cx + Math.cos(a) * rx * w, y: cy + Math.sin(a) * ry * w };
+  });
+  const mid = (a: Pt, b: Pt) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % n];
+    const m = mid(a, b);
+    d += i === 0 ? `M${mid(pts[n - 1], a).x.toFixed(1)} ${mid(pts[n - 1], a).y.toFixed(1)} ` : '';
+    d += `Q${a.x.toFixed(1)} ${a.y.toFixed(1)} ${m.x.toFixed(1)} ${m.y.toFixed(1)} `;
+  }
+  return d + 'Z';
+}
+
+/** Ustione da liquido: torace anteriore e avambraccio destro, con raffreddamento e medicazione. */
+function Burn({ sim, g }: { sim: Sim; g: BodyGeo }) {
+  const k = g.s;
+  const t = g.torso;
+  const shirtOn = sim.p.look.top !== 'nudo';
+  const cx = t.x0 + (t.x1 - t.x0) * 0.46;
+  const cy = 300 + t.hwTop * 0.18;
+  const chest = blob(cx, cy, (t.x1 - t.x0) * 0.36, t.hwTop * 0.66, [1, 0.86, 1.08, 0.94, 1.12, 0.9, 1.02, 0.84, 1.06, 0.96]);
+  const a = pointOnLimb(g, 'braccio_dx', 0.52);
+  const b = pointOnLimb(g, 'braccio_dx', 0.86);
+  const arm = capsule(a, b, limbWidthAt(g, 'braccio_dx', 0.52) * 0.95, limbWidthAt(g, 'braccio_dx', 0.86) * 0.95);
+  const r = sim.flags.ustioneRaffreddataAt;
+  const cooling = r !== undefined && sim.t - Number(r) < 1200;
+  const covered = sim.flags.ustioneCopertaAt !== undefined;
+  const blisters: Array<[number, number, number]> = [
+    [cx - 14 * k, cy - 8 * k, 4.5],
+    [cx + 10 * k, cy + 12 * k, 3.5],
+    [cx + 22 * k, cy - 14 * k, 3],
+    [(a.x + b.x) / 2, (a.y + b.y) / 2, 3.5],
+  ];
+  const head = { x: cx + 6 * k, y: 300 + t.hwTop + 64 * k };
+  return (
+    <g>
+      {shirtOn ? (
+        <path d={chest} fill="#4a1426" opacity="0.26" />
+      ) : (
+        <g>
+          <path d={chest} fill="#d9453a" opacity="0.5" />
+          <path d={blob(cx + 4 * k, cy + 2 * k, (t.x1 - t.x0) * 0.22, t.hwTop * 0.38, [1, 1.1, 0.9, 1.05, 0.92, 1.08, 0.95, 1])} fill="#b42f2a" opacity="0.32" />
+        </g>
+      )}
+      <path d={arm} fill="#d9453a" opacity="0.5" />
+      {blisters.map(([x, y, rr], i) =>
+        shirtOn && i < 3 ? null : <circle key={i} cx={x} cy={y} r={rr * k} fill="#f6e2c9" stroke="#c99a7c" strokeWidth={0.8 * k} opacity="0.95" />,
+      )}
+      {cooling && !covered && (
+        <g>
+          <path d={chest} fill="#8fd3ff" opacity="0.3" />
+          <path d={arm} fill="#8fd3ff" opacity="0.3" />
+          <path d={`M${head.x} ${head.y - 10 * k} C ${head.x - 4 * k} ${head.y - 40 * k}, ${cx} ${cy + 30 * k}, ${cx} ${cy + 6 * k}`} stroke="#bfe6ff" strokeWidth={5 * k} fill="none" strokeDasharray={`${6 * k} ${5 * k}`} strokeDashoffset={-(sim.t * 7) % 22} opacity="0.85" />
+          <path d={`M${head.x + 30 * k} ${head.y + 60 * k} Q ${head.x + 16 * k} ${head.y + 20 * k} ${head.x + 4 * k} ${head.y + 4 * k}`} stroke="#d5dadf" strokeWidth={7 * k} fill="none" strokeLinecap="round" />
+          <ellipse cx={head.x} cy={head.y} rx={13 * k} ry={8 * k} fill="#e7ebef" stroke="#9aa3ab" strokeWidth={1.5 * k} transform={`rotate(-20 ${head.x} ${head.y})`} />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <ellipse key={i} cx={cx - 30 * k + i * 15 * k} cy={cy + t.hwTop * 0.9 + ((i * 7) % 5) * k} rx={3 * k} ry={2 * k} fill="#bfe6ff" opacity="0.8" />
+          ))}
+        </g>
+      )}
+      {covered && (
+        <g>
+          <path d={chest} fill="#eef6ff" opacity="0.42" stroke="#ffffff" strokeOpacity="0.75" strokeWidth={2 * k} />
+          <path d={arm} fill="#eef6ff" opacity="0.42" stroke="#ffffff" strokeOpacity="0.75" strokeWidth={2 * k} />
+          <path d={`M${cx - 26 * k} ${cy - 20 * k} l ${40 * k} ${10 * k} M${cx - 18 * k} ${cy + 4 * k} l ${36 * k} ${9 * k}`} stroke="#ffffff" strokeWidth={2 * k} opacity="0.6" strokeLinecap="round" />
+        </g>
+      )}
     </g>
   );
 }

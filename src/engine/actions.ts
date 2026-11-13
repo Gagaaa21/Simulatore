@@ -167,6 +167,18 @@ const list: ActionDef[] = [
     },
   },
   {
+    id: 'spegni_fonte',
+    label: 'Spegni il fornello e allontana la pentola dalla pozza d’acqua',
+    short: 'Spegni il fornello',
+    group: 'scena',
+    duration: 10,
+    visible: (s) => s.scenario.scene.hazards.some((h) => h.fixAction === 'spegni_fonte'),
+    run: ({ sim }) => {
+      sim.set('fix_spegni_fonte', true);
+      sim.say('azione', 'Spegni il fornello, sposti la pentola nel lavello e fai asciugare la pozza con un asciugamano.');
+    },
+  },
+  {
     id: 'apri_spazio',
     label: 'Chiedi alla security di aprire un varco e allontanare la folla',
     short: 'Varco con la security',
@@ -1186,6 +1198,81 @@ const list: ActionDef[] = [
     run: ({ sim }) => {
       sim.set('ustioneRaffreddataAt', sim.t);
       sim.say('azione', 'Avvii il raffreddamento dell’ustione con acqua corrente fresca, da proseguire per 20 minuti, evitando il ghiaccio.');
+    },
+  },
+  {
+    id: 'rimuovi_indumenti',
+    label: 'Togli gli indumenti bagnati e gli oggetti non adesi alla pelle',
+    short: 'Togli indumenti bagnati',
+    group: 'E',
+    duration: 20,
+    contact: true,
+    visible: (s) => !!s.scenario.exam.extra?.ustione,
+    available: (s) => (s.flags.indumentiTolti ? 'Li hai già tolti.' : needPatient(s)),
+    run: ({ sim }) => {
+      sim.set('indumentiTolti', sim.t);
+      sim.p.look = { ...sim.p.look, top: 'nudo' };
+      sim.say('azione', 'Tagli e sfili la maglietta intrisa d’acqua calda; nulla è attaccato alla pelle.');
+    },
+  },
+  {
+    id: 'stima_superficie',
+    label: 'Stima l’estensione dell’ustione (regola del palmo)',
+    short: 'Estensione dell’ustione',
+    group: 'E',
+    duration: 15,
+    contact: true,
+    visible: (s) => !!s.scenario.exam.extra?.ustione,
+    available: needPatient,
+    run: ({ sim }) => {
+      const ex = sim.scenario.exam.extra ?? {};
+      sim.find(ex.ustione ?? '');
+      sim.measure('ustione', 'Estensione ustione', ex.superficie ?? 'stimata');
+    },
+  },
+  {
+    id: 'copri_ustione',
+    label: 'Copri l’ustione con medicazione non aderente o pellicola, senza stringere',
+    short: 'Medica l’ustione',
+    group: 'trattamenti',
+    duration: 30,
+    needs: ['kit_ustioni'],
+    contact: true,
+    visible: (s) => !!s.scenario.exam.extra?.ustione,
+    available: (s) => (s.flags.ustioneCopertaAt !== undefined ? 'L’ustione è già medicata.' : needPatient(s)),
+    run: ({ sim }) => {
+      if (sim.flags.ustioneRaffreddataAt === undefined) {
+        sim.penalize('copri_prima', 'lieve', 'Ustione coperta prima di raffreddarla', 'Prima si raffredda con acqua corrente fresca, poi si copre: la medicazione da sola non toglie il calore dai tessuti.', ['ERC_FA_2025']);
+      }
+      sim.set('ustioneCopertaAt', sim.t);
+      sim.say('azione', 'Appoggi la pellicola sterile sull’ustione, a strisce e senza avvolgere stretto, e fissi una medicazione non aderente.');
+    },
+  },
+  {
+    id: 'ghiaccio_ustione',
+    label: 'Applica il ghiaccio sull’ustione',
+    short: 'Ghiaccio',
+    group: 'trattamenti',
+    duration: 10,
+    contact: true,
+    visible: (s) => !!s.scenario.exam.extra?.ustione,
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.set('ghiaccioAt', sim.t);
+      sim.penalize('ghiaccio', 'grave', 'Ghiaccio sull’ustione', 'Il ghiaccio non va usato: restringe i vasi, può approfondire il danno e favorisce l’ipotermia. Si usa acqua corrente fresca.', ['ERC_FA_2025']);
+    },
+  },
+  {
+    id: 'rimedio_casalingo',
+    label: 'Spalma un rimedio casalingo (burro, olio, dentifricio)',
+    short: 'Rimedio casalingo',
+    group: 'trattamenti',
+    duration: 10,
+    contact: true,
+    visible: (s) => !!s.scenario.exam.extra?.ustione,
+    available: needPatient,
+    run: ({ sim }) => {
+      sim.penalize('rimedio', 'grave', 'Rimedio casalingo sull’ustione', 'Grassi e rimedi casalinghi non raffreddano e sporcano la ferita: la linea guida prevede acqua corrente fresca e poi una medicazione pulita non aderente.', ['ERC_FA_2025']);
     },
   },
 

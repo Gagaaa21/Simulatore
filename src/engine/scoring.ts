@@ -15,6 +15,7 @@ const KEY_LABEL: Record<string, string> = {
   avpu: 'coscienza (AVPU)',
   temperatura: 'temperatura',
   pupille: 'pupille',
+  ustione: 'estensione dell’ustione',
 };
 
 export const PENALTY_POINTS: Record<Penalty['severity'], number> = { critico: 15, grave: 8, lieve: 3 };

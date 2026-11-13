@@ -18,6 +18,7 @@ import { acrConcerto } from './acr-concerto';
 import { acrSupermercato } from './acr-supermercato';
 import { pblsLattante } from './pbls-lattante';
 import { tutorial } from './tutorial';
+import { ustioneBambino } from './ustione-bambino';
 
 /** Ordine consigliato: dal più semplice al più complesso all'interno di ogni categoria. */
 export const SCENARIOS: Scenario[] = [
@@ -29,6 +30,7 @@ export const SCENARIOS: Scenario[] = [
   doloreToracico,
   fbaoLattante,
   pblsLattante,
+  ustioneBambino,
   emorragiaCantiere,
   oppioidi,
   annegamento,

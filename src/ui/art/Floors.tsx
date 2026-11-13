@@ -51,7 +51,7 @@ function Casa() {
 }
 
 export type Room = 'soggiorno' | 'cucina' | 'camera';
-export type Decor = 'seggiolone' | 'lettino' | 'inalatori';
+export type Decor = 'seggiolone' | 'lettino' | 'inalatori' | 'pentola';
 
 function Cucina({ decor }: { decor: Decor[] }) {
   return (
@@ -107,10 +107,35 @@ function Cucina({ decor }: { decor: Decor[] }) {
         ].map(([x, y, r], i) => (
           <circle key={i} cx={x} cy={y} r={r} fill="#2b3036" stroke="#4b525a" strokeWidth="2" />
         ))}
-        <rect x="644" y="58" width="34" height="8" rx="3" fill="#2a2d31" />
-        <circle cx="622" cy="64" r="21" fill="url(#acciaio)" stroke="#6f777e" strokeWidth="2" />
-        <circle cx="622" cy="64" r="14" fill="#a7b0b7" />
+        {decor.includes('pentola') ? (
+          <g>
+            <circle cx="538" cy="34" r="24" fill="#ff7a1a" opacity="0.22" />
+            <circle cx="538" cy="34" r="14" fill="none" stroke="#ff8a2a" strokeWidth="4" />
+            <circle cx="538" cy="34" r="8" fill="none" stroke="#3f8cff" strokeWidth="2" opacity="0.8" />
+          </g>
+        ) : (
+          <g>
+            <rect x="644" y="58" width="34" height="8" rx="3" fill="#2a2d31" />
+            <circle cx="622" cy="64" r="21" fill="url(#acciaio)" stroke="#6f777e" strokeWidth="2" />
+            <circle cx="622" cy="64" r="14" fill="#a7b0b7" />
+          </g>
+        )}
       </g>
+      {decor.includes('pentola') && (
+        <g>
+          <path d="M470 150 C 480 118, 560 112, 610 128 S 690 150, 676 186 S 600 236, 540 224 S 452 196, 470 150Z" fill="#9cc9e6" opacity="0.38" />
+          <path d="M470 150 C 480 118, 560 112, 610 128 S 690 150, 676 186 S 600 236, 540 224 S 452 196, 470 150Z" fill="none" stroke="#e3f2fb" strokeWidth="2" opacity="0.45" />
+          <g transform="rotate(-28 626 150)">
+            <rect x="590" y="126" width="72" height="50" rx="10" fill="#000" opacity="0.2" transform="translate(4 6)" />
+            <rect x="590" y="126" width="72" height="50" rx="10" fill="url(#acciaio)" stroke="#6f777e" strokeWidth="2" />
+            <ellipse cx="662" cy="151" rx="7" ry="25" fill="#5b636a" />
+            <rect x="566" y="146" width="26" height="9" rx="4" fill="#2a2d31" />
+          </g>
+          {[0, 1, 2].map((i) => (
+            <path key={i} className="vapore" d={`M${520 + i * 40} ${178 - i * 6} c -10 -14, 10 -22, 0 -38 c -8 -12, 8 -20, 2 -32`} stroke="#ffffff" strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.28" />
+          ))}
+        </g>
+      )}
       {/* frigorifero */}
       <g>
         <rect x="788" y="0" width="112" height="128" fill="#000" opacity="0.2" />

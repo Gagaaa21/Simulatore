@@ -3822,3 +3822,25 @@ kbd {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* vapore dall'acqua bollente */
+.vapore {
+  animation: vapore 3.2s ease-in-out infinite;
+}
+.vapore:nth-child(odd) {
+  animation-delay: -1.4s;
+}
+@keyframes vapore {
+  0%,
+  100% {
+    opacity: 0.08;
+    transform: translateY(4px);
+  }
+  50% {
+    opacity: 0.34;
+    transform: translateY(-6px);
+  }
+}
+[data-motion='ridotta'] .vapore {
+  animation: none;
+}

@@ -48,7 +48,7 @@ export interface Shift {
   badges: string[];
 }
 
-const PEDIATRIC = ['fbao-lattante', 'pbls-lattante'];
+const PEDIATRIC = ['fbao-lattante', 'pbls-lattante', 'ustione-bambino'];
 
 /** Sceglie tre missioni diverse, privilegiando quelle mai giocate e mescolando territorio ed eventi. */
 function pickShift(progress: Record<string, ScenarioRecord>): string[] {

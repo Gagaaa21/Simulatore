@@ -102,6 +102,21 @@ describe('percorsi ideali', () => {
     expectAll(sim, kit);
   });
 
+  it('ustione da liquido bollente in una bambina', () => {
+    const { sim, kit } = make('ustione-bambino');
+    play(sim, ['valuta_scena', 'guanti', 'spegni_fonte', 'avvicinati', 'coscienza', 'raffredda_ustione', 'rimuovi_indumenti', 'telo', 'rassicura', proto('ustioni'), 'stima_superficie', 'q_eventi', 'saturimetro', 'attendi_lungo', 'attendi_lungo', 'attendi_lungo', 'copri_ustione', ['comunica', { code: 'I2', items: ['ustione', 'fc'] }], ['trasporta', { mode: 'barella', pos: 'supino' }]]);
+    const rep = expectAll(sim, kit);
+    expect(rep.outcome.status).toBe('ottimo');
+    expect(sim.p.v.temp).toBeGreaterThanOrEqual(36);
+  });
+
+  it('ustione: senza coprire il resto del corpo la bambina diventa ipotermica', () => {
+    const { sim } = make('ustione-bambino');
+    play(sim, ['valuta_scena', 'guanti', 'spegni_fonte', 'avvicinati', 'raffredda_ustione', 'attendi_lungo', 'attendi_lungo', 'attendi_lungo', 'attendi_lungo', 'attendi_lungo', 'attendi_lungo']);
+    expect(sim.p.v.temp).toBeLessThan(35.6);
+    expect(evaluate(sim, []).outcome.status).toBe('critico');
+  });
+
   it('emorragia in cantiere', () => {
     const { sim, kit } = make('emorragia-cantiere');
     play(sim, ['valuta_scena', 'guanti', 'togli_tensione', 'avvicinati', 'compressione_diretta', ['tourniquet', { region: 'gamba_dx', pos: 0.24, joint: false }], proto('emorragia'), 'richiedi_msa', 'telo', 'saturimetro', 'pressione', ['comunica', { code: 'I3', items: ['tq', 'pa', 'fc'] }], until((s) => s.msaOnScene), 'consegna']);
