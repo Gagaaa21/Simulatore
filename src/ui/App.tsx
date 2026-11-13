@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Scenario } from '../engine/types';
 import type { EquipmentId } from '../data/equipment';
 import type { Sim } from '../engine/engine';
@@ -79,6 +79,8 @@ export function App() {
   const [progress, setProgress] = useState<Record<string, ScenarioRecord>>(loadProgress);
   const [career, setCareerState] = useState<Career>(loadCareer);
   const [shift, setShift] = useState<Shift | null>(null);
+  // il prossimo turno è già pronto: la pagina d'ingresso ne mostra la prima chiamata
+  const shiftPreview = useMemo(() => pickShift(progress), [progress]);
   const setCareer = useCallback((c: Career) => {
     setCareerState(c);
     saveCareer(c);
@@ -131,10 +133,10 @@ export function App() {
           setSettings={setSettings}
           progress={progress}
           career={career}
+          shiftPreview={shiftPreview}
           onShift={() => {
-            const queue = pickShift(progress);
-            setShift({ queue, index: 0, results: [], badges: [] });
-            go({ name: 'briefing', scenario: SCENARIO_BY_ID[queue[0]] });
+            setShift({ queue: shiftPreview, index: 0, results: [], badges: [] });
+            go({ name: 'briefing', scenario: SCENARIO_BY_ID[shiftPreview[0]] });
           }}
         />
       );
