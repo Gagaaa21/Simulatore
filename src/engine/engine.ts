@@ -81,6 +81,9 @@ export class Sim {
   covered = false;
   measurements = new Map<string, Measurement>();
   log: LogEntry[] = [];
+  /** cambiamenti di stato del paziente rilevati secondo per secondo */
+  changes: PatientChange[] = [];
+  private snap: PatientSnap | null = null;
   penalties: Penalty[] = [];
   history: { t: number; hr: number; spo2: number | null; sbp: number; rr: number }[] = [];
   requests: Record<string, number> = {};
@@ -289,6 +292,7 @@ export class Sim {
     this.physiology();
     this.aedTick();
     this.scenario.hooks?.tick?.(this);
+    this.detectChanges();
     // arrivi
     if (this.msaAt !== null && !this.msaOnScene && this.t >= this.msaAt) {
       this.msaOnScene = true;
@@ -771,6 +775,39 @@ export class Sim {
     this.say('evento', `Presidi disponibili: ${items.map((i) => EQUIPMENT[i].name).join(', ')}.`);
   }
 
+  // ───────────────────────── cambiamenti del paziente
+  private takeSnap(): PatientSnap {
+    const p = this.p;
+    return { arrest: this.inArrest(), avpu: p.avpu, airway: p.airway, breathing: p.breathing, skin: p.skin.color, seizing: p.seizing, spo2: this.pulseOx && !this.inArrest() ? Math.round(p.v.spo2) : null };
+  }
+  private detectChanges() {
+    const now = this.takeSnap();
+    const prev = this.snap;
+    this.snap = now;
+    if (!prev) return;
+    const out: PatientChange[] = [];
+    const add = (key: PatientChange['key'], dir: PatientChange['dir'], from: string, to: string, text: string) => out.push({ t: this.t, key, dir, from, to, text });
+    if (now.arrest !== prev.arrest) {
+      if (now.arrest) add('arresto', 'peggiora', 'circolo presente', 'arresto', 'Arresto cardiaco');
+      else add('arresto', 'migliora', 'arresto', 'circolo presente', 'Ritorno del circolo spontaneo');
+    } else if (!now.arrest) {
+      if (now.avpu !== prev.avpu) add('coscienza', dirOf(RANK_AVPU, prev.avpu, now.avpu), AVPU_TXT[prev.avpu], AVPU_TXT[now.avpu], `Coscienza: ${AVPU_TXT[now.avpu]}`);
+      if (now.airway !== prev.airway) add('vie_aeree', dirOf(RANK_AIRWAY, prev.airway, now.airway), AIRWAY_TXT[prev.airway], AIRWAY_TXT[now.airway], `Vie aeree: ${AIRWAY_TXT[now.airway]}`);
+      if (now.breathing !== prev.breathing) add('respiro', dirOf(RANK_BREATH, prev.breathing, now.breathing), BREATH_TXT[prev.breathing], BREATH_TXT[now.breathing], `Respiro: ${BREATH_TXT[now.breathing]}`);
+      if (now.seizing !== prev.seizing) add('crisi', now.seizing ? 'peggiora' : 'migliora', prev.seizing ? 'crisi in corso' : 'nessuna crisi', now.seizing ? 'crisi in corso' : 'crisi finita', now.seizing ? 'Crisi convulsiva in corso' : 'La crisi convulsiva è finita');
+      if (now.skin !== prev.skin) add('cute', dirOf(RANK_SKIN, prev.skin, now.skin), prev.skin, now.skin, `Cute ${now.skin}`);
+      if (now.spo2 !== null && prev.spo2 !== null) {
+        if (prev.spo2 >= 90 && now.spo2 < 90) add('spo2', 'peggiora', `${prev.spo2}%`, `${now.spo2}%`, `Saturazione scesa sotto il 90% (${now.spo2}%)`);
+        else if (prev.spo2 < 94 && now.spo2 >= 94) add('spo2', 'migliora', `${prev.spo2}%`, `${now.spo2}%`, `Saturazione risalita a ${now.spo2}%`);
+      }
+    }
+    if (out.length) {
+      this.changes.push(...out);
+      const worse = out.some((c) => c.dir === 'peggiora');
+      this.soundQueue.push(worse ? 'peggiora' : 'migliora');
+    }
+  }
+
   // ───────────────────────── ossigeno
   setO2(device: O2Device | null, flow: number, fio2?: number) {
     if (!device || flow <= 0) {
@@ -814,3 +851,34 @@ export class Sim {
   }
 }
 
+
+// ───────────────────────── stato del paziente: scale e descrizioni
+export interface PatientSnap {
+  arrest: boolean;
+  avpu: string;
+  airway: string;
+  breathing: string;
+  skin: string;
+  seizing: boolean;
+  spo2: number | null;
+}
+export interface PatientChange {
+  t: number;
+  key: 'arresto' | 'coscienza' | 'vie_aeree' | 'respiro' | 'crisi' | 'cute' | 'spo2';
+  dir: 'peggiora' | 'migliora' | 'neutro';
+  from: string;
+  to: string;
+  text: string;
+}
+const RANK_AVPU: Record<string, number> = { A: 0, V: 1, P: 2, U: 3 };
+const RANK_AIRWAY: Record<string, number> = { pervie: 0, russante: 2, gorgogliante: 2, ostruzione_parziale: 2, ostruzione_completa: 3 };
+const RANK_BREATH: Record<string, number> = { normale: 0, tachipnoico: 1, dispnoico: 1, sibili: 1, bradipnoico: 2, superficiale: 2, agonico: 3, assente: 3 };
+const RANK_SKIN: Record<string, number> = { rosea: 0, arrossata: 1, pallida: 1, marezzata: 2, grigiastra: 2, cianotica: 3 };
+function dirOf(rank: Record<string, number>, a: string, b: string): PatientChange['dir'] {
+  const ra = rank[a] ?? 0;
+  const rb = rank[b] ?? 0;
+  return rb > ra ? 'peggiora' : rb < ra ? 'migliora' : 'neutro';
+}
+export const AVPU_TXT: Record<string, string> = { A: 'sveglio e attento', V: 'risponde solo alla voce', P: 'risponde solo al dolore', U: 'non risponde' };
+export const AIRWAY_TXT: Record<string, string> = { pervie: 'libere', russante: 'russa', gorgogliante: 'gorgoglio in gola', ostruzione_parziale: 'ostruite in parte', ostruzione_completa: 'ostruite' };
+export const BREATH_TXT: Record<string, string> = { normale: 'normale', tachipnoico: 'rapido', dispnoico: 'affannoso', sibili: 'con sibili', bradipnoico: 'lento', superficiale: 'superficiale', agonico: 'agonico (gasping)', assente: 'assente' };

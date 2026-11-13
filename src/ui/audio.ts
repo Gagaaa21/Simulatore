@@ -107,6 +107,15 @@ export function sfx(name: string) {
     case 'allarme':
       for (let i = 0; i < 3; i++) tone(960, 0.14, { type: 'square', gain: 0.05, delay: i * 0.22 });
       break;
+    case 'peggiora':
+      // due toni discendenti: il paziente sta peggiorando
+      tone(740, 0.16, { type: 'triangle', gain: 0.09 });
+      tone(523, 0.24, { type: 'triangle', gain: 0.09, delay: 0.18 });
+      break;
+    case 'migliora':
+      tone(587, 0.12, { type: 'triangle', gain: 0.07 });
+      tone(880, 0.18, { type: 'triangle', gain: 0.07, delay: 0.13 });
+      break;
     case 'carica':
       tone(300, 4.5, { type: 'sine', gain: 0.05, slide: 2600 });
       break;

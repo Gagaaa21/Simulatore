@@ -76,6 +76,12 @@ export function Scene({ sim, onAction }: { sim: Sim; onAction: (id: string) => v
               <KitIcon id={k} onClick={() => undefined} />
             </g>
           ))}
+        {(() => {
+          const c = sim.changes[sim.changes.length - 1];
+          if (!c || sim.t - c.t > 6 || inScene) return null;
+          const worse = sim.changes.some((x) => x.t === c.t && x.dir === 'peggiora');
+          return <ellipse className={`p-halo ${worse ? 'p-halo-worse' : 'p-halo-better'}`} cx="460" cy="300" rx="350" ry="120" />;
+        })()}
         <PatientFigure
           p={p}
           arrest={sim.inArrest()}

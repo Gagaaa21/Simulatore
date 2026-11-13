@@ -69,7 +69,10 @@ function followCoach(id: string) {
     }
     const r = sim.startAction(st.action, paramsFor(sim, st));
     if (!r.ok) {
-      sim.advance(5);
+      if (r.missing?.length) {
+        sim.fetchEquipment(r.missing);
+        while (sim.busy) sim.advance(1);
+      } else sim.advance(5);
       continue;
     }
     while (sim.busy) sim.advance(1);

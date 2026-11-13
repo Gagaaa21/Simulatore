@@ -67,3 +67,27 @@ describe('ACR a domicilio – percorso ideale', () => {
     expect(sim.penalties.length).toBe(1);
   });
 });
+
+describe('cambiamenti di stato del paziente', () => {
+  it('rileva il peggioramento della coscienza e lo classifica', async () => {
+    const { SCENARIO_BY_ID } = await import('../src/data/scenarios');
+    const sim = new Sim(SCENARIO_BY_ID['ipoglicemia'], 'addestramento', ['zaino']);
+    sim.start();
+    sim.startAction('avvicinati');
+    while (sim.busy) sim.advance(1);
+    sim.advance(400);
+    const c = sim.changes.filter((x) => x.key === 'coscienza');
+    expect(c.length).toBeGreaterThanOrEqual(2);
+    expect(c.every((x) => x.dir === 'peggiora')).toBe(true);
+    expect(sim.changes.some((x) => x.key === 'vie_aeree' && x.dir === 'peggiora')).toBe(true);
+  });
+  it('segnala arresto e ritorno del circolo', async () => {
+    const { SCENARIO_BY_ID } = await import('../src/data/scenarios');
+    const sim = new Sim(SCENARIO_BY_ID['dolore-toracico'], 'addestramento', ['zaino', 'dae']);
+    sim.start();
+    sim.startAction('avvicinati');
+    while (sim.busy) sim.advance(1);
+    sim.advance(300);
+    expect(sim.changes.some((x) => x.key === 'arresto' && x.dir === 'peggiora')).toBe(true);
+  });
+});

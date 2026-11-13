@@ -24,7 +24,11 @@ function usable(sim: Sim, id: string): boolean {
   const a = ACTIONS[id];
   if (!a) return false;
   if (a.visible && !a.visible(sim)) return false;
-  if ((a.needs ?? []).some((e) => !sim.brought.has(e))) return false;
+  // presidio rimasto sul mezzo: lo propone solo se il caso lo prevede (cliccando parte il recupero)
+  const lo = sim.scenario.loadout;
+  const missing = (a.needs ?? []).filter((e) => !sim.brought.has(e));
+  if (missing.length && (!lo || missing.some((e) => !lo.essential.includes(e) && !lo.recommended.includes(e) || lo.unavailable?.includes(e)))) return false;
+  if (missing.length && sim.fetching.length) return false;
   return sim.actionAvailability(id) === true;
 }
 

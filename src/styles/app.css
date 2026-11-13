@@ -4813,3 +4813,209 @@ kbd {
     padding-left: 12px;
   }
 }
+
+/* ───────────────────────── cambiamenti di stato del paziente */
+.p-alert {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: min(92%, 560px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 12px 12px 14px;
+  border-radius: var(--r-m);
+  background: rgba(10, 18, 30, 0.94);
+  border: 2px solid var(--pa);
+  box-shadow: 0 12px 34px rgba(2, 6, 14, 0.6), 0 0 0 4px color-mix(in srgb, var(--pa) 25%, transparent);
+  animation: p-alert-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.p-alert-peggiora {
+  --pa: #ff9f43;
+}
+.p-alert-critico {
+  --pa: var(--m-allarme);
+}
+.p-alert-migliora {
+  --pa: var(--m-fc);
+}
+@keyframes p-alert-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.p-alert-ico {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--pa);
+  color: #0b1420;
+  font-size: var(--t-16);
+}
+.p-alert-critico .p-alert-ico {
+  animation: p-pulse 0.9s ease-in-out infinite;
+}
+.p-alert-title {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-21);
+  line-height: 1.15;
+  color: var(--pa);
+}
+.p-alert-body ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-14);
+}
+.p-alert-body li::before {
+  content: '▸ ';
+  color: var(--pa);
+}
+.p-alert-story {
+  margin-top: 4px;
+  font-size: var(--t-14);
+  color: var(--testo-2);
+  line-height: 1.45;
+}
+.p-alert-x {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--testo-2);
+  font-size: var(--t-21);
+  line-height: 1;
+}
+.p-alert-x:hover {
+  color: var(--testo);
+  background: var(--notte-3);
+}
+@keyframes p-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 61, 85, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 61, 85, 0);
+  }
+}
+.p-halo {
+  fill: none;
+  stroke-width: 6;
+  pointer-events: none;
+  animation: p-halo 1.2s ease-in-out infinite;
+}
+.p-halo-worse {
+  stroke: #ff9f43;
+}
+.p-halo-better {
+  stroke: #4be38a;
+}
+@keyframes p-halo {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+.p-status {
+  border-radius: var(--r-m);
+  background: var(--notte-2);
+  border: 1px solid var(--filo);
+  padding: 10px 12px;
+}
+.p-status header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-14);
+  color: var(--testo-2);
+  margin-bottom: 6px;
+}
+.p-status dl {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+.p-status dl div {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 6px;
+  border-radius: var(--r-s);
+}
+.p-status dt {
+  font-size: var(--t-12);
+  color: var(--testo-3);
+}
+.p-status dd {
+  font-size: var(--t-14);
+  color: var(--testo);
+}
+.p-status .tr-peggiora {
+  background: rgba(255, 159, 67, 0.14);
+}
+.p-status .tr-migliora {
+  background: rgba(75, 227, 138, 0.12);
+}
+.p-trend {
+  margin-left: 6px;
+  font-size: var(--t-12);
+}
+.tr-peggiora .p-trend {
+  color: #ff9f43;
+}
+.tr-migliora .p-trend {
+  color: var(--m-fc);
+}
+.p-todo {
+  color: var(--testo-3);
+  font-style: italic;
+}
+.p-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--t-12);
+}
+.p-badge-warn {
+  background: #ff9f43;
+  color: #0b1420;
+}
+.p-status-arrest {
+  border-color: var(--m-allarme);
+  background: rgba(255, 61, 85, 0.1);
+}
+.p-arrest {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--t-18);
+  color: #ff8a8a;
+}
+@media (prefers-reduced-motion: reduce) {
+  .p-alert,
+  .p-halo,
+  .p-alert-critico .p-alert-ico {
+    animation: none;
+  }
+}
+[data-motion='ridotta'] .p-alert,
+[data-motion='ridotta'] .p-halo,
+[data-motion='ridotta'] .p-alert-critico .p-alert-ico {
+  animation: none;
+}

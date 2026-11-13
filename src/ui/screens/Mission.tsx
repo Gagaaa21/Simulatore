@@ -13,6 +13,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { TUTORIAL_STEPS } from '../../data/scenarios/tutorial';
 import { Scene } from '../components/Scene';
 import { ActionPanel } from '../components/ActionPanel';
+import { PatientAlert, PatientStatus } from '../components/PatientStatus';
 import { LogFeed } from '../components/LogFeed';
 import { Monitor } from '../components/Monitor';
 import { AedPanel } from '../components/AedPanel';
@@ -276,6 +277,7 @@ export function Mission({
           )}
           <div className="scene-wrap">
             <Scene sim={sim} onAction={trigger} />
+            <PatientAlert sim={sim} />
             {flash && (
               <div className={`flash flash-${flash.split('|')[0]}`} role="status">
                 {flash.split('|').slice(1).join('|')}
@@ -301,6 +303,7 @@ export function Mission({
           </div>
         </main>
         <aside className="col-tools">
+          <PatientStatus sim={sim} />
           <Monitor sim={sim} />
           <CprPanel sim={sim} onAction={trigger} />
           {showAed && <AedPanel sim={sim} onAction={trigger} available={sim.has('dae')} />}
