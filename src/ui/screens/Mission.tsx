@@ -89,12 +89,18 @@ export function Mission({
   // guida del tutorial: primo passo non ancora completato ed evidenziazione del comando
   const stepIdx = scenario.tutorial ? TUTORIAL_STEPS.findIndex((st) => !st.done(sim)) : -1;
   const step = stepIdx >= 0 ? TUTORIAL_STEPS[stepIdx] : null;
+  // l'evidenziazione si riapplica di continuo: le schede possono cambiare senza che la missione si ridisegni
+  const stepTarget = step?.target ?? null;
   useEffect(() => {
-    if (!step) return;
-    const els = Array.from(document.querySelectorAll(step.target));
-    els.forEach((e) => e.classList.add('tut-target'));
-    return () => els.forEach((e) => e.classList.remove('tut-target'));
-  });
+    if (!stepTarget) return;
+    const apply = () => document.querySelectorAll(stepTarget).forEach((e) => e.classList.add('tut-target'));
+    apply();
+    const id = window.setInterval(apply, 300);
+    return () => {
+      window.clearInterval(id);
+      document.querySelectorAll('.tut-target').forEach((e) => e.classList.remove('tut-target'));
+    };
+  }, [stepTarget]);
 
   const modalOpen = !!picker || protoOpen || !!missing || confirmExit || coach || showSettings;
   const running = !paused && !modalOpen && !sim.ended;
