@@ -593,7 +593,7 @@ const list: ActionDef[] = [
       const p = sim.p;
       if (sim.inArrest()) {
         sim.cpr.ventilation = 'pallone';
-        sim.say('azione', 'Il collega alla testa ventila con pallone e maschera, 2 insufflazioni ogni 30 compressioni.');
+        sim.say('azione', `Il collega alla testa ventila con pallone e maschera${sim.isChild() ? ' pediatrici' : ''}: 2 insufflazioni ogni ${sim.cpr.ratio === '15:2' ? 15 : 30} compressioni.`);
         if (!sim.o2 && sim.has('ossigeno')) sim.hint('Collega il pallone all’ossigeno ad alti flussi (reservoir) appena possibile.');
         return;
       }
