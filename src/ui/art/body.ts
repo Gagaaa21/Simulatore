@@ -169,3 +169,39 @@ export function capsule(a: Pt, b: Pt, ra: number, rb: number): string {
   const f = (n: number) => n.toFixed(1);
   return `M${f(a1.x)} ${f(a1.y)} L${f(b1.x)} ${f(b1.y)} A${f(rb)} ${f(rb)} 0 0 1 ${f(b2.x)} ${f(b2.y)} L${f(a2.x)} ${f(a2.y)} A${f(ra)} ${f(ra)} 0 0 1 ${f(a1.x)} ${f(a1.y)} Z`;
 }
+
+/** Arto come forma unica e continua (radice → articolazione → estremità), con estremità arrotondate. */
+export function limbPath(pts: Pt[], ws: number[]): string {
+  const n = pts.length;
+  const dirs = pts.slice(1).map((p, i) => {
+    const dx = p.x - pts[i].x;
+    const dy = p.y - pts[i].y;
+    const l = Math.hypot(dx, dy) || 1;
+    return { x: dx / l, y: dy / l };
+  });
+  const normals = pts.map((_, i) => {
+    const d = i === 0 ? dirs[0] : i === n - 1 ? dirs[n - 2] : { x: dirs[i - 1].x + dirs[i].x, y: dirs[i - 1].y + dirs[i].y };
+    const l = Math.hypot(d.x, d.y) || 1;
+    return { x: -d.y / l, y: d.x / l };
+  });
+  const top = pts.map((p, i) => ({ x: p.x + normals[i].x * ws[i], y: p.y + normals[i].y * ws[i] }));
+  const bot = pts.map((p, i) => ({ x: p.x - normals[i].x * ws[i], y: p.y - normals[i].y * ws[i] }));
+  const f = (v: number) => v.toFixed(1);
+  let d = `M${f(top[0].x)} ${f(top[0].y)}`;
+  for (let i = 1; i < n; i++) {
+    if (i < n - 1) {
+      // curva morbida attorno all'articolazione
+      d += ` L${f((top[i - 1].x + top[i].x) / 2 + (top[i].x - top[i - 1].x) * 0.3)} ${f((top[i - 1].y + top[i].y) / 2 + (top[i].y - top[i - 1].y) * 0.3)}`;
+      d += ` Q${f(top[i].x)} ${f(top[i].y)} ${f(top[i].x + (top[i + 1].x - top[i].x) * 0.2)} ${f(top[i].y + (top[i + 1].y - top[i].y) * 0.2)}`;
+    } else d += ` L${f(top[i].x)} ${f(top[i].y)}`;
+  }
+  d += ` A${f(ws[n - 1])} ${f(ws[n - 1])} 0 0 1 ${f(bot[n - 1].x)} ${f(bot[n - 1].y)}`;
+  for (let i = n - 2; i >= 0; i--) {
+    if (i > 0) {
+      d += ` L${f(bot[i].x + (bot[i + 1].x - bot[i].x) * 0.2)} ${f(bot[i].y + (bot[i + 1].y - bot[i].y) * 0.2)}`;
+      d += ` Q${f(bot[i].x)} ${f(bot[i].y)} ${f(bot[i].x + (bot[i - 1].x - bot[i].x) * 0.2)} ${f(bot[i].y + (bot[i - 1].y - bot[i].y) * 0.2)}`;
+    } else d += ` L${f(bot[i].x)} ${f(bot[i].y)}`;
+  }
+  d += ` A${f(ws[0])} ${f(ws[0])} 0 0 1 ${f(top[0].x)} ${f(top[0].y)} Z`;
+  return d;
+}

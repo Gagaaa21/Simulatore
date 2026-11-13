@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import type { BodyRegion, Patient } from '../../engine/types';
 import { mix, shade } from './color';
-import { bodyGeometry, capsule, type BodyGeo, type Limb, type Pt } from './body';
+import { bodyGeometry, capsule, limbPath, type BodyGeo, type Limb, type Pt } from './body';
 
 export interface PatientArtState {
   p: Patient;
@@ -227,18 +227,12 @@ function Hair({ p, c, rx, ry, prone }: { p: Patient; c: Pt; rx: number; ry: numb
 // ───────────────────────── arti
 type Seg = [Pt, Pt, number, number];
 
-/** Segmenti uniti con un solo contorno continuo: prima il bordo, poi il riempimento. */
+/** Segmenti contigui disegnati come un’unica forma: bordo e riempimento senza giunture visibili. */
 function Segs({ segs, fill, edge }: { segs: Seg[]; fill: string; edge: string }) {
-  return (
-    <g>
-      {segs.map(([a, b, ra, rb], i) => (
-        <path key={`e${i}`} d={capsule(a, b, ra + 1.3, rb + 1.3)} fill={edge} opacity="0.55" />
-      ))}
-      {segs.map(([a, b, ra, rb], i) => (
-        <path key={`f${i}`} d={capsule(a, b, ra, rb)} fill={fill} />
-      ))}
-    </g>
-  );
+  const pts: Pt[] = [segs[0][0], ...segs.map((sg) => sg[1])];
+  const ws: number[] = [segs[0][2], ...segs.map((sg) => sg[3])];
+  const d = segs.length === 1 ? capsule(segs[0][0], segs[0][1], segs[0][2], segs[0][3]) : limbPath(pts, ws);
+  return <path d={d} fill={fill} stroke={edge} strokeWidth="1.3" strokeOpacity="0.5" strokeLinejoin="round" />;
 }
 
 const lerp = (a: Pt, b: Pt, t: number): Pt => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
@@ -462,45 +456,47 @@ function Lateral({ s, gid }: { s: PatientArtState; gid: string }) {
   const skin = skinFor(p);
   const shirtC = lk.top === 'nudo' ? skin : lk.shirt;
   const shoe = lk.shoes ?? '#2a2d33';
+  const bare = lk.bottom === 'shorts' || lk.bottom === 'gonna';
+  const legFill = `url(#${gid}-${bare ? 'skin' : 'pants'})`;
+  const legEdge = ink(bare ? skin : lk.pants);
+  const P = (x: number, y: number): Pt => ({ x, y });
   return (
     <g>
       <ellipse cx="450" cy="312" rx="270" ry="80" fill="#000" opacity="0.3" filter="url(#sfoca)" />
       {/* gamba sotto, distesa */}
       <Hit region="gamba_dx" hover={hv === 'gamba_dx'} s={s}>
         <g>
-          <path d={capsule({ x: 488, y: 296 }, { x: 600, y: 292 }, 20, 15)} fill={`url(#${gid}-pants)`} stroke={ink(lk.pants)} strokeOpacity="0.4" />
-          <path d={capsule({ x: 600, y: 292 }, { x: 690, y: 290 }, 15, 11)} fill={`url(#${gid}-pants)`} stroke={ink(lk.pants)} strokeOpacity="0.4" />
-          <rect x="690" y="278" width="34" height="22" rx="10" fill={shoe} />
+          <Segs segs={[[P(488, 296), P(600, 292), 20, 15], [P(600, 292), P(690, 290), 15, 11]]} fill={legFill} edge={legEdge} />
+          <rect x="688" y="278" width="36" height="23" rx="11" fill={shoe} stroke={shade(shoe, -0.45)} />
         </g>
       </Hit>
       {/* gamba sopra, flessa in avanti */}
       <Hit region="gamba_sx" hover={hv === 'gamba_sx'} s={s}>
         <g>
-          <path d={capsule({ x: 490, y: 318 }, { x: 566, y: 372 }, 21, 16)} fill={`url(#${gid}-pants)`} stroke={ink(lk.pants)} strokeOpacity="0.4" />
-          <path d={capsule({ x: 566, y: 372 }, { x: 650, y: 362 }, 16, 12)} fill={`url(#${gid}-pants)`} stroke={ink(lk.pants)} strokeOpacity="0.4" />
-          <rect x="648" y="350" width="34" height="22" rx="10" fill={shoe} />
+          <Segs segs={[[P(490, 318), P(566, 372), 21, 16], [P(566, 372), P(650, 362), 16, 12]]} fill={legFill} edge={legEdge} />
+          <rect x="646" y="350" width="36" height="23" rx="11" fill={shoe} stroke={shade(shoe, -0.45)} />
         </g>
       </Hit>
       <Hit region="bacino" hover={hv === 'bacino'} s={s}>
-        <path d="M430 264 Q 470 254 500 268 Q 512 304 498 336 Q 466 350 430 342 Z" fill={`url(#${gid}-pants)`} stroke={ink(lk.pants)} strokeOpacity="0.4" />
+        <path d="M430 264 Q 470 254 500 268 Q 514 304 498 336 Q 466 350 430 342 Z" fill={`url(#${gid}-pants)`} stroke={ink(lk.pants)} strokeOpacity="0.45" />
       </Hit>
       {/* braccio sotto, in avanti */}
       <Hit region="braccio_dx" hover={hv === 'braccio_dx'} s={s}>
         <g>
-          <path d={capsule({ x: 312, y: 330 }, { x: 352, y: 382 }, 13, 10)} fill={`url(#${gid}-shirt)`} stroke={ink(shirtC)} strokeOpacity="0.4" />
-          <path d={capsule({ x: 352, y: 382 }, { x: 412, y: 394 }, 10, 8)} fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.35" />
-          <ellipse cx="426" cy="396" rx="14" ry="10" fill={`url(#${gid}-skin)`} />
+          <Segs segs={[[P(312, 330), P(352, 382), 13, 10], [P(352, 382), P(412, 394), 10, 8]]} fill={`url(#${gid}-skin)`} edge={ink(skin)} />
+          {lk.top !== 'nudo' && <Segs segs={[[P(312, 330), P(336, 362), 15, 12]]} fill={`url(#${gid}-shirt)`} edge={ink(shirtC)} />}
+          <ellipse cx="426" cy="396" rx="14" ry="10" fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.45" />
         </g>
       </Hit>
       <Hit region="torace" hover={hv === 'torace'} s={s}>
-        <path d="M288 270 Q 300 254 332 256 L 436 264 Q 448 300 436 338 L 332 346 Q 296 348 288 332 Z" fill={`url(#${gid}-shirt)`} stroke={ink(shirtC)} strokeOpacity="0.45" />
+        <path d="M288 270 Q 300 254 332 256 L 436 264 Q 448 300 436 338 L 332 346 Q 296 348 288 332 Z" fill={`url(#${gid}-shirt)`} stroke={ink(shirtC)} strokeOpacity="0.5" />
       </Hit>
       {/* braccio sopra: mano sotto la guancia */}
       <Hit region="braccio_sx" hover={hv === 'braccio_sx'} s={s}>
         <g>
-          <path d={capsule({ x: 334, y: 282 }, { x: 304, y: 340 }, 13, 10)} fill={`url(#${gid}-shirt)`} stroke={ink(shirtC)} strokeOpacity="0.45" />
-          <path d={capsule({ x: 304, y: 340 }, { x: 266, y: 344 }, 10, 8)} fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.35" />
-          <ellipse cx="254" cy="342" rx="13" ry="10" fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.35" />
+          <Segs segs={[[P(334, 282), P(304, 340), 13, 10], [P(304, 340), P(266, 344), 10, 8]]} fill={`url(#${gid}-skin)`} edge={ink(skin)} />
+          {lk.top !== 'nudo' && <Segs segs={[[P(334, 282), P(318, 314), 15, 12]]} fill={`url(#${gid}-shirt)`} edge={ink(shirtC)} />}
+          <ellipse cx="254" cy="342" rx="13" ry="10" fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.45" />
         </g>
       </Hit>
       <Hit region="collo" hover={hv === 'collo'} s={s}>
@@ -508,13 +504,13 @@ function Lateral({ s, gid }: { s: PatientArtState; gid: string }) {
       </Hit>
       <Hit region="testa" hover={hv === 'testa'} s={s}>
         <g>
-          <ellipse cx="232" cy="306" rx="38" ry="31" fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.4" />
-          <path d={`M206 280 Q 196 306 208 330 Q 236 306 224 280 Z`} fill={lk.hair} />
           {lk.hairStyle === 'lunghi' && <path d="M206 280 Q 150 300 170 350 Q 196 340 208 330 Z" fill={shade(lk.hair, -0.08)} />}
-          <ellipse cx="236" cy="290" rx="8" ry="5.5" fill={shade(skin, -0.14)} />
-          <path d="M246 312 q 4 3 8 0" stroke={shade(skin, -0.45)} strokeWidth="1.6" fill="none" />
-          <path d="M260 322 q 6 2 9 -2" stroke={lipsFor(p, skin)} strokeWidth="2.4" fill="none" strokeLinecap="round" />
-          <ellipse cx="262" cy="310" rx="5" ry="3.5" fill={shade(skin, 0.05)} />
+          <ellipse cx="232" cy="306" rx="38" ry="31" fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.45" />
+          <path d="M204 278 Q 192 306 206 332 Q 222 318 222 304 Q 222 288 236 278 Q 220 272 204 278 Z" fill={lk.hair} />
+          <ellipse cx="238" cy="290" rx="8" ry="5.5" fill={shade(skin, -0.14)} stroke={ink(skin)} strokeOpacity="0.3" />
+          <path d="M244 312 q 4 3 8 0" stroke={shade(skin, -0.45)} strokeWidth="1.6" fill="none" />
+          <ellipse cx="262" cy="309" rx="5.5" ry="3.8" fill={shade(skin, 0.06)} />
+          <path d="M258 322 q 6 2 9 -2" stroke={lipsFor(p, skin)} strokeWidth="2.4" fill="none" strokeLinecap="round" />
         </g>
       </Hit>
     </g>
@@ -534,10 +530,10 @@ function Standing({ s, gid }: { s: PatientArtState; gid: string }) {
         <path d="M424 226 Q 470 216 482 240 L 486 360 Q 470 384 424 374 Q 404 300 424 226 Z" fill={`url(#${gid}-shirt)`} stroke={ink(lk.shirt)} strokeOpacity="0.45" />
       </Hit>
       <Hit region="braccio_sx" hover={hv === 'braccio_sx'} s={s}>
-        <path d={`${capsule({ x: 448, y: 232 }, { x: 492, y: 258 }, 12, 10)} ${capsule({ x: 492, y: 258 }, { x: 488, y: 290 }, 10, 8)}`} fill={`url(#${gid}-shirt)`} stroke={ink(lk.shirt)} strokeOpacity="0.4" />
+        <Segs segs={[[{ x: 448, y: 232 }, { x: 492, y: 258 }, 12, 10], [{ x: 492, y: 258 }, { x: 488, y: 290 }, 10, 8]]} fill={`url(#${gid}-shirt)`} edge={ink(lk.shirt)} />
       </Hit>
       <Hit region="braccio_dx" hover={hv === 'braccio_dx'} s={s}>
-        <path d={`${capsule({ x: 448, y: 368 }, { x: 492, y: 342 }, 12, 10)} ${capsule({ x: 492, y: 342 }, { x: 488, y: 310 }, 10, 8)}`} fill={`url(#${gid}-shirt)`} stroke={ink(lk.shirt)} strokeOpacity="0.4" />
+        <Segs segs={[[{ x: 448, y: 368 }, { x: 492, y: 342 }, 12, 10], [{ x: 492, y: 342 }, { x: 488, y: 310 }, 10, 8]]} fill={`url(#${gid}-shirt)`} edge={ink(lk.shirt)} />
       </Hit>
       <ellipse cx="486" cy="292" rx="11" ry="9" fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.4" />
       <ellipse cx="486" cy="308" rx="11" ry="9" fill={`url(#${gid}-skin)`} stroke={ink(skin)} strokeOpacity="0.4" />

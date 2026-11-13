@@ -27,6 +27,11 @@ function variant(sim: Sim, i: number) {
     sim.tourniquet = { at: 30, region: 'gamba_dx', pos: 0.24, ok: true };
     sim.p.bloodLossMl = 1400;
   }
+  if (sim.scenario.id === 'alcol' || sim.scenario.id === 'convulsioni') {
+    sim.p.position = 'laterale';
+    sim.o2 = { device: 'maschera', flow: 6, since: 0 };
+    sim.pulseOx = true;
+  }
   if (sim.scenario.id === 'trauma-moto') {
     sim.immob.add('materasso');
     sim.immob.add('pelvica');
