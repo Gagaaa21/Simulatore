@@ -30,6 +30,8 @@ export const bpco: Scenario = {
     note: 'Dispnea grave: ossigeno subito e sedia portantina, perché il paziente non deve fare le scale a piedi.',
   },
   scene: {
+    room: 'camera',
+    decor: ['inalatori'],
     intro: 'Camera da letto. Il paziente è seduto sul bordo del letto, le mani sulle ginocchia, spalle sollevate, labbra serrate. Sul comodino inalatori e un saturimetro da dito.',
     hazards: [],
     bystanders: 'La moglie.',

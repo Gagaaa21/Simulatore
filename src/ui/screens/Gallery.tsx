@@ -62,7 +62,7 @@ export function Gallery() {
                     <stop offset="1" stopColor="#b98a2a" />
                   </linearGradient>
                 </defs>
-                <Floor setting={sc.setting} timeOfDay={sc.timeOfDay} />
+                <Floor setting={sc.setting} timeOfDay={sc.timeOfDay} room={sc.scene.room} decor={sc.scene.decor} />
                 {Array.from(sim.brought).map((k) => (
                   <KitIcon key={k} id={k} />
                 ))}

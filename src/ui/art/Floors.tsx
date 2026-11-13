@@ -50,6 +50,191 @@ function Casa() {
   );
 }
 
+export type Room = 'soggiorno' | 'cucina' | 'camera';
+export type Decor = 'seggiolone' | 'lettino' | 'inalatori';
+
+function Cucina({ decor }: { decor: Decor[] }) {
+  return (
+    <g>
+      <defs>
+        <pattern id="piastrelle-cucina" width="140" height="140" patternUnits="userSpaceOnUse">
+          <rect width="140" height="140" fill="#bdb29f" />
+          <rect width="70" height="70" fill="#c9bfae" />
+          <rect x="70" y="70" width="70" height="70" fill="#c9bfae" />
+          <path d="M0 70H140M70 0V140M0 0H140M0 0V140" stroke="#a39885" strokeWidth="1.6" />
+        </pattern>
+        <linearGradient id="luce-cucina" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff2d6" stopOpacity="0.32" />
+          <stop offset="0.6" stopColor="#fff2d6" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="acciaio" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#c7cdd2" />
+          <stop offset="1" stopColor="#8e979e" />
+        </linearGradient>
+      </defs>
+      <rect width={W} height={H} fill="url(#piastrelle-cucina)" />
+      {/* piano di lavoro lungo la parete */}
+      <rect x="0" y="0" width="780" height="104" fill="#000" opacity="0.18" />
+      <rect x="0" y="0" width="780" height="96" fill="#d9dcdf" />
+      <rect x="0" y="88" width="780" height="10" fill="#7d8287" />
+      <path d="M0 6H780" stroke="#eef0f2" strokeWidth="2" opacity="0.7" />
+      {/* tagliere */}
+      <g transform="rotate(-4 160 48)">
+        <rect x="112" y="22" width="96" height="54" rx="7" fill="#c99a63" />
+        <rect x="120" y="30" width="80" height="38" rx="5" fill="#d4a670" />
+        <circle cx="150" cy="48" r="9" fill="#d94b3a" />
+        <circle cx="172" cy="52" r="7" fill="#e8c23c" />
+        <rect x="190" y="70" width="70" height="7" rx="3" fill="#b8bec4" transform="rotate(14 190 70)" />
+      </g>
+      {/* lavello */}
+      <g>
+        <rect x="270" y="14" width="160" height="68" rx="9" fill="url(#acciaio)" />
+        <rect x="282" y="24" width="66" height="48" rx="7" fill="#7f888f" />
+        <rect x="354" y="24" width="64" height="48" rx="7" fill="#7f888f" />
+        <circle cx="315" cy="48" r="4" fill="#5b636a" />
+        <circle cx="386" cy="48" r="4" fill="#5b636a" />
+        <rect x="346" y="2" width="8" height="26" rx="3" fill="#cfd5da" />
+        <circle cx="350" cy="6" r="7" fill="#dfe4e8" />
+      </g>
+      {/* piano cottura con pentola */}
+      <g>
+        <rect x="500" y="12" width="160" height="72" rx="7" fill="#1c1f23" />
+        {[
+          [538, 34, 14],
+          [622, 34, 11],
+          [538, 64, 11],
+          [622, 64, 15],
+        ].map(([x, y, r], i) => (
+          <circle key={i} cx={x} cy={y} r={r} fill="#2b3036" stroke="#4b525a" strokeWidth="2" />
+        ))}
+        <rect x="644" y="58" width="34" height="8" rx="3" fill="#2a2d31" />
+        <circle cx="622" cy="64" r="21" fill="url(#acciaio)" stroke="#6f777e" strokeWidth="2" />
+        <circle cx="622" cy="64" r="14" fill="#a7b0b7" />
+      </g>
+      {/* frigorifero */}
+      <g>
+        <rect x="788" y="0" width="112" height="128" fill="#000" opacity="0.2" />
+        <rect x="792" y="0" width="108" height="122" rx="4" fill="#e7eaed" />
+        <rect x="792" y="0" width="108" height="122" rx="4" fill="none" stroke="#c3c9ce" strokeWidth="2" />
+        <rect x="800" y="104" width="44" height="6" rx="3" fill="#aab2b9" />
+      </g>
+      {/* tavolo apparecchiato, sedia spostata */}
+      <g>
+        <rect x="690" y="372" width="196" height="136" rx="10" fill="#000" opacity="0.22" transform="translate(6 8)" />
+        <rect x="690" y="372" width="196" height="136" rx="10" fill="#7a5235" />
+        <rect x="700" y="382" width="176" height="116" rx="7" fill="#8b5f3d" />
+        <path d="M712 404c40-4 90 3 150-2M712 470c50 3 100-4 150 1" stroke="#9c6c47" strokeWidth="2" fill="none" opacity="0.6" />
+        <circle cx="742" cy="414" r="20" fill="#f4f1ea" />
+        <circle cx="742" cy="414" r="13" fill="#e9e3d6" />
+        <circle cx="742" cy="414" r="8" fill="#d4b26a" opacity="0.8" />
+        <circle cx="836" cy="466" r="20" fill="#f4f1ea" />
+        <circle cx="836" cy="466" r="13" fill="#e9e3d6" />
+        <circle cx="784" cy="446" r="8" fill="#cfe6f5" opacity="0.75" />
+        <circle cx="806" cy="404" r="10" fill="#e6e0d2" />
+        <g transform="rotate(-18 650 420)">
+          <rect x="626" y="396" width="48" height="50" rx="7" fill="#000" opacity="0.2" transform="translate(4 5)" />
+          <rect x="626" y="396" width="48" height="50" rx="7" fill="#5b3d28" />
+          <rect x="626" y="396" width="10" height="50" rx="4" fill="#4a3020" />
+        </g>
+      </g>
+      {decor.includes('seggiolone') && (
+        <g transform="rotate(8 760 220)">
+          <rect x="716" y="186" width="96" height="78" rx="18" fill="#000" opacity="0.2" transform="translate(5 7)" />
+          <path d="M716 190 l-18 -18 M812 190 l18 -18 M716 262 l-18 18 M812 262 l18 18" stroke="#9aa3ab" strokeWidth="6" strokeLinecap="round" />
+          <rect x="716" y="186" width="96" height="78" rx="18" fill="#7fb7d9" />
+          <rect x="730" y="198" width="52" height="54" rx="12" fill="#5d9cc4" />
+          <rect x="776" y="182" width="44" height="86" rx="12" fill="#eee8dc" />
+          <circle cx="796" cy="206" r="4" fill="#e08a3c" />
+          <circle cx="804" cy="232" r="3" fill="#e08a3c" />
+          <rect x="784" y="244" width="22" height="5" rx="2" fill="#c0c6cc" />
+        </g>
+      )}
+      <rect width={W} height={H} fill="url(#luce-cucina)" />
+    </g>
+  );
+}
+
+function Camera({ decor }: { decor: Decor[] }) {
+  return (
+    <g>
+      <defs>
+        <pattern id="parquet-camera" width="180" height="48" patternUnits="userSpaceOnUse">
+          <rect width="180" height="24" fill="#7c5d40" />
+          <rect y="24" width="180" height="24" fill="#856546" />
+          <rect x="0" y="0" width="110" height="24" fill="#8a6a4b" />
+          <rect x="70" y="24" width="110" height="24" fill="#77593d" />
+          <path d="M0 24H180M0 48H180M110 0V24M70 24V48" stroke="#5a412c" strokeWidth="1.4" />
+          <path d="M12 8c30 2 60-2 84 1M120 36c24 1 34-2 52 0" stroke="#9a7a58" strokeWidth="1" fill="none" opacity="0.5" />
+        </pattern>
+        <radialGradient id="abat-jour" cx="0.79" cy="0.05" r="0.55">
+          <stop offset="0" stopColor="#ffd48f" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#ffd48f" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="piumone" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#d6dde7" />
+          <stop offset="1" stopColor="#b4c0cf" />
+        </linearGradient>
+      </defs>
+      <rect width={W} height={H} fill="url(#parquet-camera)" />
+      {/* scendiletto */}
+      <rect x="196" y="156" width="540" height="286" rx="14" fill="#5f6573" />
+      <rect x="210" y="170" width="512" height="258" rx="10" fill="none" stroke="#7b8291" strokeWidth="3" />
+      {/* letto matrimoniale contro la parete */}
+      <g>
+        <rect x="160" y="-40" width="500" height="168" rx="12" fill="#000" opacity="0.22" transform="translate(6 8)" />
+        <rect x="160" y="-40" width="500" height="168" rx="12" fill="#3b2f27" />
+        <rect x="160" y="-40" width="20" height="168" rx="6" fill="#2c231d" />
+        <rect x="186" y="-32" width="466" height="152" rx="12" fill="url(#piumone)" />
+        <rect x="192" y="-24" width="74" height="62" rx="16" fill="#f2f4f6" />
+        <rect x="192" y="48" width="74" height="62" rx="16" fill="#eef1f4" />
+        <path d="M300 -30 C 330 20, 300 70, 330 118 M420 -30 c 20 60, -10 90, 18 148" stroke="#a5b2c2" strokeWidth="3" fill="none" opacity="0.7" />
+        <path d="M186 116 C 260 132, 340 108, 420 128 S 560 112, 652 122 L652 120 L186 120Z" fill="#b0bccb" />
+      </g>
+      {/* comodino con abat-jour */}
+      <g>
+        <rect x="676" y="0" width="92" height="86" rx="6" fill="#000" opacity="0.22" transform="translate(5 6)" />
+        <rect x="676" y="0" width="92" height="86" rx="6" fill="#5a4330" />
+        <rect x="684" y="4" width="76" height="74" rx="4" fill="#6a503a" />
+        <circle cx="708" cy="30" r="20" fill="#f6e3b4" />
+        <circle cx="708" cy="30" r="8" fill="#fff6dd" />
+        <rect x="736" y="44" width="16" height="28" rx="3" fill="#1b1e22" />
+        {decor.includes('inalatori') && (
+          <g>
+            <rect x="694" y="58" width="22" height="12" rx="4" fill="#3d7fd1" />
+            <rect x="712" y="54" width="8" height="18" rx="3" fill="#2d63a6" />
+            <rect x="720" y="62" width="14" height="10" rx="3" fill="#e9b949" />
+          </g>
+        )}
+      </g>
+      {/* armadio */}
+      <g>
+        <rect x="790" y="0" width="110" height="120" fill="#000" opacity="0.2" />
+        <rect x="794" y="0" width="106" height="114" fill="#4b3a2c" />
+        <path d="M847 0V114" stroke="#33271d" strokeWidth="3" />
+        <rect x="838" y="96" width="6" height="12" rx="2" fill="#c8b48a" />
+        <rect x="850" y="96" width="6" height="12" rx="2" fill="#c8b48a" />
+      </g>
+      {decor.includes('lettino') && (
+        <g>
+          <rect x="690" y="380" width="184" height="120" rx="8" fill="#000" opacity="0.2" transform="translate(5 7)" />
+          <rect x="690" y="380" width="184" height="120" rx="8" fill="#ece7dd" />
+          <rect x="702" y="392" width="160" height="96" rx="5" fill="#cfe3f0" />
+          {Array.from({ length: 13 }).map((_, i) => (
+            <line key={i} x1={704 + i * 12.5} y1="381" x2={704 + i * 12.5} y2="391" stroke="#c9c2b4" strokeWidth="3" />
+          ))}
+          {Array.from({ length: 13 }).map((_, i) => (
+            <line key={`b${i}`} x1={704 + i * 12.5} y1="489" x2={704 + i * 12.5} y2="499" stroke="#c9c2b4" strokeWidth="3" />
+          ))}
+          <rect x="770" y="404" width="80" height="72" rx="10" fill="#f3c6d3" />
+          <path d="M770 420h80M770 440h80M770 460h80" stroke="#e7a9bb" strokeWidth="2" />
+          <circle cx="726" cy="440" r="12" fill="#f6e7b8" />
+        </g>
+      )}
+      <rect width={W} height={H} fill="url(#abat-jour)" />
+    </g>
+  );
+}
+
 function Ristorante() {
   return (
     <g>
@@ -357,11 +542,21 @@ function Supermercato() {
   );
 }
 
-export function Floor({ setting, timeOfDay }: { setting: SettingId; timeOfDay: 'giorno' | 'sera' | 'notte' }) {
+export function Floor({
+  setting,
+  timeOfDay,
+  room = 'soggiorno',
+  decor = [],
+}: {
+  setting: SettingId;
+  timeOfDay: 'giorno' | 'sera' | 'notte';
+  room?: Room;
+  decor?: Decor[];
+}) {
   let floor: JSX.Element;
   switch (setting) {
     case 'casa':
-      floor = <Casa />;
+      floor = room === 'cucina' ? <Cucina decor={decor} /> : room === 'camera' ? <Camera decor={decor} /> : <Casa />;
       break;
     case 'ristorante':
       floor = <Ristorante />;

@@ -31,7 +31,9 @@ export const pblsLattante: Scenario = {
     note: 'Codice rosso respiratorio pediatrico: pallone e maschere pediatriche, ossigeno, aspiratore e DAE con piastre o chiave pediatrica.',
   },
   scene: {
-    intro: 'Camera dei genitori, luce accesa. La bambina è sul fasciatoio rigido; il padre le preme il torace con due dita e piange. La madre tiene il telefono in vivavoce.',
+    room: 'camera',
+    decor: ['lettino'],
+    intro: 'Camera dei genitori, luce accesa. La bambina è sul pavimento accanto al lettino, su una superficie rigida; il padre le preme il torace con due dita e piange. La madre tiene il telefono in vivavoce.',
     hazards: [],
     bystanders: 'Entrambi i genitori.',
   },

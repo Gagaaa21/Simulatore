@@ -69,7 +69,7 @@ export function Scene({ sim, onAction }: { sim: Sim; onAction: (id: string) => v
             <stop offset="1" stopColor="#b98a2a" />
           </linearGradient>
         </defs>
-        <Floor setting={sim.scenario.setting} timeOfDay={sim.scenario.timeOfDay} />
+        <Floor setting={sim.scenario.setting} timeOfDay={sim.scenario.timeOfDay} room={sim.scenario.scene.room} decor={sim.scenario.scene.decor} />
         {!inScene &&
           kits.map((k) => (
             <g key={k} onClick={(e) => openKit(k, e)}>

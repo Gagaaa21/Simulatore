@@ -30,6 +30,7 @@ export const ipoglicemia: Scenario = {
     note: 'Alterazione della coscienza in un diabetico: lo zaino contiene il glucometro, l’esame più importante.',
   },
   scene: {
+    room: 'cucina',
     intro: 'Cucina. Il paziente è seduto a tavola, pallido, madido di sudore, fissa un punto nel vuoto e borbotta. La moglie gli tiene la spalla.',
     hazards: [],
     bystanders: 'La moglie.',

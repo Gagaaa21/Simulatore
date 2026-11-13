@@ -294,6 +294,10 @@ export interface Scenario {
   scene: {
     intro: string;
     hazards: Hazard[];
+    /** stanza, per le missioni in casa (default soggiorno) */
+    room?: 'soggiorno' | 'cucina' | 'camera';
+    /** dettagli d'arredo che raccontano il caso */
+    decor?: Array<'seggiolone' | 'lettino' | 'inalatori'>;
     mechanism?: string;
     bystanders?: string;
     /** presidi già sul posto (es. DAE pubblico da far prendere) */

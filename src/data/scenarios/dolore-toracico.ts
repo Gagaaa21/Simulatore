@@ -30,6 +30,7 @@ export const doloreToracico: Scenario = {
     note: 'Dolore toracico: DAE sempre (rischio di aritmie maligne) e sedia portantina per evitare che il paziente faccia le scale a piedi.',
   },
   scene: {
+    room: 'camera',
     intro: 'Camera da letto. Il paziente è seduto sul bordo del letto, pallido e sudato, una mano sul petto. La moglie vi apre la porta.',
     hazards: [],
     bystanders: 'La moglie.',

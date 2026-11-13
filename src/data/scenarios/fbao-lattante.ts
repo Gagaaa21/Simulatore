@@ -30,7 +30,9 @@ export const fbaoLattante: Scenario = {
     note: 'Ostruzione respiratoria pediatrica: pallone e maschere pediatriche, aspiratore e ossigeno vanno portati subito.',
   },
   scene: {
-    intro: 'Cucina di un appartamento. La madre ha appoggiato il bambino sul tappeto del soggiorno: è sveglio, agitato, fa smorfie ma non emette suoni.',
+    room: 'cucina',
+    decor: ['seggiolone'],
+    intro: 'Cucina di un appartamento. La madre ha tolto il bambino dal seggiolone e lo tiene davanti a sé sul pavimento: è sveglio, agitato, fa smorfie ma non emette suoni.',
     hazards: [],
     bystanders: 'La madre, in lacrime.',
   },
