@@ -235,7 +235,7 @@ export function App() {
         />
       );
     case 'protocolli':
-      return <Library focus={screen.focus} onBack={() => go({ name: 'menu' })} />;
+      return <Library focus={screen.focus} onBack={() => go({ name: 'menu' })} onPlay={(s) => go({ name: 'briefing', scenario: s })} />;
     case 'triage':
       return <TriageGame onBack={() => go({ name: 'menu' })} />;
     case 'eventi':

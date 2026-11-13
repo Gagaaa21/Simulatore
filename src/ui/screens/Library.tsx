@@ -3,6 +3,10 @@ import { PROTOCOLS, PROTOCOL_ORDER } from '../../data/protocols';
 import type { ProtocolId } from '../../engine/types';
 import { CRITICITA, LUOGO, PATOLOGIA, VALUTAZIONE, type CriticitaCode, type LuogoCode, type PatologiaCode, type ValutazioneCode } from '../../data/codes';
 import { SourceChips } from '../components/SourceChip';
+import { ALGORITMI, isAsk, type AlgoNode } from '../../data/algoritmi';
+import { CAREER_SCENARIOS } from '../../data/scenarios';
+import type { Scenario } from '../../engine/types';
+import { CodePill } from './ScenarioSelect';
 
 type PageId = ProtocolId | 'codici' | 'maxi' | 'eventi' | 'legale';
 
@@ -13,46 +17,120 @@ const EXTRA: { id: PageId; name: string }[] = [
   { id: 'legale', name: 'Aspetti legali' },
 ];
 
-function ProtocolPage({ id }: { id: ProtocolId }) {
-  const p = PROTOCOLS[id];
+function Flow({ nodes }: { nodes: AlgoNode[] }) {
   return (
-    <article className="lib-page">
+    <ol className="algo">
+      {nodes.map((n, i) =>
+        isAsk(n) ? (
+          <li key={i} className="algo-item algo-ask-item">
+            <div className="algo-ask">
+              <span className="algo-diamond" aria-hidden="true" />
+              <div>
+                <p className="algo-q">{n.ask}</p>
+                {n.d && <p className="algo-d">{n.d}</p>}
+              </div>
+            </div>
+            <div className="algo-branches">
+              {(['si', 'no'] as const).map((b) => (
+                <div key={b} className={`algo-branch algo-${b}`}>
+                  <span className="algo-lbl">{b === 'si' ? 'Sì' : 'No'}</span>
+                  {n[b].length ? <Flow nodes={n[b]} /> : <p className="algo-pass">Prosegui</p>}
+                  {n.fine === b && <p className="algo-end">Il percorso finisce qui</p>}
+                </div>
+              ))}
+            </div>
+          </li>
+        ) : (
+          <li key={i} className={`algo-item algo-step who-${n.who ?? 'tu'}`}>
+            {n.who && n.who !== 'tu' && <span className="algo-who">{n.who === 'sores' ? 'SORES' : 'Équipe sanitaria'}</span>}
+            <p className="algo-t">{n.t}</p>
+            {n.d && <p className="algo-d">{n.d}</p>}
+          </li>
+        ),
+      )}
+    </ol>
+  );
+}
+
+function ProtocolPage({ id, onPlay }: { id: ProtocolId; onPlay?: (s: Scenario) => void }) {
+  const p = PROTOCOLS[id];
+  const a = ALGORITMI[id];
+  const missions = CAREER_SCENARIOS.filter((s) => s.protocol.correct.includes(id));
+  return (
+    <article className="lib-page proto-page">
       <p className="lib-fam">{p.family}</p>
       <h2>{p.name}</h2>
       <p className="lib-sum">{p.summary}</p>
-      <ol className="flow">
-        {p.steps.map((s, i) => (
-          <li key={i} className={s.ask ? 'ask' : ''}>
-            <span className="flow-n num"><span>{i + 1}</span></span>
-            <div>
-              <p className="flow-t">{s.title}</p>
-              {s.detail && <p className="flow-d">{s.detail}</p>}
+      <ul className="algo-legend" aria-label="Legenda">
+        <li className="who-tu">Lo fai tu</li>
+        <li className="who-sores">Via radio con la SORES</li>
+        <li className="who-equipe">Lo fa l’équipe sanitaria</li>
+        <li className="legend-ask">Domanda: segui il ramo Sì o No</li>
+      </ul>
+      <Flow nodes={a.nodes} />
+
+      <div className="proto-info">
+        <section>
+          <h3>Chi fa cosa in FVG</h3>
+          <div className="chi-grid">
+            <div className="chi chi-tu">
+              <p className="chi-h">Tu, soccorritore</p>
+              <ul>
+                {a.tu.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
             </div>
-          </li>
-        ))}
-      </ol>
-      {p.numbers && (
-        <dl className="numbers">
-          {p.numbers.map((n) => (
-            <div key={n.label}>
-              <dt>{n.label}</dt>
-              <dd className="num">{n.value}</dd>
+            <div className="chi chi-equipe">
+              <p className="chi-h">Équipe sanitaria (ALS, automedica)</p>
+              <ul>
+                {a.equipe.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
             </div>
-          ))}
-        </dl>
-      )}
-      {p.pitfalls && (
-        <>
-          <h3>Errori frequenti</h3>
-          <ul className="pitfalls">
-            {p.pitfalls.map((x) => (
-              <li key={x}>{x}</li>
-            ))}
-          </ul>
-        </>
-      )}
+          </div>
+        </section>
+        {p.numbers && (
+          <section>
+            <h3>Numeri da ricordare</h3>
+            <dl className="key-numbers">
+              {p.numbers.map((n) => (
+                <div key={n.label}>
+                  <dt>{n.label}</dt>
+                  <dd className="num">{n.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
+        {p.pitfalls && (
+          <section>
+            <h3>Errori frequenti</h3>
+            <ul className="pitfalls">
+              {p.pitfalls.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {missions.length > 0 && onPlay && (
+          <section>
+            <h3>Allenati</h3>
+            <div className="proto-missions">
+              {missions.map((s) => (
+                <button key={s.id} className="cat-row" onClick={() => onPlay(s)}>
+                  <CodePill s={s} />
+                  <span className="cat-title">{s.title}</span>
+                  <span className="cat-best num">{s.minutes} min</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
       <p className="lib-src">
-        Fonti: <SourceChips ids={p.sources} />
+        Fonti: <SourceChips ids={Array.from(new Set([...p.sources, 'SORES_FVG']))} />
       </p>
     </article>
   );
@@ -253,7 +331,7 @@ function Legale() {
   );
 }
 
-export function Library({ focus, onBack }: { focus?: string; onBack: () => void }) {
+export function Library({ focus, onBack, onPlay }: { focus?: string; onBack: () => void; onPlay?: (s: Scenario) => void }) {
   const [page, setPage] = useState<PageId>((focus as PageId) ?? 'bls_adulto');
   return (
     <div className="page library">
@@ -266,6 +344,27 @@ export function Library({ focus, onBack }: { focus?: string; onBack: () => void 
           <p className="muted">Sequenze e numeri chiave tratti dalle linee guida ufficiali. Le indicazioni della SORES e del tuo ente prevalgono sempre.</p>
         </div>
       </header>
+      <label className="lib-select">
+        <span>Protocollo</span>
+        <select value={page} onChange={(e) => setPage(e.target.value as PageId)}>
+          {Array.from(new Set(PROTOCOL_ORDER.map((id) => PROTOCOLS[id].family))).map((f) => (
+            <optgroup key={f} label={f}>
+              {PROTOCOL_ORDER.filter((id) => PROTOCOLS[id].family === f).map((id) => (
+                <option key={id} value={id}>
+                  {PROTOCOLS[id].name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+          <optgroup label="Sistema 118">
+            {EXTRA.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+      </label>
       <div className="lib-grid">
         <nav className="lib-nav" aria-label="Protocolli">
           {Array.from(new Set(PROTOCOL_ORDER.map((id) => PROTOCOLS[id].family))).map((f) => (
@@ -288,7 +387,7 @@ export function Library({ focus, onBack }: { focus?: string; onBack: () => void 
           </div>
         </nav>
         <div className="lib-body">
-          {page === 'codici' ? <Codici /> : page === 'maxi' ? <Maxi /> : page === 'eventi' ? <Eventi /> : page === 'legale' ? <Legale /> : <ProtocolPage id={page} />}
+          {page === 'codici' ? <Codici /> : page === 'maxi' ? <Maxi /> : page === 'eventi' ? <Eventi /> : page === 'legale' ? <Legale /> : <ProtocolPage id={page} onPlay={onPlay} />}
         </div>
       </div>
     </div>

@@ -355,21 +355,15 @@ export interface ActionContext {
   params?: Record<string, unknown>;
 }
 
-export type ActionGroup =
-  | 'scena'
-  | 'A'
-  | 'B'
-  | 'C'
-  | 'D'
-  | 'E'
-  | 'anamnesi'
-  | 'centrale';
+export type ActionGroup = 'scena' | 'valutazione' | 'parametri' | 'anamnesi' | 'trattamenti' | 'centrale';
 
 export interface ActionDef {
   id: string;
   label: string;
   short?: string;
   group: ActionGroup;
+  /** sottosezione dentro la scheda (es. «Immobilizzazione» nei trattamenti) */
+  section?: string;
   duration: number | ((sim: Sim) => number);
   needs?: EquipmentId[];
   /** visibile in questo scenario? */

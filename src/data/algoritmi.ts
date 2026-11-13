@@ -1,0 +1,423 @@
+import type { ProtocolId } from '../engine/types';
+
+/** Chi esegue il passo: il soccorritore, la SORES (via radio) o l'équipe sanitaria (ALS, automedica). */
+export type Who = 'tu' | 'sores' | 'equipe';
+
+/** Passo d'azione. */
+export interface AlgoStep {
+  t: string;
+  d?: string;
+  who?: Who;
+}
+/** Domanda con due rami; dopo i rami l'algoritmo prosegue. */
+export interface AlgoAsk {
+  ask: string;
+  d?: string;
+  si: AlgoNode[];
+  no: AlgoNode[];
+  /** il ramo termina qui (non prosegue con i passi successivi) */
+  fine?: 'si' | 'no';
+}
+export type AlgoNode = AlgoStep | AlgoAsk;
+
+export interface Algoritmo {
+  nodes: AlgoNode[];
+  /** cosa fa il soccorritore e cosa resta all'équipe sanitaria, secondo il modello FVG */
+  tu: string[];
+  equipe: string[];
+}
+
+export const isAsk = (n: AlgoNode): n is AlgoAsk => 'ask' in n;
+
+const sores = (t: string, d?: string): AlgoStep => ({ t, d, who: 'sores' });
+const equipe = (t: string, d?: string): AlgoStep => ({ t, d, who: 'equipe' });
+
+export const ALGORITMI: Record<ProtocolId, Algoritmo> = {
+  bls_adulto: {
+    nodes: [
+      { t: 'Sicurezza e DPI', d: 'Scena sicura per te, i colleghi, gli astanti e il paziente.' },
+      {
+        ask: 'Risponde?',
+        d: 'Chiamalo a voce alta e scuotilo per le spalle.',
+        si: [{ t: 'Valutazione ABCDE', d: 'Lascialo nella posizione in cui si trova se è sicura e rivaluta.' }, sores('Riferisci alla SORES')],
+        no: [{ t: 'Chiedi aiuto', d: 'Fuori servizio: 112 in vivavoce subito e fai portare il DAE.' }],
+        fine: 'si',
+      },
+      {
+        ask: 'Respira normalmente?',
+        d: 'Apri le vie aeree; guarda, ascolta e senti per non più di 10 secondi. Il gasping non è respiro normale.',
+        si: [{ t: 'Posizione laterale di sicurezza', d: 'Rivaluta il respiro di continuo.' }, sores('Riferisci alla SORES')],
+        no: [sores('Arresto cardiaco: riferiscilo alla SORES', 'Sui codici rossi parte anche l’automedica.')],
+        fine: 'si',
+      },
+      { t: 'RCP 30:2', d: 'Centro del torace, 5–6 cm, 100–120/min, rilascio completo. 2 ventilazioni con pallone collegato all’ossigeno ad alti flussi.' },
+      { t: 'DAE appena disponibile', d: 'Accendilo, piastre sul torace nudo, nessuno tocca il paziente durante l’analisi.' },
+      {
+        ask: 'Shock consigliato?',
+        si: [{ t: '«Via tutti!» e shock', d: 'Poi riprendi subito le compressioni per 2 minuti.' }],
+        no: [{ t: 'Riprendi subito le compressioni', d: 'Per 2 minuti, fino alla nuova analisi.' }],
+      },
+      { t: 'Cambio compressore ogni 2 minuti', d: 'Durante l’analisi del DAE, in meno di 5 secondi.' },
+      equipe('Farmaci e gestione avanzata', 'All’arrivo dell’automedica passa le consegne continuando la RCP.'),
+    ],
+    tu: ['Riconoscere l’arresto e iniziare la RCP', 'Usare il DAE', 'Ventilare con pallone e ossigeno ad alti flussi', 'Cannula di Guedel e aspiratore'],
+    equipe: ['Adrenalina e antiaritmici', 'Vie aeree avanzate', 'Decidere quando sospendere la rianimazione'],
+  },
+
+  pbls: {
+    nodes: [
+      { t: 'Sicurezza e DPI' },
+      {
+        ask: 'Risponde?',
+        d: 'Chiamalo e stimolalo; nel lattante non scuoterlo.',
+        si: [{ t: 'Valutazione ABCDE' }, sores('Riferisci alla SORES')],
+        no: [{ t: 'Chiedi aiuto' }],
+        fine: 'si',
+      },
+      {
+        ask: 'Respira normalmente?',
+        d: 'Vie aeree aperte (nel lattante capo in posizione neutra); guarda, ascolta e senti per non più di 10 secondi.',
+        si: [{ t: 'Posizione laterale di sicurezza' }, sores('Riferisci alla SORES')],
+        no: [{ t: 'Aspira le secrezioni se ostruiscono' }, { t: '5 ventilazioni iniziali', d: 'Con pallone e maschera pediatrici e ossigeno ad alti flussi.' }],
+        fine: 'si',
+      },
+      {
+        ask: 'Segni di vita?',
+        d: 'Movimenti, tosse, respiro normale.',
+        si: [{ t: 'Continua a ventilare', d: 'Rivaluta ogni minuto.' }],
+        no: [{ t: 'RCP 15:2', d: 'Lattante: due pollici avvolgenti, un terzo del torace. 100–120/min.' }],
+        fine: 'si',
+      },
+      { t: 'DAE appena disponibile', d: 'Sotto i 25 kg piastre antero-posteriori e modalità pediatrica se disponibile.' },
+      sores('Aggiorna la SORES', 'Arresto pediatrico: parte anche l’automedica.'),
+      equipe('Farmaci e gestione avanzata'),
+    ],
+    tu: ['5 ventilazioni iniziali e RCP 15:2', 'Aspirare le secrezioni', 'Pallone pediatrico con ossigeno', 'DAE con piastre pediatriche'],
+    equipe: ['Accessi vascolari e intraossei', 'Farmaci', 'Vie aeree avanzate'],
+  },
+
+  fbao_adulto: {
+    nodes: [
+      { t: '«Ti stai soffocando?»', d: 'Sospetto quando qualcuno, spesso mangiando, si porta le mani alla gola.' },
+      {
+        ask: 'Tosse efficace?',
+        si: [{ t: 'Incoraggia a tossire', d: 'Non dare colpi; sorveglia che la tosse resti efficace.' }],
+        no: [],
+      },
+      {
+        ask: 'È cosciente?',
+        si: [{ t: '5 colpi interscapolari', d: 'Paziente piegato in avanti, sostieni il torace.' }, { t: '5 compressioni addominali', d: 'Pugno tra ombelico e sterno, verso l’interno e verso l’alto.' }, { t: 'Alterna 5 e 5', d: 'Fino alla risoluzione o alla perdita di coscienza.' }],
+        no: [{ t: 'A terra e RCP 30:2', d: 'Le compressioni possono smuovere il corpo estraneo.' }, { t: 'Guarda in bocca prima di ventilare', d: 'Rimuovi solo ciò che vedi, un solo tentativo, niente dita alla cieca.' }],
+      },
+      { t: 'Dopo la disostruzione', d: 'Valutazione ABCDE e saturimetro.' },
+      sores('Riferisci alla SORES', 'Dopo le compressioni addominali serve sempre una valutazione medica.'),
+    ],
+    tu: ['Colpi interscapolari e compressioni addominali', 'RCP se perde coscienza', 'Rimuovere un corpo estraneo visibile'],
+    equipe: ['Laringoscopia e pinza di Magill', 'Valutazione delle lesioni da compressioni addominali'],
+  },
+
+  fbao_pediatrico: {
+    nodes: [
+      { t: 'Riconosci il soffocamento', d: 'Esordio improvviso mentre mangia o gioca: niente voce, pianto o tosse.' },
+      {
+        ask: 'Tosse efficace?',
+        si: [{ t: 'Incoraggia a tossire e sorveglia' }],
+        no: [],
+      },
+      {
+        ask: 'È cosciente?',
+        si: [
+          {
+            ask: 'Lattante (sotto 1 anno)?',
+            si: [{ t: '5 colpi dorsali', d: 'A pancia in giù sull’avambraccio, testa più in basso del torace.' }, { t: '5 compressioni toraciche', d: 'Supino, due dita o pollici sulla metà inferiore dello sterno.' }],
+            no: [{ t: '5 colpi interscapolari' }, { t: '5 compressioni addominali' }],
+          },
+        ],
+        no: [{ t: '5 ventilazioni iniziali' }, { t: 'RCP 15:2', d: 'Guarda in bocca prima di ventilare.' }],
+      },
+      sores('Riferisci alla SORES', 'Valutazione medica sempre, anche se la disostruzione riesce.'),
+    ],
+    tu: ['Colpi dorsali e compressioni toraciche nel lattante', 'Compressioni addominali sopra l’anno di età', 'PBLS se perde coscienza'],
+    equipe: ['Rimozione strumentale del corpo estraneo', 'Valutazione ospedaliera'],
+  },
+
+  abcde: {
+    nodes: [
+      { t: 'Sicurezza e impressione generale', d: 'Coscienza, respiro, colorito a colpo d’occhio.' },
+      {
+        ask: 'A – Vie aeree pervie?',
+        si: [],
+        no: [{ t: 'Apri le vie aeree e aspira', d: 'Guedel se incosciente senza riflessi; posizione laterale se respira e non c’è trauma.' }],
+      },
+      {
+        ask: 'B – Respiro adeguato?',
+        d: 'Frequenza, espansione, lavoro respiratorio, SpO₂.',
+        si: [],
+        no: [sores('Riferisci la SpO₂', 'Ossigeno con il presidio e la concentrazione indicati.'), { t: 'Pallone se il respiro è assente o inefficace' }],
+      },
+      {
+        ask: 'C – Emorragie o shock?',
+        d: 'Polso, cute, riempimento capillare, pressione.',
+        si: [{ t: 'Ferma le emorragie, supino, telo isotermico' }],
+        no: [],
+      },
+      { t: 'D – Neurologico', d: 'AVPU, pupille, Cincinnati se sospetti un ictus. Se è diabetico riferiscilo.' },
+      { t: 'E – Esposizione', d: 'Testa-piedi, temperatura, prevenzione dell’ipotermia.' },
+      sores('Riferisci alla SORES', 'Valutazione ABCDE e parametri: la SORES assegna codice e destinazione.'),
+      { t: 'Rivaluta', d: 'Dopo ogni intervento e a ogni cambiamento.' },
+    ],
+    tu: ['Valutazione ABCDE con parametri non invasivi', 'Interventi sui problemi che trovi, in ordine', 'Riferire alla SORES'],
+    equipe: ['Glicemia capillare', 'Accessi venosi e farmaci', 'ECG a 12 derivazioni'],
+  },
+
+  dolore_toracico: {
+    nodes: [
+      { t: 'Riposo assoluto', d: 'Semiseduto; non deve camminare: sedia portantina anche per poche rampe.' },
+      { t: 'Parametri', d: 'SpO₂, FC, PA, FR, cute.' },
+      sores('Riferisci la SpO₂', 'Ossigeno solo se la SORES lo indica (di norma sotto il 90%).'),
+      { t: 'Ora di esordio e caratteristiche del dolore', d: 'OPQRST, sintomi associati, terapie in corso.' },
+      sores('Riferisci alla SORES', 'Parte l’ALS: l’infermiere esegue e trasmette l’ECG.'),
+      {
+        ask: 'Perde coscienza e non respira normalmente?',
+        si: [{ t: 'BLSD subito', d: 'Il DAE deve essere già accanto al paziente.' }],
+        no: [{ t: 'Rivaluta e tieni il DAE pronto' }],
+      },
+      equipe('ECG, aspirina, nitrati, attivazione dell’emodinamica'),
+    ],
+    tu: ['Riposo e posizione', 'Parametri non invasivi', 'DAE pronto e BLSD'],
+    equipe: ['ECG a 12 derivazioni e teletrasmissione', 'Aspirina, nitrati e altri farmaci, anche quelli del paziente'],
+  },
+
+  ictus: {
+    nodes: [
+      { t: 'Scala di Cincinnati', d: 'Mimica facciale, slivellamento delle braccia, linguaggio.' },
+      {
+        ask: 'Almeno un segno anomalo?',
+        si: [{ t: 'Ora di esordio', d: 'L’ultima volta in cui è stato visto bene, non l’ora del ritrovamento.' }, { t: 'Terapie e patologie', d: 'Anticoagulanti, diabete, aritmie.' }],
+        no: [{ t: 'Continua la valutazione ABCDE' }],
+      },
+      { t: 'Nulla per bocca', d: 'La deglutizione può essere compromessa.' },
+      sores('Riferisci subito alla SORES', 'Cincinnati, ora di esordio, anticoagulanti: si attiva il percorso ictus.'),
+      { t: 'Tempo sulla scena minimo', d: 'Porta con te un familiare o il suo numero.' },
+      equipe('Glicemia, valutazione neurologica, trombolisi o trombectomia in ospedale'),
+    ],
+    tu: ['Riconoscere con la scala di Cincinnati', 'Raccogliere l’ora di esordio', 'Riferire presto e partire in fretta'],
+    equipe: ['Glicemia capillare', 'Decisione sulla riperfusione'],
+  },
+
+  ipoglicemia: {
+    nodes: [
+      { t: 'Sospetta', d: 'Diabetico (soprattutto con insulina) confuso, sudato, pallido, con tremori o comportamento strano.' },
+      { t: 'Anamnesi', d: 'Farmaci, insulina, ultimo pasto, da quanto è così.' },
+      { t: 'Parametri', d: 'AVPU, SpO₂, FC, PA.' },
+      sores('Riferisci alla SORES', 'Sospetta ipoglicemia: la SORES invia l’ALS.'),
+      { t: 'Nulla per bocca', d: 'Il soccorritore non somministra nulla, nemmeno acqua e zucchero.' },
+      {
+        ask: 'La coscienza peggiora?',
+        si: [{ t: 'Vie aeree e posizione laterale', d: 'Aspiratore pronto, aggiorna la SORES.' }],
+        no: [{ t: 'Rivaluta ogni pochi minuti' }],
+      },
+      equipe('Glicemia capillare e glucosio', 'Per bocca o in vena, deciso dall’infermiere.'),
+    ],
+    tu: ['Riconoscere i segni e l’anamnesi', 'Parametri non invasivi', 'Proteggere le vie aeree se peggiora'],
+    equipe: ['Glicemia capillare (manovra invasiva)', 'Somministrazione di glucosio o zucchero'],
+  },
+
+  dispnea: {
+    nodes: [
+      { t: 'Posizione seduta', d: 'Indumenti allentati, nessuno sforzo.' },
+      { t: 'SpO₂ e frequenza respiratoria' },
+      {
+        ask: 'BPCO o rischio di ipercapnia?',
+        si: [sores('Riferisci SpO₂ e BPCO', 'Di norma maschera Venturi al 24–28%, obiettivo 88–92%.')],
+        no: [sores('Riferisci la SpO₂', 'Obiettivo 94–98%; sotto l’85% di norma reservoir.')],
+      },
+      { t: 'Applica esattamente il presidio indicato', d: 'Presidio e concentrazione li decide la SORES.' },
+      { t: 'Ricontrolla e riferisci di nuovo', d: 'Nel BPCO, sopra il 92% la SORES riduce la concentrazione.' },
+      { t: 'Niente scale a piedi', d: 'Sedia portantina.' },
+      equipe('Aerosol e farmaci', 'Anche lo spray del paziente.'),
+    ],
+    tu: ['Posizione e parametri', 'Ossigeno come indicato dalla SORES', 'Trasporto seduto'],
+    equipe: ['Broncodilatatori e altri farmaci', 'Ventilazione non invasiva'],
+  },
+
+  anafilassi: {
+    nodes: [
+      { t: 'Riconosci', d: 'Esordio rapido dopo un allergene: gonfiore di labbra e lingua, stridore, sibili, ipotensione; spesso orticaria.' },
+      sores('Chiedi subito il mezzo avanzato', 'L’adrenalina è il farmaco salvavita: se il paziente ha l’autoiniettore, riferiscilo.'),
+      {
+        ask: 'Respira male?',
+        si: [{ t: 'Seduto con le gambe distese' }],
+        no: [{ t: 'Sdraiato', d: 'Gambe sollevate se è pallido o ipoteso.' }],
+      },
+      { t: 'Mai in piedi né a camminare' },
+      sores('Riferisci la SpO₂', 'Nell’anafilassi di norma reservoir a 15 L/min.'),
+      { t: 'DAE vicino', d: 'Può evolvere in arresto: BLSD.' },
+      equipe('Adrenalina intramuscolo', 'Seconda dose dopo 5 minuti se i sintomi persistono.'),
+    ],
+    tu: ['Riconoscere e chiamare subito', 'Posizione corretta', 'Ossigeno come indicato e DAE pronto'],
+    equipe: ['Adrenalina, anche con l’autoiniettore del paziente', 'Altri farmaci e gestione delle vie aeree'],
+  },
+
+  convulsioni: {
+    nodes: [
+      {
+        ask: 'Crisi in corso?',
+        si: [{ t: 'Proteggi senza trattenere', d: 'Qualcosa di morbido sotto la testa, allontana gli oggetti, niente in bocca.' }, { t: 'Cronometra' }],
+        no: [],
+      },
+      {
+        ask: 'Dura più di 5 minuti o si ripete?',
+        si: [sores('Stato di male: riferiscilo subito', 'Serve il mezzo avanzato.')],
+        no: [],
+      },
+      {
+        ask: 'A crisi finita respira normalmente?',
+        d: 'Brevi movimenti simil-convulsivi possono essere l’esordio di un arresto.',
+        si: [{ t: 'Posizione laterale di sicurezza', d: 'Aspira se serve, cerca traumi e morso della lingua.' }],
+        no: [{ t: 'BLSD' }],
+      },
+      { t: 'Anamnesi dai presenti', d: 'Epilessia, farmaci saltati, sonno, alcol o sostanze, diabete.' },
+      sores('Riferisci la SpO₂ e la valutazione'),
+      equipe('Farmaci antiepilettici e glicemia'),
+    ],
+    tu: ['Proteggere e cronometrare', 'Valutare il respiro a crisi finita', 'Posizione laterale'],
+    equipe: ['Benzodiazepine e altri farmaci', 'Glicemia'],
+  },
+
+  trauma: {
+    nodes: [
+      { t: 'Sicurezza', d: 'Mezzo a protezione con i lampeggianti, alta visibilità, Forze dell’ordine e VVF se servono.' },
+      { t: 'Dinamica', d: 'Alta energia: sospetta lesioni gravi anche se il paziente sta bene.' },
+      {
+        ask: 'Emorragia massiva?',
+        si: [{ t: 'Compressione e tourniquet', d: 'Prima di tutto il resto.' }],
+        no: [],
+      },
+      { t: 'A – Vie aeree e rachide', d: 'Stabilizzazione manuale del capo, sublussazione, casco rimosso in due.' },
+      { t: 'B – Respiro', d: 'FR, simmetria, SpO₂.' },
+      sores('Riferisci la SpO₂', 'Nel trauma maggiore di norma reservoir a 15 L/min.'),
+      { t: 'C – Circolo', d: 'Polso, cute, PA; cintura pelvica se dolore al bacino dopo alta energia.' },
+      { t: 'D ed E', d: 'AVPU, pupille, motilità; testa-piedi e telo isotermico.' },
+      sores('Riferisci dinamica e parametri', 'Elisoccorso e Trauma Center li decide la SORES.'),
+      { t: 'Immobilizzazione', d: 'Collare, barella a cucchiaio, materassino a depressione; tavola spinale solo per l’estricazione.' },
+      equipe('Analgesia, accessi venosi, gestione avanzata'),
+    ],
+    tu: ['Sicurezza della scena', 'Emorragie, rachide, vie aeree', 'Immobilizzazione e telo isotermico'],
+    equipe: ['Analgesia e farmaci', 'Accessi venosi e intraossei', 'Decompressione e vie aeree avanzate'],
+  },
+
+  emorragia: {
+    nodes: [
+      { t: 'Guanti e compressione diretta subito', d: 'Ferma e decisa sulla ferita.' },
+      {
+        ask: 'La compressione basta?',
+        si: [{ t: 'Medicazione compressiva', d: 'Garza emostatica nella ferita e bendaggio.' }],
+        no: [
+          {
+            ask: 'Ferita su un arto?',
+            si: [{ t: 'Tourniquet', d: '5–7 cm a monte, mai su un’articolazione; stringi finché il sangue si ferma; annota l’ora; non allentarlo.' }, { t: 'Se non basta: secondo tourniquet sopra il primo' }],
+            no: [{ t: 'Garza emostatica zaffata e compressione mantenuta' }],
+          },
+        ],
+      },
+      { t: 'Supino e telo isotermico' },
+      sores('Riferisci alla SORES', 'Ora del tourniquet e parametri.'),
+      equipe('Gestione dello shock emorragico'),
+    ],
+    tu: ['Compressione, medicazione, tourniquet', 'Prevenire l’ipotermia'],
+    equipe: ['Liquidi, sangue e farmaci', 'Acido tranexamico'],
+  },
+
+  colpo_calore: {
+    nodes: [
+      { t: 'Sospetta', d: 'Sforzo o caldo con confusione, agitazione o perdita di coscienza.' },
+      { t: 'Temperatura' },
+      { t: 'All’ombra e via gli indumenti in eccesso' },
+      { t: 'Raffreddamento attivo subito', d: 'Immersione in acqua fredda se disponibile; altrimenti teli bagnati e ghiaccio, nebulizzazione e ventilazione.' },
+      {
+        ask: 'Sotto i 39 °C o sintomi risolti?',
+        si: [{ t: 'Sospendi il raffreddamento' }],
+        no: [{ t: 'Continua e ricontrolla' }],
+      },
+      { t: 'Prima raffreddare, poi trasportare' },
+      sores('Riferisci alla SORES'),
+      equipe('Liquidi e farmaci'),
+    ],
+    tu: ['Riconoscere e misurare la temperatura', 'Raffreddare subito'],
+    equipe: ['Liquidi per via venosa', 'Gestione delle complicanze'],
+  },
+
+  intossicazione: {
+    nodes: [
+      { t: 'Sicurezza', d: 'Siringhe, aggressività, ambienti tossici.' },
+      {
+        ask: 'Vie aeree a rischio?',
+        d: 'Vomito, gorgoglio, russamento.',
+        si: [{ t: 'Aspira e posizione laterale', d: 'Se respira e non c’è trauma.' }],
+        no: [],
+      },
+      sores('Riferisci la SpO₂'),
+      {
+        ask: 'Coscienza ridotta?',
+        si: [sores('Chiedi il mezzo avanzato', 'Può esserci un’ipoglicemia: la misura e la tratta l’infermiere.')],
+        no: [],
+      },
+      { t: 'Telo isotermico e ricerca di traumi' },
+      { t: 'Non lasciarlo solo', d: 'Rivaluta spesso, non affidarlo agli amici.' },
+    ],
+    tu: ['Proteggere le vie aeree', 'Prevenire l’ipotermia', 'Sorvegliare'],
+    equipe: ['Glicemia e glucosio', 'Antidoti e farmaci'],
+  },
+
+  annegamento: {
+    nodes: [
+      { t: 'Recupero sicuro', d: 'In acqua entra solo personale formato; da riva galleggiante o oggetto da allungare.' },
+      {
+        ask: 'Respira normalmente?',
+        si: [{ t: 'Posizione laterale', d: 'Ossigeno come indicato dalla SORES.' }],
+        no: [{ t: '5 ventilazioni iniziali', d: 'Con pallone e ossigeno: la causa è l’ipossia.' }, { t: 'RCP 30:2' }, { t: 'DAE', d: 'Asciuga il torace prima delle piastre.' }],
+      },
+      { t: 'Togli gli indumenti bagnati e copri' },
+      sores('Riferisci alla SORES'),
+      equipe('Gestione avanzata delle vie aeree'),
+    ],
+    tu: ['5 ventilazioni iniziali e RCP', 'DAE', 'Prevenire l’ipotermia'],
+    equipe: ['Vie aeree avanzate e farmaci'],
+  },
+
+  oppioidi: {
+    nodes: [
+      { t: 'Sicurezza', d: 'Siringa nel contenitore rigido, senza reincappucciarla.' },
+      { t: 'Sospetta', d: 'Sopore estremo, respiro lento, pupille a punta di spillo.' },
+      {
+        ask: 'Respira normalmente?',
+        si: [{ t: 'Posizione laterale' }, sores('Riferisci la SpO₂')],
+        no: [{ t: 'Apri le vie aeree e ventila con il pallone', d: 'Collegato all’ossigeno ad alti flussi.' }, { t: 'Se non respira o gasping: BLSD' }],
+      },
+      sores('Riferisci alla SORES', 'Respiro, saturazione, pupille, siringa trovata.'),
+      equipe('Naloxone', 'Il suo effetto può finire prima di quello dell’oppioide.'),
+    ],
+    tu: ['Ventilare con pallone e ossigeno', 'Mettere in sicurezza la siringa'],
+    equipe: ['Naloxone', 'Gestione avanzata'],
+  },
+
+  ustioni: {
+    nodes: [
+      { t: 'Spegni la fonte di calore', d: 'E metti in sicurezza la scena.' },
+      { t: 'Raffredda subito', d: 'Acqua corrente fresca per almeno 20 minuti. Niente ghiaccio, niente burro, olio o dentifricio.' },
+      { t: 'Togli indumenti e anelli', d: 'Lascia ciò che è attaccato alla pelle.' },
+      {
+        ask: 'Bambino o ustione estesa?',
+        si: [{ t: 'Copri subito il resto del corpo', d: 'Il raffreddamento esteso porta all’ipotermia.' }],
+        no: [{ t: 'Telo isotermico dopo il raffreddamento' }],
+      },
+      { t: 'Stima l’estensione', d: 'Regola del palmo: il palmo del paziente con le dita vale circa l’1%.' },
+      { t: 'Copri l’ustione', d: 'Pellicola appoggiata o medicazione non aderente, senza stringere.' },
+      sores('Riferisci alla SORES', 'Estensione, sede, età; fuliggine o voce rauca vanno segnalate subito.'),
+      equipe('Analgesia e liquidi'),
+    ],
+    tu: ['Raffreddare, scoprire, coprire', 'Stimare l’estensione', 'Prevenire l’ipotermia'],
+    equipe: ['Analgesia', 'Liquidi e gestione delle vie aeree'],
+  },
+};

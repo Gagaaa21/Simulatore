@@ -378,7 +378,7 @@ export function Mission({
               <strong>Prima la scena.</strong> Valuta la sicurezza, indossa i guanti e solo dopo avvicinati al paziente.
             </li>
             <li>
-              <strong>Segui le fasi.</strong> A sinistra le azioni sono divise come nel corso: Scena, A, B, C, D, E, Anamnesi, SORES e trasporto; una spunta indica la fase svolta. Puoi anche cliccare sul corpo del paziente o sui presidi a terra. Ogni azione richiede tempo: il paziente intanto cambia.
+              <strong>Le schede.</strong> A sinistra: Scena, Valutazione (ABCDE), Parametri, Anamnesi, Trattamenti (vie aeree, ossigeno, RCP e DAE, emorragie, immobilizzazione…) e SORES; una spunta indica la scheda svolta. Puoi anche cliccare sul corpo del paziente o sui presidi a terra. Ogni azione richiede tempo: il paziente intanto cambia.
             </li>
             <li>
               <strong>Leggi gli strumenti.</strong> A destra il monitor (saturimetro e pressione; la glicemia compare quando la misura l’infermiere), il DAE e la RCP; sotto la scena il diario con reperti e messaggi radio.
