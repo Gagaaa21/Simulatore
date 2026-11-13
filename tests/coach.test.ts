@@ -32,11 +32,11 @@ function paramsFor(sim: Sim, st: CoachStep): Record<string, unknown> | undefined
 }
 
 /** Gioca la missione eseguendo sempre il passo suggerito dalla guida. */
-function followCoach(id: string) {
+function followCoach(id: string, soloEssenziali = false) {
   const sc = SCENARIO_BY_ID[id];
   const kit: EquipmentId[] = [];
   if (sc.loadout) {
-    for (const e of [...sc.loadout.essential, ...sc.loadout.recommended]) {
+    for (const e of soloEssenziali ? sc.loadout.essential : [...sc.loadout.essential, ...sc.loadout.recommended]) {
       if (kit.reduce((a, k) => a + EQUIPMENT[k].slots, 0) + EQUIPMENT[e].slots <= CAPACITY) kit.push(e);
     }
   }
@@ -91,6 +91,18 @@ describe('la guida «Prossimo passo» porta a un buon intervento', () => {
       expect(critici, `errori seguendo la guida in ${sc.id}`).toEqual([]);
       expect(sim.ended, `${sc.id}: la guida non porta alla fine della missione`).not.toBeNull();
       expect(rep.score, `${sc.id}: ${rep.results.filter((r) => !r.ok).map((r) => r.obj.id).join(', ')}`).toBeGreaterThanOrEqual(90);
+    });
+  }
+});
+
+describe('la guida funziona anche con i soli presidi essenziali (fa recuperare il resto)', () => {
+  for (const sc of CAREER_SCENARIOS) {
+    it(sc.id, () => {
+      const { sim, rep } = followCoach(sc.id, true);
+      const gravi = sim.penalties.filter((p) => p.severity === 'critico').map((p) => p.id);
+      expect(gravi, `errori critici in ${sc.id}`).toEqual([]);
+      expect(sim.ended, `${sc.id}: la guida non porta alla fine della missione`).not.toBeNull();
+      expect(rep.score, `${sc.id}: ${rep.results.filter((r) => !r.ok).map((r) => r.obj.id).join(', ')}`).toBeGreaterThanOrEqual(75);
     });
   }
 });
