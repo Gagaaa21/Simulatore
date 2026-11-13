@@ -84,7 +84,7 @@ npm run build      # build statica in dist/
 npm run build:artifact   # pagina HTML unica in dist-artifact/sirena-118.html
 ```
 
-La build in `dist/` è un sito statico: si può aprire con qualsiasi web server. Il workflow `.github/workflows/deploy.yml` la pubblica su **GitHub Pages** a ogni push sul ramo `main` (in GitHub: *Settings → Pages → Source: GitHub Actions*).
+La build in `dist/` è un sito statico: si può aprire con qualsiasi web server. Il workflow `.github/workflows/deploy.yml` la pubblica su **GitHub Pages** a ogni push sul ramo predefinito del repository: basta attivare una volta *Settings → Pages → Source: GitHub Actions*.
 
 ## Comandi in missione
 
